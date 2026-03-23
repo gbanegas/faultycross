@@ -35,6 +35,7 @@
 
 #include "pack_unpack.h"
 #include "parameters.h"
+#include "utils.h"
 
 /* Public key: the parity check matrix is shrunk to a seed, syndrome
  * represented in full */
@@ -86,8 +87,25 @@ void CROSS_sign(const sk_t * const SK,
                 const uint64_t mlen,
                 CROSS_sig_t * const sig);
 
+void CROSS_sign_faulted(const sk_t *SK,
+               const char *const m,
+               const uint64_t mlen,
+               FP_ELEM delta_hat_mat [K][N-K],
+               CROSS_sig_t *sig);
+
 /* verify returns 1 if signature is ok, 0 otherwise */
 int CROSS_verify(const pk_t * const PK,
                  const char * const m,
                  const uint64_t mlen,
                  const CROSS_sig_t * const sig);
+
+int recover(FP_ELEM res[N], const pk_t *const PK,
+                 const char *const m,
+                 const uint64_t mlen,
+                 const CROSS_sig_t *const sig);
+
+int recover_H(FP_ELEM res[N], const pk_t *const PK,
+                 const char *const m,
+                 const uint64_t mlen,
+                 const CROSS_sig_t *const sig,
+                 uint16_t x_1, uint16_t x_2, FP_ELEM delta_val);

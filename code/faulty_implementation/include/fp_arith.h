@@ -130,6 +130,47 @@ void restr_vec_by_fp_matrix(FP_ELEM res[N-K],
 }
 
 static
+void restr_vec_by_fp_delta_matrix(FP_ELEM res[N-K],
+                                 FZ_ELEM e[N],
+                                 FP_ELEM delta_V[K][N-K]){
+    memset(res, 0, (N-K) * sizeof(FP_ELEM));
+
+    for(int i = 0; i < K; i++){
+       FP_ELEM e_val = RESTR_TO_VAL(e[i]);
+       
+       for(int j = 0; j < N-K; j++){
+           if (delta_V[i][j] != 0) {
+               res[j] = FPRED_DOUBLE( (FP_DOUBLEPREC) res[j] +
+                                      (FP_DOUBLEPREC) e_val *
+                                      (FP_DOUBLEPREC) delta_V[i][j]);
+           }
+       }
+    }
+}
+
+
+static 
+void fp_matrix_plus_fp_matrix(FP_ELEM res[K][N-K],
+                         FP_ELEM V_tr[K][N-K],
+                         FP_ELEM delta[K][N-K]){
+
+    for(int i = 0; i < K; i++){
+       for(int j = 0; j < N-K; j++){
+           res[i][j] = FPRED_DOUBLE( (FP_DOUBLEPREC) V_tr[i][j] +
+                                  (FP_DOUBLEPREC) delta[i][j]
+                );
+       }
+    }
+}
+
+static 
+void fp_vec_plus_fp_vec(FP_ELEM res[N-K], FP_ELEM in1[N-K], FP_ELEM in2[N-K]){
+    for(int i = 0; i < N; i++){
+        res[i] = FPRED_DOUBLE( (FP_DOUBLEPREC) in1[i] + (FP_DOUBLEPREC) in2[i]);
+    }
+}
+
+static
 void fp_vec_by_fp_matrix(FP_ELEM res[N-K],
                          FP_ELEM e[N],
                          FP_ELEM V_tr[K][N-K]){

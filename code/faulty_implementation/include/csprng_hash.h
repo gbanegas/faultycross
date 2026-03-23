@@ -36,6 +36,7 @@
 
 #include "parameters.h"
 #include "sha3.h"
+#include <time.h>
 
 /************************* CSPRNG ********************************/
 
@@ -226,6 +227,63 @@ void csprng_fp_mat(FP_ELEM res[K][N-K],
         bits_in_sub_buf -= BITS_FOR_P;
     }   
 }
+
+static inline
+void csprng_fp_mat_faulted(FP_ELEM res[K][N-K],
+                   CSPRNG_STATE_T * const csprng_state, int fault, int loop){
+    const FP_ELEM mask = ( (FP_ELEM) 1 << BITS_TO_REPRESENT(P-1)) - 1;
+    uint8_t CSPRNG_buffer[ROUND_UP(BITS_V_CT_RNG,8)/8];
+    /*
+    The values of fault correspond to the skipped instruction
+    0: no fault
+    1: first condition of line 13
+    2: second condition of line 13
+    3: condition at line 14
+    4: loop at line 16
+    5-8: updates at lignes 19-22
+    9: shift at line 28
+    10: update at line 29
+
+    loop gives the index of the iteration of the while loop where the fault occurs
+    */
+    csprng_randombytes(CSPRNG_buffer,sizeof(CSPRNG_buffer),csprng_state);    
+    int placed = 0;
+    uint64_t sub_buffer = 0;
+    for (int i=0; i<8; i++) {
+        sub_buffer |= ((uint64_t) CSPRNG_buffer[i]) << 8*i;
+    }
+	/* position of the next fresh byte in CSPRNG_buffer*/
+    int bits_in_sub_buf = 64;
+    int pos_in_buf = 8;
+    int pos_remaining = sizeof(CSPRNG_buffer) - pos_in_buf;
+    int skip = 0;
+    while(placed < K*(N-K)) {
+        if (placed == loop%(K*(N-K)) && skip == 0) skip = fault;
+        if ((skip == 1 || bits_in_sub_buf <= 32)&& (skip == 2 || pos_remaining > 0)) { //
+            /* get at most 4 bytes from buffer */
+            int refresh_amount;
+            if (skip != 3) refresh_amount = (pos_remaining >= 4) ? 4 : pos_remaining; //
+            uint32_t refresh_buf = 0;
+            if (skip != 4) {
+                for (int i=0; i<refresh_amount; i++) { //
+                    refresh_buf |= ((uint32_t)CSPRNG_buffer[pos_in_buf+i]) << 8*i;
+                }
+            }
+            if (skip != 5) pos_in_buf += refresh_amount; //
+            if (skip != 6) sub_buffer |=  ((uint64_t) refresh_buf) << bits_in_sub_buf;//
+            if (skip != 7) bits_in_sub_buf += 8*refresh_amount; //
+            if (skip != 8) pos_remaining -= refresh_amount; //
+        }
+        *((FP_ELEM*)res+placed) = sub_buffer & mask;
+        if (*((FP_ELEM*)res+placed) < P) {
+           placed++;
+        }
+        if (skip != 9) sub_buffer = sub_buffer >> BITS_FOR_P;
+        if (skip != 10) bits_in_sub_buf -= BITS_FOR_P;
+        if (skip > 0) skip = -1;
+    }   
+}
+
 
 #if defined(RSDP)
 static inline
