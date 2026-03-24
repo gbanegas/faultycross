@@ -210,3 +210,13 @@ void convert_restr_vec_to_fp(FP_ELEM res[N],
         res[j] = RESTR_TO_VAL(in[j]);
     }
 }
+
+FZ_ELEM val_to_restr_index(FP_ELEM val) {
+    for (FZ_ELEM a = 0; a < Z; a++) {
+        if (RESTR_TO_VAL(a) == val) {
+            return a;
+        }
+    }
+    // If not found, something went wrong with the recovery of the first K elements
+    return 0; 
+}

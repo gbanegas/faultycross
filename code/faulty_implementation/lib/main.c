@@ -10,6 +10,7 @@
 #ifndef CATEGORY_1
 #define CATEGORY_1
 #endif
+#define C 49
 
 #include "parameters.h"
 #include "csprng_hash.h"
@@ -36,20 +37,18 @@ static int simulate_faulted_V(){
     const int nb_faults = sizeof(faults) / sizeof(faults[0]);
 
     for (int fi = 0; fi < nb_faults; fi++) {
-        for (int loop = 0; loop < 10; loop++){
-            int fault = faults[fi];
-            CSPRNG_STATE_T csprng_state_fault;
+        int fault = faults[fi];
+        CSPRNG_STATE_T csprng_state_fault;
 
-            csprng_initialize(&csprng_state_fault, seed_pk, KEYPAIR_SEED_LENGTH_BYTES, dsc_csprng_seed_pk);
-            csprng_fp_mat_faulted(V_faulted, &csprng_state_fault, fault, loop);
+        csprng_initialize(&csprng_state_fault, seed_pk, KEYPAIR_SEED_LENGTH_BYTES, dsc_csprng_seed_pk);
+        csprng_fp_mat_faulted(V_faulted, &csprng_state_fault, fault);
 
-            char title[128];
-            snprintf(title, sizeof(title), "Faulted mat (csprng_fp_mat_faulted) fault=%d, loop=%d", fault, loop);
-            print_fp_mat(title, V_faulted);
+        char title[128];
+        snprintf(title, sizeof(title), "Faulted mat (csprng_fp_mat_faulted) fault=%d, loop=%d", fault, loop);
+        print_fp_mat(title, V_faulted);
 
-            //int diff = count_differences(V_ref, V_faulted);
-            printf("fault=%d / %d\n\n", fault, K * (N - K));
-        }
+        //int diff = count_differences(V_ref, V_faulted);
+        printf("fault=%d / %d\n\n", fault, K * (N - K));
     }
 
     return 0;
@@ -93,7 +92,7 @@ int simulate_recover_faulted(FZ_ELEM * res, sk_t * sk, pk_t * pk, char * msg, ui
 }
 
 
-int simulate_verification_faulted(FZ_ELEM * res, sk_t * sk, pk_t * pk, char * msg, uint64_t mlen, uint16_t x_1, uint16_t x_2, FP_ELEM delta_val){
+int simulate_recover_faulted_easy(FZ_ELEM * res, sk_t * sk, pk_t * pk, char * msg, uint64_t mlen, uint16_t x_1, uint16_t x_2, FP_ELEM delta_val){
     CROSS_sig_t sig;
 
     FP_ELEM delta_mat [K][N-K] = {0};
@@ -111,10 +110,10 @@ int simulate_verification_faulted(FZ_ELEM * res, sk_t * sk, pk_t * pk, char * ms
 
     return 0;
     
+    
 }
 
-
-int main(void) {
+void simulate_recover_full(int easy){
 
     sk_t sk;
     pk_t pk;
@@ -122,17 +121,47 @@ int main(void) {
     CROSS_keygen(&sk, &pk);
     srand( time( NULL ));
     FZ_ELEM e [N] = {0};
-    int recovered [N] = {0};
-    for (int i = 0; i < 5000; i++){
+    uint8_t recovered [N] = {0};
+    int found = 0;
+    int tries = 0;
+    while (found < K){
         int x_1 = rand()%K;
         int x_2 = rand()%(N-K);
         FP_ELEM delta_val = rand()%P;
-        printf("Testing with V[%d][%d]=%d\n", x_1, x_2, delta_val);
-        if(simulate_recover_faulted(e,&sk,&pk,msg,12,x_1,x_2,delta_val)){
-            printf("recovered e[%d]=%d\n", x_1, e[x_1]);
-            recovered[x_1] = 1;
+        //printf("Testing with V[%d][%d]=%d\n", x_1, x_2, delta_val);
+        int sim = 0;
+        if (easy){
+            sim = simulate_recover_faulted_easy(e,&sk,&pk,msg,12,x_1,x_2,delta_val);
+        } else {
+            sim = simulate_recover_faulted(e,&sk,&pk,msg,12,x_1,x_2,delta_val);
         }
+        if(sim){
+            //printf("recovered e[%d]=%d\n", x_1, e[x_1]);
+            if (!recovered[x_1]){
+                recovered[x_1] = 1;
+                //printf("Found %d/%d\n", found, K);
+                //print_fp_vec("found", recovered, K);
+                found++;
+            }
+        }
+        tries++;
     }
 
+    CROSS_sig_t sig;
+                    
+    CROSS_sign(&sk, msg, 12, &sig);
+    recover_systemic_part(e, &pk);
+
+    print_restr_vec("e_hat", e, N);
+    printf("tries : %d\n", tries);
+
+}
+
+
+
+int main(void) {
+
+    simulate_recover_full(1);
+    
     return 0;
 }

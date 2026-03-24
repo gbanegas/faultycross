@@ -230,7 +230,7 @@ void csprng_fp_mat(FP_ELEM res[K][N-K],
 
 static inline
 void csprng_fp_mat_faulted(FP_ELEM res[K][N-K],
-                   CSPRNG_STATE_T * const csprng_state, int fault, int loop){
+                   CSPRNG_STATE_T * const csprng_state, int fault){
     const FP_ELEM mask = ( (FP_ELEM) 1 << BITS_TO_REPRESENT(P-1)) - 1;
     uint8_t CSPRNG_buffer[ROUND_UP(BITS_V_CT_RNG,8)/8];
     /*
@@ -244,7 +244,6 @@ void csprng_fp_mat_faulted(FP_ELEM res[K][N-K],
     9: shift at line 28
     10: update at line 29
 
-    loop gives the index of the iteration of the while loop where the fault occurs
     */
     csprng_randombytes(CSPRNG_buffer,sizeof(CSPRNG_buffer),csprng_state);    
     int placed = 0;
@@ -256,9 +255,9 @@ void csprng_fp_mat_faulted(FP_ELEM res[K][N-K],
     int bits_in_sub_buf = 64;
     int pos_in_buf = 8;
     int pos_remaining = sizeof(CSPRNG_buffer) - pos_in_buf;
-    int skip = 0;
+    int skip = fault;
     while(placed < K*(N-K)) {
-        if (placed == loop%(K*(N-K)) && skip == 0) skip = fault;
+        //if (placed == loop%(K*(N-K)) && skip == 0) skip = fault;
         if ((skip == 1 || bits_in_sub_buf <= 32)&& (skip == 2 || pos_remaining > 0)) { //
             /* get at most 4 bytes from buffer */
             int refresh_amount;
@@ -280,7 +279,7 @@ void csprng_fp_mat_faulted(FP_ELEM res[K][N-K],
         }
         if (skip != 9) sub_buffer = sub_buffer >> BITS_FOR_P;
         if (skip != 10) bits_in_sub_buf -= BITS_FOR_P;
-        if (skip > 0) skip = -1;
+        //if (skip > 0) skip = -1;
     }   
 }
 

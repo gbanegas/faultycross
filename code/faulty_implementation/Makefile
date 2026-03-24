@@ -5,7 +5,7 @@
 #   make clean    (remove binary and object files)
 
 CC ?= gcc
-CFLAGS ?= -std=c11 -O2 -Wall -Wextra -Wshadow -Wundef -Wno-unused-parameter
+CFLAGS ?= -std=c11 -O2 -Wall -Wextra -Wshadow -Wundef -Wno-unused-parameter -Wno-unused-function
 DEFS ?= -DRSDP -DCATEGORY_1 -DBALANCED
 INCLUDES ?= -Iinclude
 LDFLAGS ?= -lm

@@ -109,3 +109,5 @@ int recover_H(FP_ELEM res[N], const pk_t *const PK,
                  const uint64_t mlen,
                  const CROSS_sig_t *const sig,
                  uint16_t x_1, uint16_t x_2, FP_ELEM delta_val);
+
+void recover_systemic_part(FZ_ELEM res[N], const pk_t *const PK);

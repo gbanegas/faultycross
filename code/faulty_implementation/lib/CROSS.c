@@ -80,7 +80,7 @@ void expand_pk_faulted(FP_ELEM V_tr[K][N-K],
 
   CSPRNG_STATE_T csprng_state_mat;
   csprng_initialize(&csprng_state_mat, seed_pk, KEYPAIR_SEED_LENGTH_BYTES, dsc_csprng_seed_pk);
-  csprng_fp_mat_faulted(V_tr, &csprng_state_mat, 0, 0);
+  csprng_fp_mat_faulted(V_tr, &csprng_state_mat, 0);
 }
 #elif defined(RSDPG)
 static
@@ -1331,5 +1331,39 @@ int recover_H(FP_ELEM res[N], const pk_t *const PK,
     }
     return 0;
 
+
+}
+
+void recover_systemic_part(FZ_ELEM res[N], const pk_t *const PK){
+
+        
+    FP_ELEM V_tr[K][N-K];
+    //1-3: expand_pk 
+#if defined(RSDP)
+    expand_pk(V_tr,PK->seed_pk);
+#elif defined(RSDPG)
+    FZ_ELEM W_mat[M][N-M];
+    expand_pk(V_tr,W_mat,PK->seed_pk);
+#endif
+
+    FP_ELEM s[N-K] = {0};
+    if (unpack_fp_syn(s,PK->s) == 0) printf("syndrome unpack problem");
+    
+    FP_ELEM v_e0[N-K] = {0};
+    for(int i = 0; i < K; i++){
+        FP_ELEM e0_val = RESTR_TO_VAL(res[i]);
+        for(int j = 0; j < N-K; j++){
+            v_e0[j] = FPRED_DOUBLE( (FP_DOUBLEPREC) v_e0[j] +
+                                         (FP_DOUBLEPREC) e0_val *
+                                         (FP_DOUBLEPREC) V_tr[i][j]);
+       }
+    }
+
+    for (int i = 0; i < N-K; i++){
+        FP_ELEM e1_val = FPRED_SINGLE( (uint32_t)s[i] + FPRED_OPPOSITE(v_e0[i]) );
+
+        res[K+i] = val_to_restr_index(e1_val);
+    }
+    fp_dz_norm(res);
 
 }
