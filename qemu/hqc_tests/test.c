@@ -6,6 +6,9 @@
 
 #include "randombytes.h"
 #include "hal.h"
+#include "fp_arith.h"
+#include "parameters.h"
+#include "csprng_hash.h"
 
 
 static void fill_message(uint8_t *m, size_t mlen) {
@@ -60,9 +63,14 @@ static void hal_sendf(const char *fmt, ...)
 int main(void) 
 {
 
-	
 
 	hal_send_str("====== START ======");
+	FP_ELEM res[K][N-K];
+	CSPRNG_STATE_T csprng_state;
+ 	csprng_fp_mat(res, &csprng_state);
+
+	//print_mat(res);
+
 
 	hal_send_str("====== END ======");
 

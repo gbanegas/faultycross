@@ -36,6 +36,7 @@
 
 #include "parameters.h"
 #include "sha3.h"
+#include "randombytes.h"
 
 /************************* CSPRNG ********************************/
 
@@ -66,8 +67,7 @@ void csprng_randombytes(unsigned char * const x,
 
 /******************************************************************************/
 
-void randombytes(unsigned char * x,
-                 unsigned long long xlen);
+
 
 /************************* HASH functions ********************************/
 
