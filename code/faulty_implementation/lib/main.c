@@ -72,6 +72,27 @@ int simulate_verification(){
     
 }
 
+int simulate_recover_faulted(FZ_ELEM * res, sk_t * sk, pk_t * pk, char * msg, uint64_t mlen, uint16_t x_1, uint16_t x_2, FP_ELEM delta_val){
+    CROSS_sig_t sig;
+
+    FP_ELEM delta_mat [K][N-K] = {0};
+    delta_mat[x_1][x_2] = delta_val;
+                    
+    CROSS_sign_faulted(sk, msg, mlen, delta_mat, &sig);
+    
+    FZ_ELEM e_hat [N];
+
+    if (recover(e_hat, pk, msg, mlen, &sig)){
+        //printf("Successfully recovered e[%d] = %d\n", x_1, e_hat[x_1]);
+        res[x_1] = e_hat[x_1];
+        return 1;
+    } 
+
+    return 0;
+    
+}
+
+
 int simulate_verification_faulted(FZ_ELEM * res, sk_t * sk, pk_t * pk, char * msg, uint64_t mlen, uint16_t x_1, uint16_t x_2, FP_ELEM delta_val){
     CROSS_sig_t sig;
 
@@ -99,25 +120,19 @@ int main(void) {
     pk_t pk;
     char * msg = "Hello World!";
     CROSS_keygen(&sk, &pk);
-
-    uint16_t x_1 = 0;
-    FZ_ELEM res [N] = {0};
-    while (x_1 < K){
-        int found_x_1 = 0;
-        uint16_t x_2 = 0;
-        while (!found_x_1 && x_2 < N-K){
-            //printf("(%d,%d)\n",x_1,x_2);
-            FP_ELEM delta_val = 1;
-            while (!found_x_1 && delta_val < P){
-                found_x_1 = found_x_1 || simulate_verification_faulted(res, &sk, &pk, msg, 12, x_1, x_2, delta_val);
-                delta_val++;
-            }
-            x_2++;
+    srand( time( NULL ));
+    FZ_ELEM e [N] = {0};
+    int recovered [N] = {0};
+    for (int i = 0; i < 5000; i++){
+        int x_1 = rand()%K;
+        int x_2 = rand()%(N-K);
+        FP_ELEM delta_val = rand()%P;
+        printf("Testing with V[%d][%d]=%d\n", x_1, x_2, delta_val);
+        if(simulate_recover_faulted(e,&sk,&pk,msg,12,x_1,x_2,delta_val)){
+            printf("recovered e[%d]=%d\n", x_1, e[x_1]);
+            recovered[x_1] = 1;
         }
-        x_1 ++;
-    } 
-
-    print_restr_vec("e^", res, N);
+    }
 
     return 0;
 }

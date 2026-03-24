@@ -6,7 +6,7 @@
 
 CC ?= gcc
 CFLAGS ?= -std=c11 -O2 -Wall -Wextra -Wshadow -Wundef -Wno-unused-parameter
-DEFS ?= -DRSDP -DCATEGORY_1 -DBALANCED -DNO_TREES
+DEFS ?= -DRSDP -DCATEGORY_1 -DBALANCED
 INCLUDES ?= -Iinclude
 LDFLAGS ?= -lm
 

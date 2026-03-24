@@ -899,8 +899,6 @@ int CROSS_verify(const pk_t *const PK,
     return is_signature_ok;
 }
 
-
-/* verify returns 1 if signature is ok, 0 otherwise */
 int recover(FP_ELEM res[N], const pk_t *const PK,
                  const char *const m,
                  const uint64_t mlen,
@@ -917,9 +915,7 @@ int recover(FP_ELEM res[N], const pk_t *const PK,
 #endif
 
     FP_ELEM s[N-K] = {0};
-    uint8_t is_padd_key_ok;
-    is_padd_key_ok = unpack_fp_syn(s,PK->s);
-
+    if (unpack_fp_syn(s,PK->s) == 0) printf("syndrome unpack problem");
 
     // 5-6: digest_chall1 <- Hash(msg|digest_cmt|Salt)
     uint8_t digest_msg_cmt_salt[2*HASH_DIGEST_LENGTH+SALT_LENGTH_BYTES];
@@ -939,12 +935,14 @@ int recover(FP_ELEM res[N], const pk_t *const PK,
     uint8_t chall_2[T]={0};
     expand_digest_to_fixed_weight(chall_2,sig->digest_chall_2);
     
-    //9: Rebuild tree 
+
     uint8_t is_stree_padding_ok = 0;
+    // 9: rebuild leaves
 #if defined(NO_TREES)
     uint8_t round_seeds[T*SEED_LENGTH_BYTES] = {0};
     is_stree_padding_ok = rebuild_leaves(round_seeds, chall_2, sig->path);
 #else
+    //9: Rebuild tree 
     uint8_t seed_tree[SEED_LENGTH_BYTES*NUM_NODES_SEED_TREE] = {0};
     is_stree_padding_ok = rebuild_tree(seed_tree, chall_2, sig->path, sig->salt);
 
@@ -1002,48 +1000,47 @@ int recover(FP_ELEM res[N], const pk_t *const PK,
         }
     } 
 
-    printf("[RECOVER] cmt1 loop OK\n");
-
-    FZ_ELEM e_hat[N] = {0};
-    FP_ELEM delta_mat_hat[K][N-K] = {0};
-    for(uint16_t x_1 = 0; x_1 < K; x_1++){
-        for(uint16_t x_2 = 0; x_2 < N-K; x_2++){
-            for(FP_ELEM delta_val = 1; delta_val < P; delta_val++){
+    for (int x_1 = 0; x_1 < K; x_1++) {
+        for (int x_2 = 0; x_2 < N-K; x_2++){
+            FP_ELEM delta_mat_hat[K][N-K] = {0};
+            for (FP_ELEM delta_val = 1; delta_val < P; delta_val++){
+                delta_mat_hat[x_1][x_2] = delta_val;
                 for (FZ_ELEM a = 0; a < Z; a++) {
-                    printf("[RECOVER] testing for delta[%d][%d] = %d, e[%d] = %d\n", x_1, x_2, delta_val, x_2, a);
-                    delta_mat_hat[x_1][x_2] = delta_val;
+                    FZ_ELEM e_hat[N] = {0};
                     e_hat[x_1] = a;
+
+                    int current_used_rsps = 0;
 
                     for(uint16_t i = 0; i< T; i++){
                         if(chall_2[i] == 0){
                                                         /* place y[i] in the buffer for later on hashing */
                             is_packed_padd_ok = is_packed_padd_ok &&
-                                                unpack_fp_vec(y[i], sig->resp_0[used_rsps].y);
+                                                unpack_fp_vec(y[i], sig->resp_0[current_used_rsps].y);
                             FZ_ELEM v_bar[N];
-#if defined(RSDP)
+            #if defined(RSDP)
                             /*v_bar is memcpy'ed directly into cmt_0 input buffer */
                             FZ_ELEM* v_bar_ptr = cmt_0_i_input+DENSELY_PACKED_FP_SYN_SIZE;
                             is_packed_padd_ok = is_packed_padd_ok &&
-                                                unpack_fz_vec(v_bar, sig->resp_0[used_rsps].v_bar);
+                                                unpack_fz_vec(v_bar, sig->resp_0[current_used_rsps].v_bar);
                             memcpy(v_bar_ptr,
-                                &sig->resp_0[used_rsps].v_bar,
+                                &sig->resp_0[current_used_rsps].v_bar,
                                 DENSELY_PACKED_FZ_VEC_SIZE);
                             is_signature_ok = is_signature_ok &&
                                             is_fz_vec_in_restr_group_n(v_bar);
-#elif defined(RSDPG)
+            #elif defined(RSDPG)
                             /*v_G_bar is memcpy'ed directly into cmt_0 input buffer */
                             FZ_ELEM* v_G_bar_ptr = cmt_0_i_input+DENSELY_PACKED_FP_SYN_SIZE;
                             memcpy(v_G_bar_ptr,
-                                &sig->resp_0[used_rsps].v_G_bar,
+                                &sig->resp_0[current_used_rsps].v_G_bar,
                                 DENSELY_PACKED_FZ_RSDP_G_VEC_SIZE);
                             FZ_ELEM v_G_bar[M];
                             is_packed_padd_ok = is_packed_padd_ok &&
-                                                unpack_fz_rsdp_g_vec(v_G_bar, sig->resp_0[used_rsps].v_G_bar);
+                                                unpack_fz_rsdp_g_vec(v_G_bar, sig->resp_0[current_used_rsps].v_G_bar);
                             is_signature_ok = is_signature_ok &&
                                             is_fz_vec_in_restr_group_m(v_G_bar);
                             fz_inf_w_by_fz_matrix(v_bar,v_G_bar,W_mat);
 
-#endif
+            #endif
                             
                             // 23: v = g^v_bar
                             FP_ELEM v[N];
@@ -1058,72 +1055,70 @@ int recover(FP_ELEM res[N], const pk_t *const PK,
                             
                             // y'H = y'(I|V_tilda)T
                             fp_vec_by_fp_matrix(y_prime_H,y_prime,V_tilda);
-                            
-                            // e_tilda = e_hat*delta_mat_hat
-                            FP_ELEM e_tilda[N-K] = {0};
-                            restr_vec_by_fp_delta_matrix(e_tilda, e_hat, delta_mat_hat);
-                            
-                            // s_hat_tilda = s + e_tilda
-                            FP_ELEM s_hat_tilda[N-K];
-                            fp_vec_plus_fp_vec(s_hat_tilda, s, e_tilda);
-
                             fp_dz_norm_synd(y_prime_H);
-                            
-                            // s'[i] = y'H_tilda - chall[i]s_hat_tilda
-                            fp_synd_minus_fp_vec_scaled(s_prime,
-                                                        y_prime_H,
-                                                        chall_1[i],
-                                                        s_hat_tilda);
-                            
-                            // add s'[i] to cmt_0 input    
+
+                            FP_ELEM e_delta_T[N-K] = {0};
+                            FP_ELEM e_hat_val = RESTR_TO_VAL(e_hat[x_1]); 
+                            e_delta_T[x_2] = FPRED_SINGLE((uint32_t)e_hat_val * (uint32_t)delta_val);
+
+                            //print_fp_vec("s", s, N-K);
+                            FP_ELEM s_hat_tilda[N-K];
+                            for(int j=0; j<N-K; j++) {
+                                s_hat_tilda[j] = FPRED_SINGLE((uint32_t)s[j] + (uint32_t)e_delta_T[j]);
+                            }
+                            //print_fp_vec("s^", s_hat_tilda, N-K);
+
+                            fp_synd_minus_fp_vec_scaled(s_prime, y_prime_H, chall_1[i], s_hat_tilda);
                             fp_dz_norm_synd(s_prime);
                             pack_fp_syn(cmt_0_i_input, s_prime);
                             uint16_t domain_sep_hash = HASH_DOMAIN_SEP_CONST+i+(2*T-1);
 
                             hash(cmt_0[i], cmt_0_i_input, sizeof(cmt_0_i_input), domain_sep_hash);
+                            current_used_rsps++;
                         }
 
 
-                    }   
+                    }
+
                     uint8_t digest_cmt0_cmt1[2*HASH_DIGEST_LENGTH];
 
                     // 27: recompute root -> digest_cmt0
-                    if(recompute_root(digest_cmt0_cmt1, cmt_0, sig->proof, chall_2) == 0) printf("mtree padding is not ok\n");
+                    uint8_t is_mtree_padding_ok = recompute_root(digest_cmt0_cmt1, cmt_0, sig->proof, chall_2);
                     // 13: hash(cmt[i]) -> digest_cmt1
                     hash(digest_cmt0_cmt1 + HASH_DIGEST_LENGTH, cmt_1, sizeof(cmt_1), HASH_DOMAIN_SEP_CONST);
-
+                    
                     // 28: hash(digest_cmt0, digest_cmt1) -> digest_cmt_prime 
                     uint8_t digest_cmt_prime[HASH_DIGEST_LENGTH];
-
                     hash(digest_cmt_prime, digest_cmt0_cmt1 ,sizeof(digest_cmt0_cmt1), HASH_DOMAIN_SEP_CONST);
+                    //printf("digest_cmt_prime : ");
+                    //print_digest(digest_cmt_prime);
 
                     int does_digest_cmt_match = ( memcmp(digest_cmt_prime,
                                                         sig->digest_cmt,
                                                         HASH_DIGEST_LENGTH) == 0);
-
+                    
                     is_signature_ok = is_signature_ok &&
-                      does_digest_cmt_match &&
-                      is_stree_padding_ok &&
-                      is_padd_key_ok &&
-                      is_packed_padd_ok;
+                                does_digest_cmt_match &&
+                                is_mtree_padding_ok &&
+                                is_stree_padding_ok &&
+                                is_packed_padd_ok;
                     // 29: digest_cmt == digest_cmt_prime ? 
-                    if (is_signature_ok) {
+                    if (does_digest_cmt_match) {
                         memcpy(res, e_hat, N*sizeof(FZ_ELEM));
                         return 1;
-                    }
-
-                    
-                }
+                    } 
+                
 
             }
-
         }
     }
     
+    }
     return 0;
 
 
 }
+
 
 int recover_H(FP_ELEM res[N], const pk_t *const PK,
                  const char *const m,
