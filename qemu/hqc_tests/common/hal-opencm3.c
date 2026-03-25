@@ -322,6 +322,13 @@ void hal_send_str(const char* in)
   usart_send_blocking(SERIAL_USART, '\n');
 }
 
+void hal_send_bytes(const uint8_t* data, size_t len)
+{
+  for (size_t i = 0; i < len; i++) {
+    usart_send_blocking(SERIAL_USART, data[i]);
+  }
+}
+
 void sys_tick_handler(void)
 {
   ++overflowcnt;

@@ -1,37 +1,28 @@
-#ifndef RANDOMBYTES_H
-#define RANDOMBYTES_H
+#ifndef PQCLEAN_RANDOMBYTES_H
+#define PQCLEAN_RANDOMBYTES_H
 
-#include <stddef.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
-#define RNG_SUCCESS 0
-#define RNG_BAD_MAXLEN -1
-#define RNG_BAD_OUTBUF -2
-#define RNG_BAD_REQ_LEN -3
-#define RNG_FAIL_SYSCALL -4
+#ifdef _WIN32
+/* Load size_t on windows */
+#include <crtdefs.h>
+#else
+#include <unistd.h>
+#endif /* _WIN32 */
 
-typedef struct {
-    unsigned char buffer[16];
-    int buffer_pos;
-    unsigned long length_remaining;
-    unsigned char key[32];
-    unsigned char ctr[16];
-} AES_XOF_struct;
 
-typedef struct {
-    unsigned char Key[32];
-    unsigned char V[16];
-    int reseed_counter;
-    int init;
-} AES256_CTR_DRBG_struct;
+/*
+ * Write `n` bytes of high quality random bytes to `buf`
+ */
+#define randombytes     PQCLEAN_randombytes
+int randombytes(uint8_t *output, size_t n);
 
-void AES256_CTR_DRBG_Update(unsigned char *provided_data, unsigned char *Key,
-                            unsigned char *V);
-
-void randombytes_init(unsigned char *entropy_input,
-                      unsigned char *personalization_string,
-                      int security_strength);
-
-int randombytes(uint8_t *out, size_t outlen);
-
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* PQCLEAN_RANDOMBYTES_H */

@@ -1,0 +1,31 @@
+  CC      obj/common/hal-mps2.c.o
+[ -d obj/common ] || mkdir -p obj/common
+arm-none-eabi-gcc -c -o obj/common/hal-mps2.c.o -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs -Icommon -Icommon/mps2 -c -fdump-rtl-dfinish -fstack-usage  -DRSDP -DCATEGORY_1 -DBALANCED common/hal-mps2.c
+  AR      obj/libpqm4hal.a
+[ -d obj ] || mkdir -p obj
+arm-none-eabi-ar rcs obj/libpqm4hal.a obj/common/mps2/startup_MPS2.S.o obj/common/hal-mps2.c.o obj/common/randombytes.c.o
+  CC      obj/test.c.o
+[ -d obj ] || mkdir -p obj
+arm-none-eabi-gcc -c -o obj/test.c.o -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs -Icommon -Icommon/mps2 -c -fdump-rtl-dfinish -fstack-usage  -DRSDP -DCATEGORY_1 -DBALANCED test.c
+  CC      obj/csprng_hash.c.o
+[ -d obj ] || mkdir -p obj
+arm-none-eabi-gcc -c -o obj/csprng_hash.c.o -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs -Icommon -Icommon/mps2 -c -fdump-rtl-dfinish -fstack-usage  -DRSDP -DCATEGORY_1 -DBALANCED csprng_hash.c
+  CC      obj/fips202.c.o
+[ -d obj ] || mkdir -p obj
+arm-none-eabi-gcc -c -o obj/fips202.c.o -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs -Icommon -Icommon/mps2 -c -fdump-rtl-dfinish -fstack-usage  -DRSDP -DCATEGORY_1 -DBALANCED fips202.c
+  CC      obj/keccakf1600.c.o
+[ -d obj ] || mkdir -p obj
+arm-none-eabi-gcc -c -o obj/keccakf1600.c.o -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs -Icommon -Icommon/mps2 -c -fdump-rtl-dfinish -fstack-usage  -DRSDP -DCATEGORY_1 -DBALANCED keccakf1600.c
+  CC      obj/load_matrix.c.o
+[ -d obj ] || mkdir -p obj
+arm-none-eabi-gcc -c -o obj/load_matrix.c.o -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs -Icommon -Icommon/mps2 -c -fdump-rtl-dfinish -fstack-usage  -DRSDP -DCATEGORY_1 -DBALANCED load_matrix.c
+  CC      obj/randombytes.c.o
+[ -d obj ] || mkdir -p obj
+arm-none-eabi-gcc -c -o obj/randombytes.c.o -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs -Icommon -Icommon/mps2 -c -fdump-rtl-dfinish -fstack-usage  -DRSDP -DCATEGORY_1 -DBALANCED randombytes.c
+  GEN     obj/_ELFNAME_qemu-test.elf.o
+echo "const char _elf_name[] = \"\";" | \
+	arm-none-eabi-gcc -x c -c -o obj/_ELFNAME_qemu-test.elf.o -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs -Icommon -Icommon/mps2 -c -fdump-rtl-dfinish -fstack-usage -DRSDP -DCATEGORY_1 -DBALANCED -
+  LD      elf/qemu-test.elf
+[ -d elf ] || mkdir -p elf
+arm-none-eabi-gcc --specs=nosys.specs -Wl,--wrap=_sbrk -ffreestanding -Lobj -Tobj/ldscript.ld -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -o elf/qemu-test.elf obj/_ELFNAME_qemu-test.elf.o obj/test.c.o obj/csprng_hash.c.o obj/fips202.c.o obj/keccakf1600.c.o obj/load_matrix.c.o obj/randombytes.c.o -Wl,--start-group -lpqm4hal -Wl,--end-group
+rm obj/_ELFNAME_qemu-test.elf.o obj/keccakf1600.c.o obj/csprng_hash.c.o obj/randombytes.c.o obj/fips202.c.o obj/load_matrix.c.o

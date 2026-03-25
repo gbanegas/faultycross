@@ -6,7 +6,6 @@
 
 #include "randombytes.h"
 #include "hal.h"
-#include "fp_arith.h"
 #include "parameters.h"
 #include "csprng_hash.h"
 
@@ -59,20 +58,46 @@ static void hal_sendf(const char *fmt, ...)
 }
 
 
+void print_fp_mat(const char *title, FP_ELEM A[K][N-K]) {
+    hal_send_str(title);
+    hal_send_str("\n");
+    for (int i = 0; i < K; i++) {
+        char row[1024];
+        size_t pos = 0;
+        pos += snprintf(row + pos, sizeof(row) - pos, "[%3d] ", i);
+        for (int j = 0; j < N - K; j++) {
+            pos += snprintf(row + pos, sizeof(row) - pos, "%3u", (unsigned)A[i][j]);
+            if (j < N - K - 1) pos += snprintf(row + pos, sizeof(row) - pos, " ");
+        }
+        hal_send_str(row);
+    }
+}
+
 
 int main(void) 
 {
 
 
-	hal_send_str("====== START ======");
+	//hal_send_str("====== START ======");
+	uint8_t seed_sk[KEYPAIR_SEED_LENGTH_BYTES] = {0};
+	randombytes(seed_sk,KEYPAIR_SEED_LENGTH_BYTES);
+	uint8_t seed_e_seed_pk[2][KEYPAIR_SEED_LENGTH_BYTES];
+	const uint16_t dsc_csprng_seed_sk = CSPRNG_DOMAIN_SEP_CONST + (3*T+1);
+
+  	CSPRNG_STATE_T csprng_state;
+  	csprng_initialize(&csprng_state, seed_sk, KEYPAIR_SEED_LENGTH_BYTES, dsc_csprng_seed_sk);
+  	csprng_randombytes((uint8_t *)seed_e_seed_pk, 2*KEYPAIR_SEED_LENGTH_BYTES,&csprng_state); 	
+
+
 	FP_ELEM res[K][N-K];
-	CSPRNG_STATE_T csprng_state;
- 	csprng_fp_mat(res, &csprng_state);
-
-	//print_mat(res);
+	csprng_fp_mat(res, &csprng_state);
 
 
-	hal_send_str("====== END ======");
+	//print_fp_mat("V_tr", res);
+
+	hal_send_bytes((uint8_t*)res, sizeof(res));
+
+	//hal_send_str("====== END ======");
 
 	return 0;
 }

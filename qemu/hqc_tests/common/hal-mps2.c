@@ -69,6 +69,13 @@ void hal_send_str(const char* in)
   uart_putc('\n');
 }
 
+void hal_send_bytes(const uint8_t* data, size_t len)
+{
+  for (size_t i = 0; i < len; i++) {
+    uart_putc(data[i]);
+  }
+}
+
 #if !defined(NO_SEMIHOSTING_EXIT)
 // TODO(dsprenkels) Currently, we only exit the QEMU host when a the program
 // exists sucessfully.  We should also populate some interrupts handlers that
