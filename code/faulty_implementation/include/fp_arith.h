@@ -129,6 +129,21 @@ void restr_vec_by_fp_matrix(FP_ELEM res[N-K],
     }
 }
 
+
+static 
+void fp_matrix_plus_fp_matrix(FP_ELEM res[K][N-K],
+                         FP_ELEM V_tr[K][N-K],
+                         FP_ELEM delta[K][N-K]){
+
+    for(int i = 0; i < K; i++){
+       for(int j = 0; j < N-K; j++){
+           res[i][j] = FPRED_DOUBLE( (FP_DOUBLEPREC) V_tr[i][j] +
+                                  (FP_DOUBLEPREC) delta[i][j]
+                );
+       }
+    }
+}
+
 static
 void fp_vec_by_fp_matrix(FP_ELEM res[N-K],
                          FP_ELEM e[N],
@@ -194,4 +209,14 @@ void convert_restr_vec_to_fp(FP_ELEM res[N],
     for(int j = 0; j < N; j++){
         res[j] = RESTR_TO_VAL(in[j]);
     }
+}
+
+FZ_ELEM val_to_restr_index(FP_ELEM val) {
+    for (FZ_ELEM a = 0; a < Z; a++) {
+        if (RESTR_TO_VAL(a) == val) {
+            return a;
+        }
+    }
+    // If not found, something went wrong with the recovery of the first K elements
+    return 0; 
 }
