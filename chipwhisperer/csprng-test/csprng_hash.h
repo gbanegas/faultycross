@@ -34,6 +34,11 @@
 #ifndef CSPRNG_HASH_H
 #define CSPRNG_HASH_H
 
+#ifndef START
+  #warning "START was not defined, defaulting to 0"
+  #define START 0
+#endif
+
 #include "parameters.h"
 #include "sha3.h"
 #include "randombytes.h"
@@ -139,16 +144,18 @@ void csprng_fp_mat_trigger(FP_ELEM res[K][N-K],
     int bits_in_sub_buf = 64;
     int pos_in_buf = 8;
     int pos_remaining = sizeof(CSPRNG_buffer) - pos_in_buf;
+    int threshold = (N-K)*START;
     while(placed < K*(N-K)) {
-        if (bits_in_sub_buf <= 32 && pos_remaining > 0) {
+        int b = bits_in_sub_buf <= 32 && pos_remaining > 0;
+        if (b) {
             /* get at most 4 bytes from buffer */
-            trigger_high();
             int refresh_amount = (pos_remaining >= 4) ? 4 : pos_remaining; 
-            trigger_low();
             uint32_t refresh_buf = 0;
+            if (placed >= threshold) trigger_high();
             for (int i=0; i<refresh_amount; i++) {
                 refresh_buf |= ((uint32_t)CSPRNG_buffer[pos_in_buf+i]) << 8*i;
             }
+            if (placed >= threshold) trigger_low();
             pos_in_buf += refresh_amount;
             sub_buffer |=  ((uint64_t) refresh_buf) << bits_in_sub_buf;
             bits_in_sub_buf += 8*refresh_amount; 
@@ -158,11 +165,11 @@ void csprng_fp_mat_trigger(FP_ELEM res[K][N-K],
         if (*((FP_ELEM*)res+placed) < P) {
            placed++;
         }
-        //trigger_high();
         sub_buffer = sub_buffer >> BITS_FOR_P;
-        //trigger_low();
         bits_in_sub_buf -= BITS_FOR_P;
     }   
+
+
 }
 
 #endif // CSPRNG_HASH_H

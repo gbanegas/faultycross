@@ -26,6 +26,7 @@
 
 #include "simpleserial.h"
 
+
 static uint8_t seed_sk[KEYPAIR_SEED_LENGTH_BYTES] = {93 ,68 ,121,38 ,47 ,112,56 ,42 ,42 ,6  ,99 ,25 ,104,102,38 ,113,112,102,8  ,28 ,89 ,102,95 ,72 ,90 ,109,124,41 ,9  ,106,9  ,109};
 static FP_ELEM res[K][N-K] = {0};
 static FP_ELEM ref[K][N-K] = {{72 ,3  ,95 ,79 ,126,11 ,81 ,4  ,100,40 ,78 ,1  ,66 ,67 ,99 ,89 ,76 ,44 ,25 ,3  ,117,110,123,121,70 ,111,88 ,18 ,95 ,98 ,37 ,53 ,85 ,45 ,86 ,114,54 ,71 ,121,96 ,83 ,97 ,28 ,4  ,29 ,108,54 ,7  ,24 ,102,31 },
@@ -126,6 +127,13 @@ uint16_t compare_matrix(uint8_t * coor){
 	return diff;
 }
 
+
+/** Computes V_tr (for constant seed for testing)
+ * Compares with normal V_tr
+ * returns 1 if successful fault (1 false value)
+ * in this case, write coordinates on fault on serial
+ * returns 0 otherwise
+ */
 #if SS_VER == SS_VER_2_1
 uint8_t compute_matrix(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* in)
 #else

@@ -35,7 +35,7 @@ TARGET = csprng
 # List C source files here.
 # Header files (.h) are automatically pulled in.
 SRC += csprng.c csprng_hash.c fips202.c keccakf1600.c randombytes.c 
-CFLAGS += -DRSDP -DCATEGORY_1 -DBALANCED
+CFLAGS += -DRSDP -DCATEGORY_1 -DBALANCED -DSTART=$(START)
 
 # -----------------------------------------------------------------------------
 
