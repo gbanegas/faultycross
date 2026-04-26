@@ -1,4 +1,5 @@
 from sage.all import *
+import graphviz
 import hashlib
 from dataclasses import dataclass
 
@@ -292,6 +293,61 @@ def sample_challenge(params, seed):
                 break
         ch[i], ch[p] = ch[p], ch[i]
     return ch
+
+# ----------------------- Graphviz -----------------------------
+def _seed_hex(seed, n=8):
+    return seed.hex()[:n] if seed else "None"
+
+def visualize_ggm_graphviz(root, fault_node=None, affected_ids=None, title="GGM Tree"):
+    """
+    Generates a Graphviz Source object for the GGM tree.
+    - fault_node: ID of the node where the fault was injected.
+    - affected_ids: Set of IDs that changed due to the fault.
+    """
+    dot = graphviz.Digraph(comment=title)
+    dot.attr(label=title, labelloc='t', fontsize='20')
+    
+    # Iterate through all nodes (BFS)
+    q = [root]
+    while q:
+        node = q.pop(0)
+        
+        # Determine styling
+        color = "white"
+        style = "filled"
+        label = f"ID: {node.id}\nRounds: [{node.start}..{node.end}]\nSeed: {_seed_hex(node.seed)}"
+        
+        if node.id == fault_node:
+            color = "red" # The fault target
+        elif affected_ids and node.id in affected_ids:
+            color = "pink" # Propagated changes
+            
+        dot.node(str(node.id), label, fillcolor=color, style=style, shape="box")
+        
+        # Add edges and children
+        if node.left:
+            dot.edge(str(node.id), str(node.left.id))
+            q.append(node.left)
+        if node.right:
+            dot.edge(str(node.id), str(node.right.id))
+            q.append(node.right)
+            
+    return dot
+
+def visualize_tree_diff(root_golden, root_faulted, fault_id=None):
+    """
+    Compares two trees and highlights nodes where seeds differ.
+    """
+    affected_ids = set()
+    golden_map = {n.id: n for n in bfs_nodes(root_golden)}
+    fault_map = {n.id: n for n in bfs_nodes(root_faulted)}
+    
+    for node_id, g_node in golden_map.items():
+        f_node = fault_map.get(node_id)
+        if f_node and g_node.seed != f_node.seed:
+            affected_ids.add(node_id)
+            
+    return visualize_ggm_graphviz(root_faulted, fault_node=fault_id, affected_ids=affected_ids, title="Tree Diff (Correct vs Faulted)")
 
 # ---------- Fast systematic-form data for monomial images of G0 ------------
 
@@ -845,7 +901,7 @@ def sign(params, sk, msg, salt=None, fault_zero_seed_node=None, verbose=False):
         print("sign: withheld rounds U =", U)
         print("sign: path nodes =", len(path))
         print("sign: cmt =", short_hex(cmt, 16))
-    return sig
+    return sig, tree_root, round_seeds
 
 
 def verify(params, pk, msg, sig, verbose=False):
@@ -1258,7 +1314,7 @@ def demo_fault_visualization(params=None, fault_node=None, overview_depth=3,
     msg = b"hello-msg"
     salt = b"S" * params.salt_bytes
 
-    golden = sign(params, sk, msg, salt=salt, fault_zero_seed_node=None)
+    golden, tree_root_g, round_seeds_g = sign(params, sk, msg, salt=salt, fault_zero_seed_node=None)
     if fault_node is None:
         # Default: pick a mid-depth internal node.
         internals = [n for n in bfs_nodes(golden["tree_root"])
@@ -1266,8 +1322,7 @@ def demo_fault_visualization(params=None, fault_node=None, overview_depth=3,
         fault_node = internals[len(internals) // 4].id
     print("chosen fault node id = %d" % fault_node)
 
-    faulted = sign(params, sk, msg, salt=salt,
-                   fault_zero_seed_node=fault_node)
+    faulted, tree_root_f, round_seeds_f = sign(params, sk, msg, salt=salt, fault_zero_seed_node=fault_node)
 
     ok_g = verify(params, pk, msg, golden)
     ok_f = verify(params, pk, msg, faulted)
@@ -1322,6 +1377,13 @@ def demo_fault_visualization(params=None, fault_node=None, overview_depth=3,
         faulted["tree_root"],
         fault_node=fault_node,
     )
+
+    diff_graph = visualize_tree_diff(tree_root_g, tree_root_f, fault_id=zoom_root)
+
+    # In a Jupyter notebook, simply typing 'diff_graph' will render it.
+    # Or save to a file:
+    diff_graph.render("less_fault_diff", format="png", cleanup=True)
+    print("Visualization saved to less_fault_diff.png")
 
 
 def print_signature_summary(params, sig):
@@ -1402,11 +1464,11 @@ def demo_real_fault(fault_zero_seed_node):
     msg = b"real-less-msg"
     salt = b"T" * params.salt_bytes
 
-    golden = sign(params, sk, msg, salt=salt, fault_zero_seed_node=None, verbose=True)
+    golden, tree_root_g, round_seeds_g = sign(params, sk, msg, salt=salt, fault_zero_seed_node=None, verbose=True)
     ok_g = verify(params, pk, msg, golden, verbose=True)
     print("golden verify =", ok_g)
 
-    faulted = sign(params, sk, msg, salt=salt, fault_zero_seed_node=fault_zero_seed_node, verbose=True)
+    faulted, tree_root_f, round_seeds_f = sign(params, sk, msg, salt=salt, fault_zero_seed_node=fault_zero_seed_node, verbose=True)
     ok_f = verify(params, pk, msg, faulted, verbose=True)
     print("faulted verify =", ok_f)
 
@@ -1414,6 +1476,9 @@ def demo_real_fault(fault_zero_seed_node):
     print_fault_summary(summary)
     print_signature_summary(params, faulted)
     print_tree_summary(faulted["tree_root"], max_nodes=48)
+    
+
+
 
 # ---------- Demo ------------------------------------------------------------
 
