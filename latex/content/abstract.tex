@@ -1,0 +1,82 @@
+
+We now define a scheme-agnostic abstraction that captures the common structure
+of the \GGM-tree mechanism across all schemes discussed in
+Section~\ref{sec:background}.
+
+\begin{definition}[\GZKST]
+\sloppy
+\label{def:gzkst}
+A \emph{Generic ZK Seed Tree} (\GZKST) is a tuple
+$\Pi = (\Setup,\, \Expand,\, \Chal,\, \Decide,\, \Publish,\, \Recon)$
+parametrised by:
+\begin{itemize}
+  \item $\lam$: the security parameter;
+  \item $t \in \mathbb{N}$: the number of parallel ZK repetitions;
+  \item $\PRG : \{0,1\}^{\lam} \to \{0,1\}^{2\lam}$: a secure pseudorandom generator;
+  \item $\calS$: the \emph{secret type}
+        (e.g., permutations for LESS, matrix pairs for MEDS, party shares for MPCitH).
+\end{itemize}
+The six algorithms are:
+\begin{enumerate}
+  \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$:
+        samples a master seed $\seed_r \getsr \{0,1\}^{\lam}$ and a public salt.
+  \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$:
+        builds a binary tree $\calT$ by top-down \PRG-expansion from $\seed_r$.
+        Each leaf $i \in \{0, \ldots, t-1\}$ holds a seed $\eseed_i$.
+        Tree topology may be complete or incomplete (scheme-dependent).
+  \item $\Chal(\cmt, \msg) \to \mathbf{c} = (c_0, \ldots, c_{t-1})$:
+        derives a Fiat--Shamir challenge from the commitment and message.
+        $c_i = 0$ indicates that round $i$ requires the ephemeral seed;
+        $c_i \neq 0$ indicates a secret-dependent response.
+  \item $\Decide(\mathbf{c}) \to (\calH, \calR)$:
+        partitions $\{0, \ldots, t-1\}$ into the hidden index set
+        $\calH = \{i : c_i \neq 0\}$ and the revealed index set
+        $\calR = \{i : c_i = 0\}$.
+  \item $\Publish(\calT, \calH) \to \tpath$:
+        constructs a flag structure $\calF : V(\calT) \to \{0,1\}$ and returns the
+        minimal set of nodes $\tpath$ from which every $\eseed_i$ with
+        $i \in \calR$ is reconstructible, while no $\eseed_i$ with
+        $i \in \calH$ is derivable.
+  \item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_i : i \in \calR\}$:
+        verifier-side reconstruction of revealed leaf seeds from $\tpath$.
+\end{enumerate}
+\end{definition}
+
+% ------------------------------------------------------------
+\subsection{The Flag Structure}
+\label{sec:flag-structure}
+% ------------------------------------------------------------
+
+The flag structure $\calF$ produced internally by $\Publish$ is the key
+intermediate object.  It is a labelling $\calF : V(\calT) \to \{0,1\}$ where:
+\begin{itemize}
+  \item $\calF(v) = 0$: node $v$ is \emph{publishable}---either
+        directly included in $\tpath$ or derivable from a published ancestor;
+  \item $\calF(v) = 1$: node $v$ is \emph{hidden}---it must not appear in
+        $\tpath$ and must not be derivable from published nodes.
+\end{itemize}
+
+\noindent
+The flag structure satisfies two invariants:
+
+\begin{invariant}[Correctness]
+\label{inv:correctness}
+For every $i \in \calR$ there exists a node $v$ on the path from the root to
+leaf $\eseed_i$ such that $\calF(v) = 0$ and $\calF(\mathsf{parent}(v)) = 1$.
+\end{invariant}
+
+\begin{invariant}[ZK hiding]
+\label{inv:hiding}
+For every $i \in \calH$, no ancestor of leaf $\eseed_i$ satisfies $\calF(v) = 0$.
+\end{invariant}
+
+The ZK property of the signature scheme is contingent on
+Invariant~\ref{inv:hiding} holding for \emph{all} $i \in \calH$.  A fault that
+changes $\calF(v)$ from $1$ to $0$ for any $v$ that is an ancestor of some
+$\eseed_i$ with $i \in \calH$ \emph{breaks Invariant~\ref{inv:hiding}} and
+may allow an attacker to reconstruct $\eseed_i$.
+
+% ------------------------------------------------------------
+\subsection{Mapping Schemes to the GZKST Model}
+\label{sec:mapping}
+% ------------------------------------------------------------

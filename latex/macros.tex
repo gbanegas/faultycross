@@ -1,0 +1,124 @@
+% ============================================================
+%  macros.tex  --  unified notation for the GGM-tree paper
+% ============================================================
+
+% --- Base fields and groups ---------------------------------
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\Fq}{\mathbb{F}_q}
+\newcommand{\Mon}{\mathrm{Mon}}
+\newcommand{\GL}{\mathrm{GL}}
+
+% --- Security parameter / lengths ---------------------------
+\newcommand{\lam}{\lambda}          % security parameter
+\newcommand{\seedbytes}{\lambda_s}  % seed length in bytes
+
+% --- Calligraphic sets (abstract model) ---------------------
+\newcommand{\calH}{\mathcal{H}}     % hidden-index set
+\newcommand{\calR}{\mathcal{R}}     % revealed-index set
+\newcommand{\calT}{\mathcal{T}}     % seed tree
+\newcommand{\calS}{\mathcal{S}}     % secret-type space
+\newcommand{\calF}{\mathcal{F}}     % flag labelling  F:V(T)->{0,1}
+
+% --- Seeds --------------------------------------------------
+\newcommand{\seed}{\mathsf{seed}}
+\newcommand{\seedsk}{\mathsf{seed}_{\sk}}
+\newcommand{\seedpk}{\mathsf{seed}_{\pk}}
+\newcommand{\seedtree}{\mathsf{seed}_{\mathrm{tree}}}
+\newcommand{\eseed}{\widetilde{s}}  % ephemeral leaf seed  ~s_i
+
+% --- Keys ---------------------------------------------------
+\newcommand{\pk}{\mathsf{pk}}
+\newcommand{\sk}{\mathsf{sk}}
+
+% --- Signature components -----------------------------------
+\newcommand{\salt}{\mathsf{salt}}
+\newcommand{\cmt}{\mathsf{cmt}}
+\newcommand{\msg}{\mathsf{msg}}
+\newcommand{\rsp}{\mathsf{rsp}}
+\newcommand{\idx}{\mathsf{idx}}
+\newcommand{\tpath}{\mathsf{path}}  % tree path (avoid clash with tikz \path)
+
+% --- GZKST abstract algorithms ------------------------------
+\newcommand{\GZKST}{\textsf{GZKST}}
+\newcommand{\Setup}{\textsf{Setup}}
+\newcommand{\Expand}{\textsf{Expand}}
+\newcommand{\Chal}{\textsf{Chal}}
+\newcommand{\Decide}{\textsf{Decide}}
+\newcommand{\Publish}{\textsf{Publish}}
+\newcommand{\Recon}{\textsf{Recon}}
+
+% --- LESS-specific algorithms -------------------------------
+\newcommand{\CF}{\textsf{CF}}
+\newcommand{\Blind}{\textsf{Blind}}
+\newcommand{\CosetRep}{\textsf{CosetRep}}
+\newcommand{\RREF}{\textsf{RREF}}
+\newcommand{\BuildGGM}{\textsf{BuildGGM}}
+\newcommand{\GGMPath}{\textsf{GGMPath}}
+\newcommand{\RebuildGGM}{\textsf{RebuildGGM}}
+\newcommand{\LabelLeaves}{\textsf{LabelLeaves}}
+\newcommand{\ComputeSeeds}{\textsf{ComputeSeeds}}
+\newcommand{\SampleChallenge}{\textsf{SampleChallenge}}
+\newcommand{\SampleGenerator}{\textsf{SampleGenerator}}
+\newcommand{\SampleMonomial}{\textsf{SampleMonomial}}
+\newcommand{\SeedLeaves}{\textsf{SeedLeaves}}
+\newcommand{\CheckCosetRep}{\textsf{CheckCosetRep}}
+
+% --- MEDS/CROSS-specific ------------------------------------
+\newcommand{\SeedTree}{\textsf{SeedTree}}
+\newcommand{\SeedTreePaths}{\textsf{SeedTreePaths}}
+\newcommand{\BuildSeeds}{\textsf{BuildSeeds}}
+\newcommand{\ReconstructSeeds}{\textsf{ReconstructSeeds}}
+
+% --- Cryptographic primitives -------------------------------
+\newcommand{\GGM}{\textsf{GGM}}
+\newcommand{\Hash}{\textsf{Hash}}
+\newcommand{\XOF}{\textsf{XOF}}
+\newcommand{\SHAKE}{\textsf{SHAKE}}
+\newcommand{\PRG}{G}               % PRG symbol: G:{0,1}^lambda -> {0,1}^{2lambda}
+\newcommand{\PRGl}{G_0}            % left half of PRG output
+\newcommand{\PRGr}{G_1}            % right half of PRG output
+
+% --- Signature scheme algorithms ----------------------------
+\newcommand{\KeyGen}{\textsf{KeyGen}}
+\newcommand{\Sign}{\textsf{Sign}}
+\newcommand{\Verify}{\textsf{Verify}}
+
+% --- Flag array (implementation level) ----------------------
+\newcommand{\flags}{\mathtt{flags}}  % the flag array in algorithms
+
+% --- Misc operators -----------------------------------------
+\DeclareMathOperator{\supp}{supp}
+\newcommand{\getsr}{\mathrel{\xleftarrow{\$}}}  % sample uniformly
+
+% ============================================================
+% Unicode compatibility for pdflatex
+% ============================================================
+\DeclareUnicodeCharacter{03BB}{\ensuremath{\lambda}}
+\DeclareUnicodeCharacter{03A0}{\ensuremath{\Pi}}
+\DeclareUnicodeCharacter{03A3}{\ensuremath{\Sigma}}
+\DeclareUnicodeCharacter{2113}{\ensuremath{\ell}}
+\DeclareUnicodeCharacter{2190}{\ensuremath{\leftarrow}}
+\DeclareUnicodeCharacter{00B7}{\ensuremath{\cdot}}
+\DeclareUnicodeCharacter{03C0}{\ensuremath{\pi}}
+\DeclareUnicodeCharacter{03C4}{\ensuremath{\tau}}
+\DeclareUnicodeCharacter{1D4AE}{\ensuremath{\mathcal{S}}}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\to}}
+\DeclareUnicodeCharacter{21D0}{\ensuremath{\Leftarrow}}
+\DeclareUnicodeCharacter{2260}{\ensuremath{\neq}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2208}{\ensuremath{\in}}
+\DeclareUnicodeCharacter{2209}{\ensuremath{\notin}}
+\DeclareUnicodeCharacter{2218}{\ensuremath{\circ}}
+\DeclareUnicodeCharacter{2227}{\ensuremath{\wedge}}
+\DeclareUnicodeCharacter{2200}{\ensuremath{\forall}}
+\DeclareUnicodeCharacter{2308}{\ensuremath{\lceil}}
+\DeclareUnicodeCharacter{2309}{\ensuremath{\rceil}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{2013}{--}
+\DeclareUnicodeCharacter{2014}{---}
+\DeclareUnicodeCharacter{2019}{'}
+
+% Pandoc list compatibility (kept for safety, but no longer generated)
+\providecommand{\tightlist}{}

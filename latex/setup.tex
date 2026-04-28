@@ -1,0 +1,56 @@
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{calc}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{comment}
+
+% ---------- TikZ for tree figures ----------
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,matrix}
+
+% Node fill colours (flag-tree diagrams)
+\definecolor{nodegray}{RGB}{230,228,222}
+\definecolor{nodepub}{RGB}{209,239,219}
+\definecolor{nodehid}{RGB}{248,215,215}
+\definecolor{nodepath}{RGB}{207,231,252}
+\definecolor{nodefault}{RGB}{255,236,204}
+
+\tikzset{
+  seednode/.style = {circle, minimum size=17pt, inner sep=1pt,
+                     fill=nodegray,  draw=gray!60,        thin, font=\scriptsize},
+  pubnode/.style  = {circle, minimum size=17pt, inner sep=1pt,
+                     fill=nodepub,   draw=green!50!black, thin, font=\scriptsize},
+  hidnode/.style  = {circle, minimum size=17pt, inner sep=1pt,
+                     fill=nodehid,   draw=red!70!black,   thin, font=\scriptsize},
+  pathnode/.style = {circle, minimum size=17pt, inner sep=1pt,
+                     fill=nodepath,  draw=blue!60,       thick, font=\scriptsize},
+  fltnode/.style  = {circle, minimum size=17pt, inner sep=1pt,
+                     fill=nodefault, draw=orange!70,     thick, font=\scriptsize},
+  treeedge/.style = {->, >=stealth, thin, gray!60},
+  leaflbl/.style  = {font=\tiny, inner sep=0pt}
+}
+
+% ---------- Algorithms ----------
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\algnewcommand\algorithmicinput{\textbf{Input:}}
+\algnewcommand\algorithmicoutput{\textbf{Output:}}
+\algnewcommand\Input{\item[\algorithmicinput]}
+\algnewcommand\Output{\item[\algorithmicoutput]}
+
+% ---------- Extra theorem-like environments ----------
+\spnewtheorem{assumption}[theorem]{Assumption}{\bfseries}{\itshape}
+\spnewtheorem{invariant}[theorem]{Invariant}{\bfseries}{\rmfamily}
+
+% ---------- List spacing ----------
+\setlist[itemize]{topsep=2pt,  itemsep=1pt, parsep=0pt}
+\setlist[enumerate]{topsep=2pt, itemsep=1pt, parsep=0pt}

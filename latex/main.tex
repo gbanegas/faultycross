@@ -1,0 +1,55 @@
+\documentclass[runningheads]{llncs}
+
+\input{setup.tex}
+\input{macros.tex}
+
+\begin{document}
+
+\title{The Common GGM Tree Abstraction Across ZK-Based Post-Quantum Signature Schemes}
+\titlerunning{GGM Tree Abstraction for ZK-Based Signatures}
+
+%\author{}
+%%\authorrunning{}
+%\institute{ \\
+%\email{}
+%}
+
+\maketitle
+
+\begin{abstract}
+%The Goldreich--Goldwasser--Micali (GGM) tree is widely used in zero-knowledge-based 
+%post-quantum signatures as a seed-compression mechanism. This paper-style draft abstracts 
+%the common seed-tree structure across LESS-v2, MEDS, CROSS, and MPCitH/VOLEitH schemes, 
+%identifies the flag-structure invariant that protects hidden seeds, and gives a generic 
+%leakage theorem explaining why faults that publish hidden nodes lead to dual revelation 
+%and secret recovery. The abstraction is intended as a foundation for scheme-specific 
+%analyses and countermeasures.
+\keywords{GGM tree \and Zero-knowledge signatures \and Fault attacks \and 
+Post-quantum cryptography \and Seed compression}
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+\input{content/intro.tex}
+
+\section{Background}
+\label{sec:background}
+\input{content/background.tex}
+
+\section{Abstract Model}
+\label{sec:abstract}
+\input{content/abstract.tex}
+
+\section{Fault Model Taxonomy}
+\label{sec:theoretical}
+\input{content/theoretical_leakage.tex}
+
+\section{Applications}
+\label{sec:app}
+\input{content/applications.tex}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+
+\end{document}

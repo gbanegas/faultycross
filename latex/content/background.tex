@@ -1,0 +1,384 @@
+% ============================================================
+%  Section 2 – Background
+% ============================================================
+
+\begin{definition}[GGM Tree]
+\label{def:ggm}
+Let $\PRG : \{0,1\}^{\lam} \to \{0,1\}^{2\lam}$ be a length-doubling pseudorandom
+generator, decomposed as $\PRG(x) = (\PRGl(x),\, \PRGr(x))$, where $\PRGl$ and
+$\PRGr$ each output $\lam$ bits.  Given a root seed
+$\seed_r \in \{0,1\}^{\lam}$ and a depth $d$, the \emph{GGM tree} is a complete
+binary tree of depth $d$ in which:
+\begin{itemize}
+  \item the root holds $\seed_r$;
+  \item each internal node $v$ storing seed $s$ generates its left child as
+        $\PRGl(s)$ and its right child as $\PRGr(s)$;
+  \item the $2^{d}$ leaves are the \PRG\ outputs at depth $d$.
+\end{itemize}
+\end{definition}
+
+The crucial property exploited by ZK signature schemes is the
+\emph{punctured-PRF property}: given all leaf seeds \emph{except} leaf~$i$, it is
+computationally infeasible to recover the seed at leaf~$i$, provided $\PRG$ is
+a secure pseudorandom generator.  This makes the \GGM\ tree suitable for hiding
+one or more seeds while revealing the rest.
+
+\paragraph{Incomplete \GGM\ trees.}
+When the number of required leaves $t$ is not a power of $2$, a scheme may use an
+\emph{incomplete} tree: leaves appear at multiple levels, and internal nodes near
+the bottom may have fewer than two children or act as leaves themselves.  This
+reduces memory and computation, but the additional index-tracking logic introduces
+new fault surfaces, as detailed in Section~\ref{sec:theoretical}.
+
+% ============================================================
+\subsection{LESS-v2}
+\label{sec:less}
+% ============================================================
+
+\paragraph{Context.}
+LESS (Linear Equivalence Signature Scheme)~\cite{LESS-spec} uses a Fiat--Shamir
+transformation over a 3-pass Sigma protocol whose security rests on the Canonical
+Form Linear Equivalence Problem (CF-LEP).  During signing, the signer must
+generate $t$ independent ephemeral monomial matrices
+$\mathbf{Q}_{e_0}, \ldots, \mathbf{Q}_{e_{t-1}} \in \Mon_n(q)$.
+
+\paragraph{Tree type.}
+LESS-v2 uses an \emph{incomplete} \GGM\ tree with $T = \lceil \log_2 t \rceil$
+levels.  Leaves are distributed across the bottom two levels; the index offsets
+are tracked via the arrays $\mathsf{npl}$, $\mathsf{ll}$, $\mathsf{off}$, and
+$\mathsf{lsi}$.
+
+\paragraph{Flag tree.}
+After Fiat--Shamir challenge generation, LESS-v2 constructs an auxiliary
+\emph{flag tree} of the same shape as the seed tree.  It is a labelling
+$\calF : V(\calT) \to \{0,1\}$ where $\calF(v) = 0$ marks a publishable
+node and $\calF(v) = 1$ marks a hidden node.  The flag tree is built in three
+sequential phases:
+\begin{enumerate}
+  \item \textbf{Initialisation.}  Every node is set to $0$ except the root,
+        which is set to $1$.
+  \item \textbf{Leaf labelling} ($\LabelLeaves$).  For each leaf $i$, set
+        \begin{equation*}
+          \calF(\mathrm{leaf}_i) =
+          \begin{cases} 1 & \text{if } b[i] \neq 0, \\ 0 & \text{otherwise,} \end{cases}
+        \end{equation*}
+        where $\mathbf{b} = (b[0], \ldots, b[t-1])$ is the Fiat--Shamir challenge
+        vector of weight $w$ over the alphabet $\{0, \ldots, s-1\}$.
+  \item \textbf{Upward propagation} ($\ComputeSeeds$).  For each internal node $v$
+        with children $\ell$ and $r$:
+        \begin{equation*}
+          \calF(v) = \calF(\ell) \vee \calF(r).
+        \end{equation*}
+        This ensures the minimum set of nodes is published to reconstruct all
+        revealed leaf seeds.
+\end{enumerate}
+
+\paragraph{Secret-extraction opportunity.}
+For every round $i$ with $b[i] \neq 0$, the signer publishes
+$\CosetRep\!\bigl(\pi_{b[i]} \circ \tilde{\pi}^{*}_i\bigr)$
+while keeping $\eseed_i$ hidden.  If an attacker obtains both values
+simultaneously, Theorem~2 of~\cite{FaultToForge2025} shows that the secret
+permutation $\pi_{b[i]}$ is recoverable.  The flag tree is the
+\emph{sole enforcement mechanism} that prevents this dual revelation.
+
+\begin{example}
+Figure~\ref{fig:less-tree} illustrates an incomplete \GGM\ tree for $t = 6$ with
+challenge $\mathbf{b} = (0,1,0,1,0,1)$, so
+$\calH = \{1,3,5\}$ and $\calR = \{0,2,4\}$.
+After all three phases, nodes $s_3$, $s_7$, and $s_9$ satisfy
+$\calF(v)=0$ with $\calF(\mathsf{parent}(v))=1$ and thus enter $\tpath$,
+giving the verifier access to $\eseed_0$, $\eseed_2$, and $\eseed_4$.
+\end{example}
+
+\begin{figure}[tb]
+\centering
+\begin{tikzpicture}[x=0.95cm, y=1.15cm]
+  % ---- nodes (final state after all 3 phases) ----
+  % Level 0
+  \node[hidnode]  (s0)  at (3.5, 0)   {$s_0$};
+  % Level 1
+  \node[hidnode]  (s1)  at (1.5,-1)   {$s_1$};
+  \node[hidnode]  (s2)  at (5.5,-1)   {$s_2$};
+  % Level 2  (s3,s4 are leaves; s5,s6 are internal)
+  \node[pathnode] (s3)  at (0.5,-2)   {$s_3$};
+  \node[hidnode]  (s4)  at (2.5,-2)   {$s_4$};
+  \node[hidnode]  (s5)  at (4.5,-2)   {$s_5$};
+  \node[hidnode]  (s6)  at (6.75,-2)   {$s_6$};
+  % Level 3  (leaves)
+  \node[pathnode] (s7)  at (3.75,-3)  {$s_7$};
+  \node[hidnode]  (s8)  at (5.25,-3)  {$s_8$};
+  \node[pathnode] (s9)  at (6.00,-3)  {$s_9$};
+  \node[hidnode]  (s10) at (7.25,-3)  {$s_{10}$};
+  % ---- ephemeral-seed labels below leaves ----
+  \node[leaflbl] at (0.5,-2.55)  {$\eseed_0$};
+  \node[leaflbl] at (2.5,-2.55)  {$\eseed_1$};
+  \node[leaflbl] at (3.75,-3.55) {$\eseed_2$};
+  \node[leaflbl] at (5.25,-3.55) {$\eseed_3$};
+  \node[leaflbl] at (5.75,-3.55) {$\eseed_4$};
+  \node[leaflbl] at (7.25,-3.55) {$\eseed_5$};
+  % ---- edges ----
+  \draw[treeedge] (s0)--(s1); \draw[treeedge] (s0)--(s2);
+  \draw[treeedge] (s1)--(s3); \draw[treeedge] (s1)--(s4);
+  \draw[treeedge] (s2)--(s5); \draw[treeedge] (s2)--(s6);
+  \draw[treeedge] (s5)--(s7); \draw[treeedge] (s5)--(s8);
+  \draw[treeedge] (s6)--(s9); \draw[treeedge] (s6)--(s10);
+  % ---- "incomplete" annotation ----
+  \node[font=\tiny,gray] at (3.5,-2.55) {leaf level~2};
+  % ---- legend ----
+  \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
+          above left=0.2cm and -0.8cm of s1,
+          matrix of nodes, nodes={font=\tiny, inner sep=2pt},
+          column sep=4pt, row sep=1pt] {
+    \node[hidnode,  minimum size=8pt]{}; & \node{$\calF=1$ (hidden)};  \\
+    \node[pathnode, minimum size=8pt]{}; & \node{$\calF=0$, in $\tpath$}; \\
+  };
+\end{tikzpicture}
+\caption{LESS-v2 incomplete \GGM\ flag tree, $t=6$, after all three construction
+         phases.  Challenge $\mathbf{b}=(0,1,0,1,0,1)$ hides rounds
+         $\calH=\{1,3,5\}$.  Path nodes (blue, thick border) give the verifier
+         $\eseed_0$, $\eseed_2$, $\eseed_4$.  Injecting a fault on any red node
+         exposes the corresponding hidden seed alongside its response, yielding a
+         dual revelation.}
+\label{fig:less-tree}
+\end{figure}
+
+
+Table~\ref{tab:less-params} lists the parameter sets of LESS.
+
+\begin{table}[tb]
+\centering
+\caption{LESS-v2 parameter sets~\cite{LESS-spec}.}
+\label{tab:less-params}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Parameter set   & $n$ & $k$ & $q$ & $t$ & $w$ & $s$ \\
+\midrule
+LESS-252-45     & 252 & 126 & 127 &  45 & 34 & 8 \\
+LESS-252-68     & 252 & 126 & 127 &  68 & 42 & 4 \\
+LESS-252-192    & 252 & 126 & 127 & 192 & 36 & 2 \\
+LESS-400-102    & 400 & 200 & 127 & 102 & 61 & 4 \\
+LESS-400-220    & 400 & 200 & 127 & 220 & 68 & 2 \\
+LESS-548-137    & 548 & 274 & 127 & 137 & 79 & 4 \\
+LESS-548-345    & 548 & 274 & 127 & 345 & 75 & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\subsection{MEDS}
+\label{sec:meds}
+% ============================================================
+
+\paragraph{Context.}
+MEDS (Matrix Equivalence Digital Signature)~\cite{ChouNPRRST23} is a code-based
+signature scheme whose security rests on the Matrix Code Equivalence Problem
+(MCEP).  Like LESS, it applies the Fiat--Shamir transform to a 3-pass Sigma
+protocol between a prover holding a secret equivalence
+$(A, B) \in \GL_k(q) \times \GL_n(q)$ and a verifier.
+
+\paragraph{Tree type.}
+MEDS uses a \emph{complete} binary \GGM\ seed tree to generate $t$ ephemeral
+seeds.  Each leaf seed $\eseed_i$ expands into an ephemeral matrix pair.  The
+binary challenge vector $\mathbf{h} = (h_0, \ldots, h_{t-1}) \in \{0,1\}^t$
+determines which seeds are revealed ($h_i = 0$) and which are hidden ($h_i = 1$).
+
+\paragraph{Reference tree.}
+MEDS uses a \emph{Reference Tree} (also called $\SeedTree$) with a
+$\SeedTreePaths$ algorithm.  This traverses the tree bottom-up and returns the
+minimal set of internal nodes sufficient to reconstruct all revealed leaf seeds,
+while no hidden seed $\eseed_i$ (with $h_i = 1$) is derivable.  The three
+abstract phases map as follows:
+\begin{enumerate}
+  \item \textbf{Expansion.}
+        $\BuildSeeds(\seed_r, \salt)$ expands from the root to all $t$ leaves via
+        $\PRG(\text{node} \,\|\, \salt \,\|\, \text{index}) \to (\text{left},\,\text{right})$.
+  \item \textbf{Selection.}
+        $\SeedTreePaths(\calT, \mathbf{h})$ marks and collects the publishing nodes.
+  \item \textbf{Reconstruction (verifier).}
+        $\ReconstructSeeds(\tpath, \mathbf{h}, \salt)$ re-expands only from the
+        published nodes.
+\end{enumerate}
+
+\paragraph{Secret-extraction opportunity.}
+For round $i$ with $h_i = 1$, the signer reveals its ZK response.  If an attacker
+obtains both the response and $\eseed_i$, the secret equivalence pair $(A, B)$ is
+recoverable by linear algebra.  The Reference Tree is the sole enforcement mechanism
+preventing this dual revelation.
+
+\begin{example}
+Figure~\ref{fig:meds-tree} shows a complete \GGM\ tree for $t = 4$ with
+challenge $\mathbf{h} = (0,1,0,1)$, so $\calH = \{1,3\}$ and $\calR = \{0,2\}$.
+Nodes $s_3$ and $s_5$ enter $\tpath$.
+\end{example}
+
+\begin{figure}[tb]
+\centering
+\begin{tikzpicture}[x=1.1cm, y=1.15cm]
+  % Level 0
+  \node[hidnode]  (s0) at (2,  0)  {$s_0$};
+  % Level 1
+  \node[hidnode]  (s1) at (0.5,-1) {$s_1$};
+  \node[hidnode]  (s2) at (3.5,-1) {$s_2$};
+  % Level 2 (leaves)
+  \node[pathnode] (s3) at (-0.5,-2){$s_3$};
+  \node[hidnode]  (s4) at ( 1.5,-2){$s_4$};
+  \node[pathnode] (s5) at ( 2.5,-2){$s_5$};
+  \node[hidnode]  (s6) at ( 4.5,-2){$s_6$};
+  % Ephemeral seed labels
+  \node[leaflbl] at (-0.5,-2.55){$\eseed_0$};
+  \node[leaflbl] at ( 1.5,-2.55){$\eseed_1$};
+  \node[leaflbl] at ( 2.5,-2.55){$\eseed_2$};
+  \node[leaflbl] at ( 4.5,-2.55){$\eseed_3$};
+  % Edges
+  \draw[treeedge] (s0)--(s1); \draw[treeedge] (s0)--(s2);
+  \draw[treeedge] (s1)--(s3); \draw[treeedge] (s1)--(s4);
+  \draw[treeedge] (s2)--(s5); \draw[treeedge] (s2)--(s6);
+  % Legend
+  \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
+          above right=0.6cm and -1cm of s1,
+          matrix of nodes, nodes={font=\tiny, inner sep=2pt},
+          column sep=4pt, row sep=1pt] {
+    \node[hidnode,  minimum size=8pt]{}; & \node{$\calF=1$};  \\
+    \node[pathnode, minimum size=8pt]{}; & \node{in $\tpath$}; \\
+  };
+\end{tikzpicture}
+\caption{MEDS complete \GGM\ flag tree, $t=4$.
+         Challenge $\mathbf{h}=(0,1,0,1)$ hides $\calH=\{1,3\}$.
+         Path nodes $s_3$ and $s_5$ (blue) give the verifier $\eseed_0$ and
+         $\eseed_2$.  A fault on $s_4$ or $s_6$ exposes the corresponding hidden
+         seed alongside its ZK response.}
+\label{fig:meds-tree}
+\end{figure}
+
+\begin{table}[tb]
+\centering
+\caption{MEDS parameter sets~\cite{ChouNPRRST23}.}
+\label{tab:meds-params}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Parameter set & $n$ & $k$ & $q$ & $t$ & $s$ \\
+\midrule
+MEDS-9923b    & 14 &  7 & 509 & 192 & 2 \\
+MEDS-13220b   & 22 & 11 & 127 & 192 & 2 \\
+MEDS-41711b   & 30 & 15 & 509 & 392 & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\subsection{CROSS}
+\label{sec:cross}
+% ============================================================
+
+\paragraph{Context.}
+CROSS (Codes and Restricted Objects Signature Scheme)~\cite{BaldiBPSWW24} is based on
+the Restricted Linear Equivalence Problem (RLEP) and applies the Fiat--Shamir
+transform to a 3-pass Sigma protocol.  Unlike LESS and MEDS, CROSS uses a
+\emph{ternary} challenge alphabet: $c_i \in \{0, 1, 2\}$ for
+$i \in \{0, \ldots, t-1\}$.
+
+\paragraph{Tree type.}
+CROSS-v1 uses a complete \GGM\ tree identical in structure to LESS-v1.
+CROSS-v2 may adopt an optimised variant; the reference implementation uses a
+$\SeedTreePaths$ mechanism structurally equivalent to that of MEDS.
+
+\paragraph{Publishing mechanism.}
+The challenge vector determines which of the $t$ ephemeral seeds to hide:
+$\calH = \{i : c_i \neq 0\}$ and $\calR = \{i : c_i = 0\}$.  Flag propagation
+follows the same bottom-up rule as MEDS.  The distinct feature of CROSS is that
+a non-zero challenge value $c_i \in \{1, 2\}$ identifies \emph{which} of
+$s-1$ secret components the corresponding response encodes; a fault exposing
+$\eseed_i$ thus recovers the $c_i$-th component of the long-term secret.
+
+\paragraph{Secret-extraction opportunity.}
+ZKFault~\cite{ZKFault} demonstrated full key recovery from a single fault for all
+CROSS parameter sets.  The algebraic recovery follows the same structure as
+LESS-v2, with the appropriate substitution for the RLEP response.
+
+\begin{example}
+Figure~\ref{fig:cross-tree} shows a complete \GGM\ tree for $t = 4$ with ternary
+challenge $\mathbf{c} = (0,\, 2,\, 0,\, 1)$.  Because $c_1 = 2 \neq 0$ and
+$c_3 = 1 \neq 0$, the hidden set is $\calH = \{1,3\}$ and the path nodes are
+$s_3$ and $s_5$.  Faulting $s_4$ exposes $\eseed_1$ and thereby leaks the
+\emph{second} secret component (corresponding to $c_1 = 2$);
+faulting $s_6$ leaks the \emph{first} (corresponding to $c_3 = 1$).
+\end{example}
+
+\begin{figure}[tb]
+\centering
+\begin{tikzpicture}[x=1.1cm, y=1.15cm]
+  % Level 0
+  \node[hidnode]  (s0) at (2,   0) {$s_0$};
+  % Level 1
+  \node[hidnode]  (s1) at (0.5,-1) {$s_1$};
+  \node[hidnode]  (s2) at (3.5,-1) {$s_2$};
+  % Level 2 (leaves)
+  \node[pathnode] (s3) at (-0.5,-2){$s_3$};
+  \node[hidnode]  (s4) at ( 1.5,-2){$s_4$};
+  \node[pathnode] (s5) at ( 2.5,-2){$s_5$};
+  \node[hidnode]  (s6) at ( 4.5,-2){$s_6$};
+  % Ephemeral-seed labels + challenge values
+  \node[leaflbl] at (-0.5,-2.6){$\eseed_0,\; c_0{=}0$};
+  \node[leaflbl] at ( 1.5,-2.6){$\eseed_1,\; c_1{=}2$};
+  \node[leaflbl] at ( 2.5,-2.6){$\eseed_2,\; c_2{=}0$};
+  \node[leaflbl] at ( 4.5,-2.6){$\eseed_3,\; c_3{=}1$};
+  % Edges
+  \draw[treeedge] (s0)--(s1); \draw[treeedge] (s0)--(s2);
+  \draw[treeedge] (s1)--(s3); \draw[treeedge] (s1)--(s4);
+  \draw[treeedge] (s2)--(s5); \draw[treeedge] (s2)--(s6);
+  % Annotations on hidden leaves
+  \node[font=\tiny,red!70!black] at (1.5,-2) {\rotatebox{0}{}};
+  % Legend
+  \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
+          above right=0.2cm and -2.5cm of s1,
+          matrix of nodes, nodes={font=\tiny, inner sep=2pt},
+          column sep=4pt, row sep=1pt] {
+    \node[hidnode,  minimum size=8pt]{}; & \node{$\calF=1$, leaks $S_{c_i}$};  \\
+    \node[pathnode, minimum size=8pt]{}; & \node{$\calF=0$, in $\tpath$}; \\
+  };
+\end{tikzpicture}
+\caption{CROSS complete \GGM\ flag tree, $t=4$, ternary challenge
+         $\mathbf{c}=(0,2,0,1)$.  Faulting hidden node $s_4$ exposes $\eseed_1$
+         and leaks the second secret component ($c_1=2$); faulting $s_6$ leaks
+         the first ($c_3=1$).  The ternary alphabet means that different hidden
+         leaves point to \emph{different} components of the long-term secret.}
+\label{fig:cross-tree}
+\end{figure}
+
+% ============================================================
+\subsection{MPCitH / VOLEitH Family (FAEST, Mirath, SDitH, RYDE)}
+\label{sec:mpcith}
+% ============================================================
+
+\paragraph{Context.}
+MPC-in-the-Head (MPCitH) schemes use the \GGM tree in a more
+elaborate but structurally analogous way.  They generate $N$ virtual
+\emph{party shares} for each of $\tau$ parallel repetitions.  For repetition $e$,
+the Fiat--Shamir challenge selects one hidden party index
+$i^*_e \in \{0, \ldots, N-1\}$.  The \GGM\ tree lets the signer reveal all $N-1$
+non-hidden shares using $O(\log N)$ published intermediate seeds.
+
+\paragraph{Tree types.}
+\begin{itemize}
+  \item \textbf{Classic MPCitH (Mirath, RYDE).}
+        A forest of $\tau$ independent complete binary trees, each with $N$
+        leaves.  All roots are derived from a single master seed via $\XOF$.
+  \item \textbf{VOLEitH (FAEST, SDitH v2).}
+        A single large \GGM\ tree with $\tau \times N$ leaves, as described
+        in~\cite{OneTree}.  Child-node generation uses $\PRG = \text{AES-CTR}$
+        (FAEST) or SHAKE (SDitH).
+\end{itemize}
+
+The all-but-one vector commitment (AVC / BAVC) mechanism is the MPCitH counterpart
+of the flag tree.  For each repetition $e$, the signer publishes the
+\emph{co-path}: the sequence of sibling nodes along the path from the hidden leaf
+$i^*_e$ to the root.  The verifier can re-expand all $N-1$ non-hidden leaf seeds
+from the co-path alone.  This is structurally the \GGM-path mechanism with
+exactly one hidden leaf per repetition, and the same fault surfaces (index
+arithmetic, loop increments, conditional branch) apply.
+
+In LESS, MEDS, and CROSS, the secret is a permutation or matrix equivalence
+embedded in the hidden seed's ephemeral commitment.  In MPCitH, the hidden seed
+generates the prover's witness share.  In both cases the invariant is identical:
+the signer must never simultaneously reveal both the hidden leaf seed \emph{and}
+the corresponding ZK response for the same round.

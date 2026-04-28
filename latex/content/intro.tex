@@ -1,0 +1,69 @@
+\begin{comment}
+The Goldreich--Goldwasser--Micali (\GGM) construction~\cite{GGM86} was originally
+proposed as a way to build pseudorandom functions from any pseudorandom generator
+(\PRG).  In the context of post-quantum digital signatures based on zero-knowledge
+proofs, the \GGM\ tree serves a completely different but equally central purpose:
+it is a \emph{seed-compression mechanism} that allows a signer to commit to $t$
+independent ephemeral seeds using only a single master seed, while later revealing
+a subset of those seeds to a verifier without exposing the hidden ones.
+
+This role makes the \GGM\ tree a \emph{single point of failure} with respect to
+physical attacks.  Any fault that causes the tree to misclassify a hidden seed as
+publishable immediately breaks the Zero-Knowledge (ZK) property of the underlying
+protocol, leaking secret-equivalent information.  The key observation of this work
+is that this vulnerability is \emph{not specific to any one scheme}---it is a
+structural consequence of how the \GGM\ tree is used in all ZK-based post-quantum
+signature schemes, including LESS-v2, MEDS, CROSS, FAEST, Mirath, SDitH, and others.
+
+\paragraph{Contributions.}
+This paper provides the following:
+\begin{enumerate}
+  \item A description of the original \GGM\ construction and the punctured-PRF
+        property that underlies all uses in ZK signatures (Section~\ref{sec:background}).
+  \item A scheme-by-scheme analysis of how LESS-v2, MEDS, CROSS, and the
+        MPCitH/VOLEitH family each instantiate the \GGM\ tree and the associated
+        flag/reference-tree mechanism.
+  \item A unified abstract model, the \emph{Generic ZK Seed Tree} (\GZKST),
+        that captures all these instantiations
+        (Section~\ref{sec:abstract}).
+  \item A taxonomy of fault models applicable to the \GZKST\ abstraction and
+        a Generic Leakage Theorem showing that any effective fault yields a
+        dual-revelation and enables recovery of a secret-equivalent component
+        (Section~\ref{sec:theoretical}).
+\end{enumerate}
+\end{comment}
+
+\subsection{Related Work}
+\label{sec:relwork}
+
+Table~\ref{tab:relwork} summarises the prior art on fault attacks against
+\GGM-tree-based post-quantum signature schemes.
+
+\begin{table}[tb]
+\centering
+\caption{Comparison with prior fault-attack analyses on ZK-based PQ signatures.}
+\label{tab:relwork}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}llllc@{}}
+\toprule
+Work & Target & Tree type & Surfaces & Generic? \\
+\midrule
+ZKFault~\cite{ZKFault}
+  & LESS-v1, CROSS & complete & 3 & partial \\
+Fault to Forge~\cite{FaultToForge2025}
+  & LESS-v2        & incomplete & 10 & no \\
+Huang et al.~\cite{HuangHHYSTY26}
+  & LESS-v2        & incomplete & 1  & no \\
+Jendral \& Dubrova~\cite{JendralD25}
+  & FAEST (VOLEitH)& complete   & 4  & partial \\
+Banda et al.~\cite{BandaBK26}
+  & Mirath, RYDE+4 & forest     & key-rec.\ + forgery & MPCitH only \\
+\midrule
+\textbf{This work}
+  & LESS-v2, MEDS, CROSS, MPCitH
+  & complete + incomplete & all phases & \textbf{yes (\GZKST)} \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
