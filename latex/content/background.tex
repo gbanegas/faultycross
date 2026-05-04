@@ -271,44 +271,55 @@ MEDS-41711b   & 30 & 15 & 509 & 392 & 2 \\
 % ============================================================
 
 \paragraph{Context.}
-CROSS (Codes and Restricted Objects Signature Scheme)~\cite{BaldiBPSWW24} is based on
-the Restricted Linear Equivalence Problem (RLEP) and applies the Fiat--Shamir
-transform to a 3-pass Sigma protocol.  Unlike LESS and MEDS, CROSS uses a
-\emph{ternary} challenge alphabet: $c_i \in \{0, 1, 2\}$ for
-$i \in \{0, \ldots, t-1\}$.
+CROSS (Codes and Restricted Objects Signature Scheme)~\cite{CROSSspec} is based on
+the Restricted Syndrome Decoding Problem (R-SDP)~\cite{BaldiBPSWW24} and applies the
+Fiat--Shamir transform to a 5-pass ($q_2$-identification) protocol.
+Like MEDS, CROSS uses a \emph{binary} fixed-weight challenge vector
+$\mathbf{c} = (c_0, \ldots, c_{t-1}) \in \{0,1\}^t$ of weight $w$,
+so the hidden and revealed index sets are
+$\calH = \{i : c_i = 1\}$ and $\calR = \{i : c_i = 0\}$,
+identical in structure to MEDS.
 
 \paragraph{Tree type.}
-CROSS-v1 uses a complete \GGM\ tree identical in structure to LESS-v1.
-CROSS-v2 may adopt an optimised variant; the reference implementation uses a
-$\SeedTreePaths$ mechanism structurally equivalent to that of MEDS.
+CROSS uses a complete \GGM\ seed tree.  Round~1 of CROSS uses the same
+complete binary tree as LESS-v1.  The Round~2 specification~\cite{CROSSspec}
+adopts a combined seed-and-Merkle-tree structure, but the seed-publishing
+component remains structurally equivalent to the $\SeedTreePaths$ mechanism
+of MEDS (Section~\ref{sec:meds}).
 
 \paragraph{Publishing mechanism.}
-The challenge vector determines which of the $t$ ephemeral seeds to hide:
-$\calH = \{i : c_i \neq 0\}$ and $\calR = \{i : c_i = 0\}$.  Flag propagation
-follows the same bottom-up rule as MEDS.  The distinct feature of CROSS is that
-a non-zero challenge value $c_i \in \{1, 2\}$ identifies \emph{which} of
-$s-1$ secret components the corresponding response encodes; a fault exposing
-$\eseed_i$ thus recovers the $c_i$-th component of the long-term secret.
+Flag propagation follows exactly the same three-phase bottom-up rule as
+MEDS: initialise all flags to~$0$ except the root, label leaves from the
+binary challenge, propagate upward by disjunction.  The published path gives
+the verifier access to all $\eseed_i$ with $c_i = 0$, while every $\eseed_i$
+with $c_i = 1$ remains hidden.  The structural identity with MEDS means
+that every fault location identified for MEDS (Section~\ref{sec:meds}) applies
+to CROSS without modification.
 
 \paragraph{Secret-extraction opportunity.}
-ZKFault~\cite{ZKFault} demonstrated full key recovery from a single fault for all
-CROSS parameter sets.  The algebraic recovery follows the same structure as
-LESS-v2, with the appropriate substitution for the RLEP response.
+For round $i$ with $c_i = 1$, the signer reveals a ZK response encoding the
+relationship between $\eseed_i$ and the long-term secret R-SDP solution.
+If an attacker obtains both the response and $\eseed_i$, the secret is
+recoverable by the linear-algebra argument of ZKFault~\cite{ZKFault},
+which demonstrated full key recovery from a single fault for all CROSS
+parameter sets.
 
 \begin{example}
-Figure~\ref{fig:cross-tree} shows a complete \GGM\ tree for $t = 4$ with ternary
-challenge $\mathbf{c} = (0,\, 2,\, 0,\, 1)$.  Because $c_1 = 2 \neq 0$ and
-$c_3 = 1 \neq 0$, the hidden set is $\calH = \{1,3\}$ and the path nodes are
-$s_3$ and $s_5$.  Faulting $s_4$ exposes $\eseed_1$ and thereby leaks the
-\emph{second} secret component (corresponding to $c_1 = 2$);
-faulting $s_6$ leaks the \emph{first} (corresponding to $c_3 = 1$).
+Figure~\ref{fig:cross-tree} shows a complete \GGM\ tree for $t = 4$ with
+binary challenge $\mathbf{c} = (0,1,0,1)$, so $\calH = \{1,3\}$ and
+$\calR = \{0,2\}$.  Nodes $s_3$ and $s_5$ enter $\tpath$.
+The tree topology and the flag-propagation logic are identical to the MEDS
+example of Figure~\ref{fig:meds-tree}; only the underlying hard problem
+and response format differ.  A fault on $s_4$ or $s_6$ exposes the
+corresponding hidden seed alongside its R-SDP response, enabling recovery
+of the long-term secret.
 \end{example}
 
 \begin{figure}[tb]
 \centering
 \begin{tikzpicture}[x=1.1cm, y=1.15cm]
   % Level 0
-  \node[hidnode]  (s0) at (2,   0) {$s_0$};
+  \node[hidnode]  (s0) at (2,  0)  {$s_0$};
   % Level 1
   \node[hidnode]  (s1) at (0.5,-1) {$s_1$};
   \node[hidnode]  (s2) at (3.5,-1) {$s_2$};
@@ -319,29 +330,28 @@ faulting $s_6$ leaks the \emph{first} (corresponding to $c_3 = 1$).
   \node[hidnode]  (s6) at ( 4.5,-2){$s_6$};
   % Ephemeral-seed labels + challenge values
   \node[leaflbl] at (-0.5,-2.6){$\eseed_0,\; c_0{=}0$};
-  \node[leaflbl] at ( 1.5,-2.6){$\eseed_1,\; c_1{=}2$};
+  \node[leaflbl] at ( 1.5,-2.6){$\eseed_1,\; c_1{=}1$};
   \node[leaflbl] at ( 2.5,-2.6){$\eseed_2,\; c_2{=}0$};
   \node[leaflbl] at ( 4.5,-2.6){$\eseed_3,\; c_3{=}1$};
   % Edges
   \draw[treeedge] (s0)--(s1); \draw[treeedge] (s0)--(s2);
   \draw[treeedge] (s1)--(s3); \draw[treeedge] (s1)--(s4);
   \draw[treeedge] (s2)--(s5); \draw[treeedge] (s2)--(s6);
-  % Annotations on hidden leaves
-  \node[font=\tiny,red!70!black] at (1.5,-2) {\rotatebox{0}{}};
   % Legend
   \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
-          above right=0.2cm and -2.5cm of s1,
+          above right=0.6cm and -1cm of s1,
           matrix of nodes, nodes={font=\tiny, inner sep=2pt},
           column sep=4pt, row sep=1pt] {
-    \node[hidnode,  minimum size=8pt]{}; & \node{$\calF=1$, leaks $S_{c_i}$};  \\
+    \node[hidnode,  minimum size=8pt]{}; & \node{$\calF=1$ (hidden)};  \\
     \node[pathnode, minimum size=8pt]{}; & \node{$\calF=0$, in $\tpath$}; \\
   };
 \end{tikzpicture}
-\caption{CROSS complete \GGM\ flag tree, $t=4$, ternary challenge
-         $\mathbf{c}=(0,2,0,1)$.  Faulting hidden node $s_4$ exposes $\eseed_1$
-         and leaks the second secret component ($c_1=2$); faulting $s_6$ leaks
-         the first ($c_3=1$).  The ternary alphabet means that different hidden
-         leaves point to \emph{different} components of the long-term secret.}
+\caption{CROSS complete \GGM\ flag tree, $t=4$, binary challenge
+         $\mathbf{c}=(0,1,0,1)$.  The tree structure is identical to the MEDS
+         example (Figure~\ref{fig:meds-tree}): path nodes $s_3$ and $s_5$ (blue)
+         give the verifier $\eseed_0$ and $\eseed_2$.  A fault on $s_4$ or
+         $s_6$ exposes the corresponding hidden seed alongside its R-SDP
+         response, enabling full key recovery as shown in ZKFault~\cite{ZKFault}.}
 \label{fig:cross-tree}
 \end{figure}
 
