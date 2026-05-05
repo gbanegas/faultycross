@@ -301,9 +301,12 @@ published node, ensuring that the ephemeral vectors $({\bf e}'_i,
 {\bf u}'_i)$ — and hence the secret key ${\bf e}$ — remain protected.
 
 \paragraph{Secret-extraction opportunity.}
-ZKFault~\cite{ZKFault} demonstrated full key recovery from a single fault for all
-CROSS parameter sets.  The algebraic recovery follows the same structure as
-LESS-v2, with the appropriate substitution for the RLEP response.
+For round $i$ with $c_i = 1$, the signer reveals a ZK response encoding the
+relationship between $\eseed_i$ and the long-term secret R-SDP solution.
+If an attacker obtains both the response and $\eseed_i$, the secret is
+recoverable by the linear-algebra argument of ZKFault~\cite{ZKFault},
+which demonstrated full key recovery from a single fault for all CROSS
+parameter sets.
 
 % ============================================================
 \subsubsection{MPCitH / VOLEitH Family (FAEST, Mirath, SDitH, RYDE)}
