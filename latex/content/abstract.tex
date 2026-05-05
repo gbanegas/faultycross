@@ -79,4 +79,404 @@ may allow an attacker to reconstruct $\eseed_i$.
 % ------------------------------------------------------------
 \subsection{Mapping Schemes to the GZKST Model}
 \label{sec:mapping}
+
+We propose in this section to segment each of the ZK-based PQ signatures aforementionned into the elements of the GZKST tuple we defined in \ref{def:gzkst}.
+
+
+
+
+
 % ------------------------------------------------------------
+
+
+
+\subsubsection{LESS-V2}
+
+\begin{itemize}
+    \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$ The root seed is sampled using the secret key seed. The salt is sampled uniformly at random.
+    \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$ 
+LESS-v2 uses an \emph{incomplete} \GGM\ tree with $T = \lceil \log_2 t \rceil$
+levels.  Leaves are distributed across the bottom two levels; the index offsets
+are tracked via the arrays $\mathsf{npl}$, $\mathsf{ll}$, $\mathsf{off}$, and
+$\mathsf{lsi}$.
+
+\begin{figure}[tb]
+\centering
+\begin{tikzpicture}[x=0.95cm, y=1.15cm]
+  \tikzstyle{neutnode}  = [circle, draw=gray!60, fill=white, text=black, minimum size=14pt, inner sep=1pt]
+  \tikzstyle{pubnode}= [circle, draw=red!90, fill=red!20,  minimum size=14pt, inner sep=1pt, font=\tiny]
+  \tikzstyle{treeedge} = [gray!40, rounded corners=2pt,->, thin]
+  \tikzstyle{leaflbl}  = [font=\tiny, below]
+
+  % ---- nodes (final state after all 3 phases) ----
+  % Level 0
+  \node[neutnode]  (s0)  at (3.5, 0)   {$s_0$};
+  % Level 1
+  \node[neutnode]  (s1)  at (1.5,-0.75)   {$s_1$};
+  \node[neutnode]  (s2)  at (5.5,-0.75)   {$s_2$};
+  % Level 2  (s3,s4 are leaves; s5,s6 are internal)
+  \node[neutnode] (s3)  at (0.5,-1.5)   {$s_3$};
+  \node[neutnode]  (s4)  at (2.5,-1.5)   {$s_4$};
+  \node[neutnode]  (s5)  at (4.5,-1.5)   {$s_5$};
+  \node[neutnode]  (s6)  at (6.75,-1.5)   {$s_6$};
+  % Level 3  (leaves)
+  \node[neutnode] (s7)  at (0,-2.5)  {$s_7$};
+  \node[neutnode]  (s8)  at (1,-2.5)  {$s_8$};
+  \node[neutnode] (s9)  at (2,-2.5)  {$s_9$};
+  \node[neutnode]  (s10) at (3,-2.5)  {$s_{10}$};
+  % ---- ephemeral-seed labels below leaves ----
+  \node[leaflbl] at (0,-3)  {$\eseed_0$};
+  \node[leaflbl] at (1,-3)  {$\eseed_1$};
+  \node[leaflbl] at (2,-3) {$\eseed_2$};
+  \node[leaflbl] at (3,-3) {$\eseed_3$};
+  \node[leaflbl] at (4.5,-2) {$\eseed_4$};
+  \node[leaflbl] at (6.75,-2) {$\eseed_5$};
+  % ---- edges ----
+  \draw[treeedge] (s0)--(s1); \draw[treeedge] (s0)--(s2);
+  \draw[treeedge] (s1)--(s3); \draw[treeedge] (s1)--(s4);
+  \draw[treeedge] (s2)--(s5); \draw[treeedge] (s2)--(s6);
+  \draw[treeedge] (s3)--(s7); \draw[treeedge] (s3)--(s8);
+  \draw[treeedge] (s4)--(s9); \draw[treeedge] (s4)--(s10);
+\end{tikzpicture}
+\caption{LESS-v2 expanded GGM seed tree, with $t=6$}
+\label{fig:less-tree}
+\end{figure}
+
+
+
+    \item $\Chal(\cmt, \msg) \to \mathbf{c} = (c_0, \ldots, c_{t-1})$ In LESS, the commitment fed into the Fiat--Shamir hash is the concatenation
+of all $t$ canonical-form matrices $\mathbf{B}^{(1)}, \ldots, \mathbf{B}^{(t)}$
+together with the salt and the message.
+The resulting digest \textsf{cmt} is then passed to \textsf{SampleChallenge}, which produces the challenge vector
+$\mathbf{b} = (b^{(1)}, \ldots, b^{(t)}) \in \{0, \ldots, s-1\}^t$
+of fixed weight $w$, where each non-zero entry $b^{(i)} \in \{1, \ldots, s-1\}$
+indexes one of the $s-1$ public keys.
+In the framework notation, the challenge value per round is
+$c_i = b^{(i)}$: the condition $c_i = 0$ signals that round $i$ requires the
+ephemeral seed $\eseed^{(i)}$, while $c_i \neq 0$ signals that a
+secret-dependent coset representative must be provided instead.
+
+    \item $\Decide(\mathbf{c}) \to (\calH, \calR)$ From the challenge vector $\mathbf{b}$, LESS computes the support
+$U = \mathrm{supp}(\mathbf{b})$, i.e., the set of indices $i$ for
+which $b^{(i)} \neq 0$. This directly induces the partition required by the framework.
+    \item $\Publish(\calT, \calH) \to \tpath$  
+    \paragraph{Flag tree.} LESS-v2 constructs an auxiliary
+\emph{flag tree} of the same shape as the seed tree.  It is a labelling
+$\calF : V(\calT) \to \{0,1\}$ where $\calF(v) = 0$ marks a publishable
+node and $\calF(v) = 1$ marks a hidden node.  The flag tree is built in three
+sequential phases:
+\begin{enumerate}
+  \item \textbf{Initialisation.}  Every node is set to $0$ except the root,
+        which is set to $1$.
+  \item \textbf{Leaf labelling} ($\LabelLeaves$).  For each leaf $i$, set
+        \begin{equation*}
+          \calF(\mathrm{leaf}_i) =
+          \begin{cases} 1 & \text{if } b[i] \neq 0, \\ 0 & \text{otherwise,} \end{cases}
+        \end{equation*}
+        where $\mathbf{b} = (b[0], \ldots, b[t-1])$ is the Fiat--Shamir challenge
+        vector of weight $w$ over the alphabet $\{0, \ldots, s-1\}$.
+  \item \textbf{Upward propagation} ($\ComputeSeeds$).  For each internal node $v$
+        with children $\ell$ and $r$:
+        \begin{equation*}
+          \calF(v) = \calF(\ell) \vee \calF(r).
+        \end{equation*}
+        This ensures the minimum set of nodes is published to reconstruct all
+        revealed leaf seeds.
+\end{enumerate}
+The path is then constructed from the top down following this logic : if a node is flagged as true and its parent node is flagged as false, the seed in the current node is added to the path.
+
+\begin{figure}[tb]
+\centering
+\begin{tikzpicture}[x=0.95cm, y=1.15cm]
+  \tikzstyle{neutnode}  = [circle, draw=gray!60, fill=white, text=black, minimum size=14pt, inner sep=1pt]
+  \tikzstyle{pubnode}= [circle, draw=red!90, fill=red!20,  minimum size=14pt, inner sep=1pt, font=\tiny]
+  \tikzstyle{zeronode}= [circle, draw=red!90, fill=white!20,  minimum size=14pt, inner sep=1pt, font=\tiny]
+  \tikzstyle{treeedge} = [gray!40, rounded corners=2pt,->, thin]
+  \tikzstyle{leaflbl}  = [font=\tiny, below]
+
+  % ---- nodes (final state after all 3 phases) ----
+  % Level 0
+  \node[neutnode]  (s0)  at (3.5, 0)   {$s_0$};
+  % Level 1
+  \node[neutnode]  (s1)  at (1.5,-0.75)   {$s_1$};
+  \node[neutnode]  (s2)  at (5.5,-0.75)   {$s_2$};
+  % Level 2  (s3,s4 are leaves; s5,s6 are internal)
+  \node[neutnode] (s3)  at (0.5,-1.5)   {$s_3$};
+  \node[pubnode]  (s4)  at (2.5,-1.5)   {$s_4$};
+  \node[neutnode]  (s5)  at (4.5,-1.5)   {$s_5$};
+  \node[pubnode]  (s6)  at (6.75,-1.5)   {$s_6$};
+  % Level 3  (leaves)
+  \node[pubnode] (s7)  at (0,-2.5)  {$s_7$};
+  \node[neutnode]  (s8)  at (1,-2.5)  {$s_8$};
+  \node[zeronode] (s9)  at (2,-2.5)  {$s_9$};
+  \node[zeronode]  (s10) at (3,-2.5)  {$s_{10}$};
+  % ---- ephemeral-seed labels below leaves ----
+  \node[leaflbl] at (0,-3)  {$\eseed_0$};
+  \node[leaflbl] at (1,-3)  {$\eseed_1$};
+  \node[leaflbl] at (2,-3) {$\eseed_2$};
+  \node[leaflbl] at (3,-3) {$\eseed_3$};
+  \node[leaflbl] at (4.5,-2) {$\eseed_4$};
+  \node[leaflbl] at (6.75,-2) {$\eseed_5$};
+  % ---- edges ----
+  \draw[treeedge] (s0)--(s1); \draw[treeedge] (s0)--(s2);
+  \draw[treeedge] (s1)--(s3); \draw[treeedge] (s1)--(s4);
+  \draw[treeedge] (s2)--(s5); \draw[treeedge] (s2)--(s6);
+  \draw[treeedge] (s3)--(s7); \draw[treeedge] (s3)--(s8);
+  \draw[treeedge] (s4)--(s9); \draw[treeedge] (s4)--(s10);
+  % ---- legend ----
+  \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
+          above left=0.2cm and -0.8cm of s1,
+          matrix of nodes, nodes={font=\tiny, inner sep=2pt},
+          column sep=4pt, row sep=1pt] {
+    \node[neutnode,  minimum size=8pt]{}; & \node{$\calF=1$ (hidden)};  \\
+    \node[zeronode, minimum size=8pt]{}; & \node{$\calF=0$}; \\
+    \node[pubnode, minimum size=8pt]{}; & \node{$\calF=0$ and in path}; \\
+  };
+\end{tikzpicture}
+\caption{LESS-v2 GGM seed tree and flag tree, with $t=6$ after Chal, Decide and Publish phases. Here the challenge vector is $b=\{0,1,0,0,1,0\}$. The final published path is $path=\{s4,s6,s7\}$.}
+\label{fig:less-tree}
+\end{figure}
+
+
+\item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_i : i \in \calR\}$ 
+
+On the verifier side, $\mathsf{PathToSeedTree}_t(h_0, \ldots, h_{t-1},\,
+p,\, \alpha)$ reconstructs an empty tree of the same shape, places the
+received path nodes at their correct positions, and re-expands each
+downward via the PRG $\mathrm{G}$ until all $t$ leaf positions are
+filled.
+Positions $i \in \mathcal{H}$ are left empty (no seed on their
+root-to-leaf path was ever published), while positions $i \in \mathcal{R}$
+yield the recovered seeds $\sigma_i$, from which the verifier
+re-derives $(\tilde{\mathbf{A}}_i, \tilde{\mathbf{B}}_i)$ and
+re-computes $\tilde{\mathbf{G}}_i$ to verify the commitment $d$.
+
+\end{itemize}
+
+
+
+Table~\ref{tab:less-params} lists the parameter sets of LESS.
+
+\begin{table}[tb]
+\centering
+\caption{LESS-v2 parameter sets~\cite{LESS-spec}.}
+\label{tab:less-params}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Parameter set   & $n$ & $k$ & $q$ & $t$ & $w$ & $s$ \\
+\midrule
+LESS-252-45     & 252 & 126 & 127 &  45 & 34 & 8 \\
+LESS-252-68     & 252 & 126 & 127 &  68 & 42 & 4 \\
+LESS-252-192    & 252 & 126 & 127 & 192 & 36 & 2 \\
+LESS-400-102    & 400 & 200 & 127 & 102 & 61 & 4 \\
+LESS-400-220    & 400 & 200 & 127 & 220 & 68 & 2 \\
+LESS-548-137    & 548 & 274 & 127 & 137 & 79 & 4 \\
+LESS-548-345    & 548 & 274 & 127 & 345 & 75 & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{MEDS}
+
+\begin{itemize}
+    \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$ 
+    
+    MEDS samples a fresh random scalar, then derives both the master tree seed and the public salt in a single XOF call. 
+    \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$ 
+    MEDS builds a complete binary tree of height
+$\lceil \log_2 t \rceil$ by hashing the parent nodes concatenated with the salt and the node index. It then returns its first $t$ leaves.
+    \item $\Chal(\cmt, \msg) \to \mathbf{c} = (c_0, \ldots, c_{t-1})$ 
+    
+    Each leaf is then expanded into three sub-seeds with $\mathrm{XOF}$.
+from which ephemeral invertible matrices are sampled then generator matrixes computed.
+The commitment is formed by hashing the compressed systematic forms of all
+$t$ ephemeral generator matrices $\tilde{\mathbf{G}}_0, \ldots,
+\tilde{\mathbf{G}}_{t-1}$ together with the message $m$.
+
+The digest $d$ is then parsed by $\mathsf{ParseHash}_{s,t,w}(d)$
+to produce the challenge vector
+$h_0, \ldots, h_{t-1} \in \{0, \ldots, s-1\}$
+of fixed weight $w$.
+
+In the framework notation, $c_i = h_i$. 
+
+    \item $\Decide(\mathbf{c}) \to (\calH, \calR)$ The condition $c_i = 0$ signals
+that round $i$ requires the ephemeral seed $\mathsf{es}_i$, while
+$c_i \neq 0$ indicates that a secret-dependent matrix response must be
+provided.
+    \item $\Publish(\calT, \calH) \to \tpath$  
+    
+    MEDS calls $\mathsf{SeedTreeToPath}_t(h_0, \ldots, h_{t-1},\, \rho,\,
+\alpha)$, which rebuilds the full seed tree, then for each
+$i \in \mathcal{H}$ removes the label of leaf $i$ and propagates the
+deletion upward, erasing every ancestor whose subtree is entirely hidden.
+The function then serialises in depth-first order all remaining non-empty
+node labels at the highest possible level, zero-padded to
+$\ell_{\mathrm{path}}$ bytes, yielding the seed path $p$.
+
+\item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_i : i \in \calR\}$ 
+
+On the verifier side, $\mathsf{PathToSeedTree}_t(h_0, \ldots, h_{t-1},\,
+p,\, \alpha)$ reconstructs an empty tree of the same shape, places the
+received path nodes at their correct positions, and re-expands each
+downward via the PRG $\mathrm{G}$ until all $t$ leaf positions are
+filled.
+Positions $i \in \mathcal{H}$ are left empty (no seed on their
+root-to-leaf path was ever published), while positions $i \in \mathcal{R}$
+yield the recovered seeds $\sigma_i$, from which the verifier
+re-derives $(\tilde{\mathbf{A}}_i, \tilde{\mathbf{B}}_i)$ and
+re-computes $\tilde{\mathbf{G}}_i$ to verify the commitment $d$.
+\end{itemize}
+
+
+\begin{table}[tb]
+\centering
+\caption{MEDS parameter sets~\cite{ChouNPRRST23}.}
+\label{tab:meds-params}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Parameter set & $n$ & $k$ & $q$ & $t$ & $s$ \\
+\midrule
+MEDS-9923b    & 14 &  7 & 509 & 192 & 2 \\
+MEDS-13220b   & 22 & 11 & 127 & 192 & 2 \\
+MEDS-41711b   & 30 & 15 & 509 & 392 & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{CROSS}
+
+\begin{itemize}
+    \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$: The root seed is of size $\lam$ and the salt $2\lam$. They are both theoretically drawn uniformly at random.
+    \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$: 
+
+CROSS-v1 uses a complete \GGM\ tree identical in structure to LESS-v1.
+CROSS-v2 may adopt an optimised variant; the reference implementation uses a
+$\SeedTreePaths$ mechanism structurally equivalent to that of MEDS.
+
+The GGM tree in CROSS is a full binary tree where each parent node's $\lam$-bit seed is concatenated with a global salt and the node's unique index, then processed through a CSPRNG (SHAKE) to deterministically produce two $\lam$-bit strings for its left and right children.
+      \item $\Chal(\cmt, \msg) \to \mathbf{c} = (c_0, \ldots, c_{t-1})$ 
+      
+      CROSS applies the Fiat--Shamir transform in two successive rounds.
+
+First, the $t$ commitment pairs $(\mathsf{cmt}_0[i], \mathsf{cmt}_1[i])$,
+the salt, and the message are hashed to produce the first challenge vector
+$\mathsf{chall}_1 \in (\mathbb{F}_p^*)^t$, from which each first response
+$\mathsf{digest}_{y_i} = \mathrm{Hash}({\bf u}'_i + \mathsf{chall}_1[i]
+\cdot {\bf e}'_i)$ is derived.
+
+A second hash over all first-challenge digests then yields the
+second challenge vector $\mathsf{chall}_2 \in \mathcal{B}(t, w)$ of fixed Hamming weight $w$.
+In the framework notation, $c_i = \mathsf{chall}_2[i] \in \{0,1\}$: the
+condition $c_i = 0$ signals that round $i$ requires the ephemeral seed
+$\mathsf{es}_i$, while $c_i = 1$ signals that a secret-dependent response
+$({\bf y}_i, {\bf v}_i)$ must be provided.
+
+  \item $\Decide(\mathbf{c}) \to (\calH, \calR)$
+
+    The challenge vector determines which of the $t$ ephemeral seeds to hide:
+$\calH = \{i : c_i \neq 0\}$ and $\calR = \{i : c_i = 0\}$. 
+
+  \item $\Publish(\calT, \calH) \to \tpath$  
+  
+CROSS computes the seed path $\mathsf{Path}$ by applying the seed-tree
+path algorithm to the full tree with respect to $\mathcal{H}$: for each
+$i \in \mathcal{H}$, the label of leaf $i$ is removed and all ancestor
+labels on its root-to-leaf path are deleted, then the minimal set of
+surviving boundary nodes is serialised in depth-first order.
+This corresponds to the framework flag structure
+$\mathcal{F} : V(\mathcal{T}) \to \{0,1\}$ with $\mathcal{F}(v) = 1$
+marking deleted nodes and $\tpath$ being the remaining boundary.
+
+Additionally, CROSS computes a \emph{Merkle proof} $\mathsf{Proof}$ over
+the $t$ commitments $\mathsf{cmt}_0[0], \ldots, \mathsf{cmt}_0[t-1]$,
+authenticating the $w$ values $\mathsf{cmt}_0[i]$ for $i \in \mathcal{H}$
+that the verifier cannot recompute from any revealed seed.
+
+This Merkle proof is a CROSS-specific mechanism with no analogue in LESS
+or MEDS, arising from the dual-commitment structure of the underlying
+5-pass protocol, , but the seed-publishing
+component remains structurally equivalent to the $\SeedTreePaths$ mechanism
+of MEDS (Section~\ref{sec:meds}).
+  \item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_i : i \in \calR\}$ 
+  
+  On the verifier side, the received $\mathsf{Path}$ nodes are placed onto
+an empty tree of the same structure and re-expanded downward via the CSPRNG
+until all $t$ leaf positions are populated.
+Positions $i \in \mathcal{H}$ remain empty, as no seed on their
+root-to-leaf path was ever published; the verifier instead uses the
+explicit response $\mathsf{resp}[i] = ({\bf y}_i, {\bf v}_i)$ together
+with the Merkle proof to authenticate $\mathsf{cmt}_0[i]$ and verify the
+round.
+
+Positions $i \in \mathcal{R}$ yield the recovered seeds $\mathsf{Seed}[i]$,
+from which the verifier re-derives $({\bf e}'_i, {\bf u}'_i)$,
+recomputes $\mathsf{cmt}_1[i]$, and checks consistency with the signed
+commitment digest.
+
+
+\subsubsection{MPCitH / VOLEitH Family }
+
+\begin{itemize}
+    \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$ At the start of each signing, RYDE and Mirath both sample a fresh $\lambda$-bit master seed and a $2\lambda$-bit public salt.
+    \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$ 
+
+    From $(\mathsf{rseed},\, \mathsf{salt})$, RYDE and Mirthe build a binary tree of $N = \sum_{e=1}^{\tau} N_e$ internal nodes by top-down \textsf{ExpandSeed} expansion, storing the result in a heap-indexed array $mathsf{tree}[0 \ldots 2N-1]$.
+    The $t = \sum_e N_e$ leaf seeds are then read off as
+\[
+  \mathsf{seeds}[e][i] \leftarrow \mathsf{tree}\bigl[N - 1 + \psi(e,i)\bigr],
+  \quad e \in \{1,\ldots,\tau\},\; i \in \{1,\ldots,N_e\},
+\]
+
+where $\psi(e,i)$ is the interleaving map that places epoch-$e$, position-$i$ leaves at the correct flat index.
+Each leaf seed $\mathsf{seeds}[e][i]$ is then expanded via $\mathsf{ExpandShare}$ nto the per-round witness shares $(\overline{s'}, \overline{C}, \overline{v})$, and a commitment $\mathsf{com}[e][i]$ is computed from it.
+In the framework notation, $\mathsf{es}_{(e,i)} = \mathsf{seeds}[e][i]$, and the tree topology is the two-tier incomplete binary tree with leaf layout governed by $\psi$.
+    \item $\Chal(\cmt, \msg) \to \mathbf{c} = (c_0, \ldots, c_{t-1})$ RYDE applies the Fiat--Shamir transform in two successive rounds.
+The first challenge $h_1$ is obtained by hashing the salt, the commitment
+digest $\mathsf{Hash}(\mathsf{com})$, and the accumulated auxiliary values
+$\{\mathsf{aux}_{s'}[e], \mathsf{aux}_C[e]\}_{e \in [1:\tau]}$ :
+\[
+  h_1 \leftarrow \mathrm{Hash}_1\!\bigl(
+    \mathsf{salt},\, \mathrm{Hash}(\mathsf{com}),\,
+    \{\mathsf{aux}_{s'}[e],\, \mathsf{aux}_C[e]\}_{e \in [1:\tau]}
+  \bigr).
+\]
+From $h_1$, the polynomial challenge matrix $\Gamma$ is derived and used to compute the per-epoch polynomial proofs
+$(\mathsf{mid}_\alpha[e], \mathsf{base}_\alpha[e])$.
+The second challenge $h_2$ is then obtained by hashing the message,
+public key, salt, $h_1$, and all polynomial proof components:
+\[
+  h_2 \leftarrow \mathrm{Hash}_2\!\bigl(
+    \mathrm{Hash}_0(\mathsf{msg}),\, \mathsf{pk},\, \mathsf{salt},\,
+    h_1,\, \{\mathsf{base}_\alpha[e],\, \mathsf{mid}_\alpha[e]\}_{e \in [1:\tau]}
+  \bigr).
+\]
+In the framework notation, the relevant challenge is derived from $h_2$:
+the condition $c_{(e,i)} = 0$ (i.e., $i = i^*[e]$) signals that round
+$(e,i)$ requires the ephemeral seed $\mathsf{es}_{(e,i)}$ to remain
+hidden, while $c_{(e,i)} \neq 0$ signals that the seed is revealed.
+
+
+    \item $\Decide(\mathbf{c}) \to (\calH, \calR)$ 
+
+    From $h_2$, RYDE calls $\mathsf{ExpandChallenge2}(h_2, \mathsf{ctr})$
+(line~26) to produce one hidden index $i^*[e]$ per epoch
+$e \in \{1,\ldots,\tau\}$, together with a grinding mask
+$v_{\mathsf{grinding}} \in \{0,1\}^w$.
+This induces the framework partition:
+\[
+  \mathcal{H} = \{\, (e, i^*[e]) : e \in \{1,\ldots,\tau\} \,\}, \qquad
+  \mathcal{R} = \{\, (e,i) : i \neq i^*[e] \,\}.
+\]
+Unlike LESS, MEDS, and CROSS, where $|\mathcal{H}|$ is a global weight-$w$
+constraint over all rounds, RYDE enforces \emph{exactly one} hidden index
+per epoch, giving $|\mathcal{H}| = \tau$ deterministically.
+The grinding loop rejects and resamples $h_2$ via a counter
+$\mathsf{ctr}$ if the path exceeds $T_{\mathsf{open}}$ nodes or if
+$v_{\mathsf{grinding}} \neq 0$, ensuring both compactness and a
+negligible bias in the challenge distribution.
+
+    \item $\Publish(\calT, \calH) \to \tpath$  RYDE calls $\mathsf{Tree.GetSiblingPath}(\mathsf{tree},\,
+\{\psi(e, i^*[e])\}_{e \in [1:\tau]})$ (line~27), which marks the $\tau$ hidden leaf positions, propagates deletions upward by replacing any internal node whose both children are revealed by the parent (bottom-up collapsing), and serialises the surviving boundary nodes in order.
+
+\end{itemize}

@@ -115,6 +115,13 @@ target_link_libraries(${TARGET_BINARY_NAME} m)
 set_property(TARGET ${TARGET_BINARY_NAME} APPEND PROPERTY COMPILE_FLAGS "-DCATEGORY=252 -DTARGET=192")
 target_include_directories(${TARGET_BINARY_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/test)
 
+# Fault path attack harness for LESS-252-192
+set(TARGET_BINARY_NAME LESS_fault_inject_path)
+add_executable(${TARGET_BINARY_NAME} ${HEADERS} ${SOURCES} ${PROJECT_SOURCE_DIR}/lib/test/fault_inject_path.c)
+target_link_libraries(${TARGET_BINARY_NAME} m)
+set_property(TARGET ${TARGET_BINARY_NAME} APPEND PROPERTY COMPILE_FLAGS "-DCATEGORY=252 -DTARGET=192")
+target_include_directories(${TARGET_BINARY_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/test)
+
 # Post-commitment safe-error attack for LESS-252-192
 set(TARGET_BINARY_NAME LESS_post_commit_fault)
 add_executable(${TARGET_BINARY_NAME} ${HEADERS} ${SOURCES} ${PROJECT_SOURCE_DIR}/lib/test/post_commit_fault.c)

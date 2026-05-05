@@ -1,6 +1,30 @@
 % ============================================================
 %  Section 2 – Background
 % ============================================================
+\subsection{GGM trees}
+\subsubsection{Pseudorandom functions}
+
+In cryptography, a core challenge is generating randomness that is
+computationally indistinguishable from true randomness, yet reproducible given
+a secret key. A \textbf{pseudorandom function} (PRF) addresses this need: it
+is a keyed function that, to any efficient adversary without knowledge of the
+key, behaves identically to a truly random function. Intuitively, a PRF
+stretches a short secret key into an exponentially large lookup table of
+``random-looking'' outputs, without ever materialising that table in memory.
+
+PRFs are foundational primitives in symmetric cryptography. They underpin the
+construction of message authentication codes (MACs), stream ciphers, and
+key-derivation functions, among many other schemes. As a concrete example,
+consider \textsc{AES} used in counter mode: given a secret key~$k$ and an
+index~$i$, the output $\mathrm{AES}_k(i)$ is computationally
+indistinguishable from a uniformly random string, making it a widely deployed
+candidate PRF in practice.
+
+A central construction of PRFs from one-way functions is the
+\textbf{Goldreich--Goldwasser--Micali (GGM) tree}~\cite{GGM86}, which builds
+a PRF by iteratively applying a pseudorandom generator along the branches of a
+binary tree indexed by the input bits. GGM trees are the primary PRF
+construction studied in this work.
 
 \begin{definition}[GGM Tree]
 \label{def:ggm}
@@ -21,7 +45,7 @@ The crucial property exploited by ZK signature schemes is the
 \emph{punctured-PRF property}: given all leaf seeds \emph{except} leaf~$i$, it is
 computationally infeasible to recover the seed at leaf~$i$, provided $\PRG$ is
 a secure pseudorandom generator.  This makes the \GGM\ tree suitable for hiding
-one or more seeds while revealing the rest.
+one or more seeds while revealing the rest, as shown in example \ref{fig:ggm-receiver}.
 
 \paragraph{Incomplete \GGM\ trees.}
 When the number of required leaves $t$ is not a power of $2$, a scheme may use an
@@ -30,48 +54,149 @@ the bottom may have fewer than two children or act as leaves themselves.  This
 reduces memory and computation, but the additional index-tracking logic introduces
 new fault surfaces, as detailed in Section~\ref{sec:theoretical}.
 
+\begin{figure}[tb]
+\centering
+\begin{tikzpicture}[x=0.72cm, y=1.15cm]
+
+  % ---- node styles (assumed defined in preamble) ----
+  \tikzstyle{compnode}  = [circle, draw=cyan!60, fill=white, text=white, minimum size=14pt, inner sep=1pt, font=\tiny]
+  \tikzstyle{pubnode}= [circle, draw=cyan!90, fill=cyan!40,  minimum size=14pt, inner sep=1pt, font=\tiny]
+  \tikzstyle{unknode} = [circle, draw=gray!60, fill=gray!20,    minimum size=14pt, inner sep=1pt, font=\tiny]
+  \tikzstyle{treeedge} = [gray!40, rounded corners=2pt,->, thin]
+  \tikzstyle{leaflbl}  = [font=\tiny, below]
+
+  % ---- Level 0 (root, hollow) ----
+  \node[unknode] (r)   at (7.5, 0)    {};
+
+  % ---- Level 1 ----
+  \node[unknode]  (n0)  at (3.5, -0.5)   {};
+  \node[pubnode]  (n1)  at (11.5,-0.5)   {};
+
+  % ---- Level 2 ----
+  \node[pubnode]  (n00) at (1.5, -1)   {};
+  \node[unknode]  (n01) at (5.5, -1)   {};
+  \node[compnode]  (n10) at (9.5, -1)   {};
+  \node[compnode]  (n11) at (13.5,-1)   {};
+
+  % ---- Level 3 ----
+  \node[compnode]  (n000) at (0.5, -2)  {};
+  \node[compnode]  (n001) at (2.5, -2)  {};
+  \node[unknode]  (n010) at (4.5, -2)  {};
+  \node[pubnode]  (n011) at (6.5, -2)  {};
+  \node[compnode]  (n100) at (8.5, -2)  {};
+  \node[compnode]  (n101) at (10.5,-2)  {};
+  \node[compnode]  (n110) at (12.5,-2)  {};
+  \node[compnode]  (n111) at (14.5,-2)  {};
+
+  % ---- Level 4 (leaves) ----
+  \node[compnode]  (l0)  at (0,   -3)   {};
+  \node[compnode]  (l1)  at (1,   -3)   {};
+  \node[compnode]  (l2)  at (2,   -3)   {};
+  \node[compnode]  (l3)  at (3,   -3)   {};
+  \node[unknode](l4)  at (4,   -3)   {};   
+  \node[pubnode]  (l5)  at (5,   -3)   {};
+  \node[compnode](l6)  at (6,   -3)   {};   
+  \node[compnode]  (l7)  at (7,   -3)   {};
+  \node[compnode]  (l8)  at (8,   -3)   {};
+  \node[compnode]  (l9)  at (9,   -3)   {};
+  \node[compnode]  (l10) at (10,  -3)   {};
+  \node[compnode]  (l11) at (11,  -3)   {};
+  \node[compnode]  (l12) at (12,  -3)   {};
+  \node[compnode]  (l13) at (13,  -3)   {};
+  \node[compnode]  (l14) at (14,  -3)   {};
+  \node[compnode]  (l15) at (15,  -3)   {};
+
+  % ---- edges: root -> level 1 ----
+  \draw[treeedge] (r)--(n0);
+  \draw[treeedge] (r)--(n1);
+
+  % ---- edges: level 1 -> level 2 ----
+  \draw[treeedge] (n0)--(n00);  \draw[treeedge] (n0)--(n01);
+  \draw[treeedge] (n1)--(n10);  \draw[treeedge] (n1)--(n11);
+
+  % ---- edges: level 2 -> level 3 ----
+  \draw[treeedge] (n00)--(n000); \draw[treeedge] (n00)--(n001);
+  \draw[treeedge] (n01)--(n010); \draw[treeedge] (n01)--(n011);
+  \draw[treeedge] (n10)--(n100); \draw[treeedge] (n10)--(n101);
+  \draw[treeedge] (n11)--(n110); \draw[treeedge] (n11)--(n111);
+
+  % ---- edges: level 3 -> level 4 ----
+  \draw[treeedge] (n000)--(l0);  \draw[treeedge] (n000)--(l1);
+  \draw[treeedge] (n001)--(l2);  \draw[treeedge] (n001)--(l3);
+  \draw[treeedge] (n010)--(l4);  \draw[treeedge] (n010)--(l5);
+  \draw[treeedge] (n011)--(l6);  \draw[treeedge] (n011)--(l7);
+  \draw[treeedge] (n100)--(l8);  \draw[treeedge] (n100)--(l9);
+  \draw[treeedge] (n101)--(l10); \draw[treeedge] (n101)--(l11);
+  \draw[treeedge] (n110)--(l12); \draw[treeedge] (n110)--(l13);
+  \draw[treeedge] (n111)--(l14); \draw[treeedge] (n111)--(l15);
+
+  % ---- leaf labels ----
+  \node[leaflbl] at (0,  -3.45) {$\eseed_0$};
+  \node[leaflbl] at (1,  -3.45) {$\eseed_1$};
+  \node[leaflbl] at (2,  -3.45) {$\eseed_2$};
+  \node[leaflbl] at (3,  -3.45) {$\eseed_3$};
+  \node[leaflbl] at (4,  -3.45) {$\eseed_4$};
+  \node[leaflbl] at (5,  -3.45) {$\eseed_5$};
+  \node[leaflbl] at (6,  -3.45) {$\eseed_6$};
+  \node[leaflbl] at (7,  -3.45) {$\eseed_7$};
+  \node[leaflbl] at (8,  -3.45) {$\eseed_8$};
+  \node[leaflbl] at (9,  -3.45) {$\eseed_9$};
+  \node[leaflbl] at (10, -3.45) {$\eseed_{10}$};
+  \node[leaflbl] at (11, -3.45) {$\eseed_{11}$};
+  \node[leaflbl] at (12, -3.45) {$\eseed_{12}$};
+  \node[leaflbl] at (13, -3.45) {$\eseed_{13}$};
+  \node[leaflbl] at (14, -3.45) {$\eseed_{14}$};
+  \node[leaflbl] at (15, -3.45) {$\eseed_{15}$};
+
+  % ---- legend ----
+  \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
+          above right=0.2cm and 0cm of r,
+          matrix of nodes, nodes={font=\tiny, inner sep=2pt},
+          column sep=4pt, row sep=1pt] {
+    \node[unknode,  minimum size=8pt]{}; & \node{unrevealed};   \\
+    \node[pubnode,   minimum size=8pt]{}; & \node{known};       \\
+    \node[compnode, minimum size=8pt]{}; & \node{unrevealed but computable};   \\
+  };
+
+\end{tikzpicture}
+\caption{Receiver's GGM tree of depth~$4$. Given only the blue nodes and the PRNG function, the receiver can retrieve all leaves except $x_4$.}
+\label{fig:ggm-receiver}
+\end{figure}
+
+\subsection{Attack targets}
+
+This section provides an overview of the signature schemes, to which we apply our generalized
+model and against which we carry out our attacks. 
 % ============================================================
-\subsection{LESS-v2}
+\subsubsection{LESS-v2}
 \label{sec:less}
 % ============================================================
 
-\paragraph{Context.}
 LESS (Linear Equivalence Signature Scheme)~\cite{LESS-spec} uses a Fiat--Shamir
 transformation over a 3-pass Sigma protocol whose security rests on the Canonical
 Form Linear Equivalence Problem (CF-LEP).  During signing, the signer must
 generate $t$ independent ephemeral monomial matrices
 $\mathbf{Q}_{e_0}, \ldots, \mathbf{Q}_{e_{t-1}} \in \Mon_n(q)$.
+\paragraph{Role of the GGM tree in signing and verification.}
+Each leaf $\eseed_i$, for $0 \le i < t$, is an ephemeral seed of length $\lambda$
+bits from which the $i$-th monomial map $\mathbf{Q}_{e_i} \in \Mon_n(q)$ is
+derived by expanding $\eseed_i$ through a PRNG\@.
+The tree thus compactly encodes all $t$ independent ephemeral matrices required
+by the iterated Sigma protocol from a single master seed $\mathsf{mseed} \in
+\{0,1\}^\lambda$.
 
-\paragraph{Tree type.}
-LESS-v2 uses an \emph{incomplete} \GGM\ tree with $T = \lceil \log_2 t \rceil$
-levels.  Leaves are distributed across the bottom two levels; the index offsets
-are tracked via the arrays $\mathsf{npl}$, $\mathsf{ll}$, $\mathsf{off}$, and
-$\mathsf{lsi}$.
+During signing, the Fiat--Shamir challenge vector
+$\mathbf{b} = (b[0],\ldots,b[t-1]) \in \mathcal{S}_{t,w}$ partitions the
+rounds into two sets: the $w$ rounds with $b[i]\neq 0$, for which the signer
+publishes $\CosetRep(\pi_{b[i]}\circ\tilde{\pi}^*_i)$ and must \emph{conceal}
+$\eseed_i$, and the remaining $t-w$ rounds, for which $\eseed_i$ itself is
+disclosed so that the verifier can re-derive $\mathbf{Q}_{e_i}$ and
+re-compute the commitment $\mathrm{CF}(A_i)$.
 
-\paragraph{Flag tree.}
-After Fiat--Shamir challenge generation, LESS-v2 constructs an auxiliary
-\emph{flag tree} of the same shape as the seed tree.  It is a labelling
-$\calF : V(\calT) \to \{0,1\}$ where $\calF(v) = 0$ marks a publishable
-node and $\calF(v) = 1$ marks a hidden node.  The flag tree is built in three
-sequential phases:
-\begin{enumerate}
-  \item \textbf{Initialisation.}  Every node is set to $0$ except the root,
-        which is set to $1$.
-  \item \textbf{Leaf labelling} ($\LabelLeaves$).  For each leaf $i$, set
-        \begin{equation*}
-          \calF(\mathrm{leaf}_i) =
-          \begin{cases} 1 & \text{if } b[i] \neq 0, \\ 0 & \text{otherwise,} \end{cases}
-        \end{equation*}
-        where $\mathbf{b} = (b[0], \ldots, b[t-1])$ is the Fiat--Shamir challenge
-        vector of weight $w$ over the alphabet $\{0, \ldots, s-1\}$.
-  \item \textbf{Upward propagation} ($\ComputeSeeds$).  For each internal node $v$
-        with children $\ell$ and $r$:
-        \begin{equation*}
-          \calF(v) = \calF(\ell) \vee \calF(r).
-        \end{equation*}
-        This ensures the minimum set of nodes is published to reconstruct all
-        revealed leaf seeds.
-\end{enumerate}
+On the verifier side, each received node is expanded downward by the PRNG
+until all required leaves are reconstructed; the hidden leaves, corresponding
+to rounds with $b[i]\neq 0$, are never reachable from any published node,
+so the ephemeral seeds $\eseed_i$ remain protected.
 
 \paragraph{Secret-extraction opportunity.}
 For every round $i$ with $b[i] \neq 0$, the signer publishes
@@ -81,123 +206,39 @@ simultaneously, Theorem~2 of~\cite{FaultToForge2025} shows that the secret
 permutation $\pi_{b[i]}$ is recoverable.  The flag tree is the
 \emph{sole enforcement mechanism} that prevents this dual revelation.
 
-\begin{example}
-Figure~\ref{fig:less-tree} illustrates an incomplete \GGM\ tree for $t = 6$ with
-challenge $\mathbf{b} = (0,1,0,1,0,1)$, so
-$\calH = \{1,3,5\}$ and $\calR = \{0,2,4\}$.
-After all three phases, nodes $s_3$, $s_7$, and $s_9$ satisfy
-$\calF(v)=0$ with $\calF(\mathsf{parent}(v))=1$ and thus enter $\tpath$,
-giving the verifier access to $\eseed_0$, $\eseed_2$, and $\eseed_4$.
-\end{example}
-
-\begin{figure}[tb]
-\centering
-\begin{tikzpicture}[x=0.95cm, y=1.15cm]
-  % ---- nodes (final state after all 3 phases) ----
-  % Level 0
-  \node[hidnode]  (s0)  at (3.5, 0)   {$s_0$};
-  % Level 1
-  \node[hidnode]  (s1)  at (1.5,-1)   {$s_1$};
-  \node[hidnode]  (s2)  at (5.5,-1)   {$s_2$};
-  % Level 2  (s3,s4 are leaves; s5,s6 are internal)
-  \node[pathnode] (s3)  at (0.5,-2)   {$s_3$};
-  \node[hidnode]  (s4)  at (2.5,-2)   {$s_4$};
-  \node[hidnode]  (s5)  at (4.5,-2)   {$s_5$};
-  \node[hidnode]  (s6)  at (6.75,-2)   {$s_6$};
-  % Level 3  (leaves)
-  \node[pathnode] (s7)  at (3.75,-3)  {$s_7$};
-  \node[hidnode]  (s8)  at (5.25,-3)  {$s_8$};
-  \node[pathnode] (s9)  at (6.00,-3)  {$s_9$};
-  \node[hidnode]  (s10) at (7.25,-3)  {$s_{10}$};
-  % ---- ephemeral-seed labels below leaves ----
-  \node[leaflbl] at (0.5,-2.55)  {$\eseed_0$};
-  \node[leaflbl] at (2.5,-2.55)  {$\eseed_1$};
-  \node[leaflbl] at (3.75,-3.55) {$\eseed_2$};
-  \node[leaflbl] at (5.25,-3.55) {$\eseed_3$};
-  \node[leaflbl] at (5.75,-3.55) {$\eseed_4$};
-  \node[leaflbl] at (7.25,-3.55) {$\eseed_5$};
-  % ---- edges ----
-  \draw[treeedge] (s0)--(s1); \draw[treeedge] (s0)--(s2);
-  \draw[treeedge] (s1)--(s3); \draw[treeedge] (s1)--(s4);
-  \draw[treeedge] (s2)--(s5); \draw[treeedge] (s2)--(s6);
-  \draw[treeedge] (s5)--(s7); \draw[treeedge] (s5)--(s8);
-  \draw[treeedge] (s6)--(s9); \draw[treeedge] (s6)--(s10);
-  % ---- "incomplete" annotation ----
-  \node[font=\tiny,gray] at (3.5,-2.55) {leaf level~2};
-  % ---- legend ----
-  \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
-          above left=0.2cm and -0.8cm of s1,
-          matrix of nodes, nodes={font=\tiny, inner sep=2pt},
-          column sep=4pt, row sep=1pt] {
-    \node[hidnode,  minimum size=8pt]{}; & \node{$\calF=1$ (hidden)};  \\
-    \node[pathnode, minimum size=8pt]{}; & \node{$\calF=0$, in $\tpath$}; \\
-  };
-\end{tikzpicture}
-\caption{LESS-v2 incomplete \GGM\ flag tree, $t=6$, after all three construction
-         phases.  Challenge $\mathbf{b}=(0,1,0,1,0,1)$ hides rounds
-         $\calH=\{1,3,5\}$.  Path nodes (blue, thick border) give the verifier
-         $\eseed_0$, $\eseed_2$, $\eseed_4$.  Injecting a fault on any red node
-         exposes the corresponding hidden seed alongside its response, yielding a
-         dual revelation.}
-\label{fig:less-tree}
-\end{figure}
-
-
-Table~\ref{tab:less-params} lists the parameter sets of LESS.
-
-\begin{table}[tb]
-\centering
-\caption{LESS-v2 parameter sets~\cite{LESS-spec}.}
-\label{tab:less-params}
-\begin{tabular}{@{}lcccccc@{}}
-\toprule
-Parameter set   & $n$ & $k$ & $q$ & $t$ & $w$ & $s$ \\
-\midrule
-LESS-252-45     & 252 & 126 & 127 &  45 & 34 & 8 \\
-LESS-252-68     & 252 & 126 & 127 &  68 & 42 & 4 \\
-LESS-252-192    & 252 & 126 & 127 & 192 & 36 & 2 \\
-LESS-400-102    & 400 & 200 & 127 & 102 & 61 & 4 \\
-LESS-400-220    & 400 & 200 & 127 & 220 & 68 & 2 \\
-LESS-548-137    & 548 & 274 & 127 & 137 & 79 & 4 \\
-LESS-548-345    & 548 & 274 & 127 & 345 & 75 & 2 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 % ============================================================
-\subsection{MEDS}
+\subsubsection{MEDS}
 \label{sec:meds}
 % ============================================================
 
-\paragraph{Context.}
 MEDS (Matrix Equivalence Digital Signature)~\cite{ChouNPRRST23} is a code-based
 signature scheme whose security rests on the Matrix Code Equivalence Problem
 (MCEP).  Like LESS, it applies the Fiat--Shamir transform to a 3-pass Sigma
 protocol between a prover holding a secret equivalence
 $(A, B) \in \GL_k(q) \times \GL_n(q)$ and a verifier.
 
-\paragraph{Tree type.}
-MEDS uses a \emph{complete} binary \GGM\ seed tree to generate $t$ ephemeral
-seeds.  Each leaf seed $\eseed_i$ expands into an ephemeral matrix pair.  The
-binary challenge vector $\mathbf{h} = (h_0, \ldots, h_{t-1}) \in \{0,1\}^t$
-determines which seeds are revealed ($h_i = 0$) and which are hidden ($h_i = 1$).
+\paragraph{Role of the seed tree in signing and verification.}
+Each leaf $\sigma_i$, for $0 \le i < t$, is an ephemeral seed of length
+$\ell_{\mathrm{tree\_seed}}$ bytes from which the $i$-th pair of ephemeral
+invertible matrices $(\tilde{A}_i, \tilde{B}_i) \in \GL_m(q) \times \GL_n(q)$
+is sampled via a PRNG\@.
+The commitment for round $i$ is then $h_i = H\!\bigl(\mathrm{SF}(\pi_{\tilde{A}_i,
+\tilde{B}_i}(G_0))\bigr)$, so the seed tree compactly encodes all $t$ ephemeral
+matrix pairs required by the iterated Sigma protocol from a single master seed
+$\rho_{0,0} \in \mathcal{B}^{\ell_{\mathrm{tree\_seed}}}$.
 
-\paragraph{Reference tree.}
-MEDS uses a \emph{Reference Tree} (also called $\SeedTree$) with a
-$\SeedTreePaths$ algorithm.  This traverses the tree bottom-up and returns the
-minimal set of internal nodes sufficient to reconstruct all revealed leaf seeds,
-while no hidden seed $\eseed_i$ (with $h_i = 1$) is derivable.  The three
-abstract phases map as follows:
-\begin{enumerate}
-  \item \textbf{Expansion.}
-        $\BuildSeeds(\seed_r, \salt)$ expands from the root to all $t$ leaves via
-        $\PRG(\text{node} \,\|\, \salt \,\|\, \text{index}) \to (\text{left},\,\text{right})$.
-  \item \textbf{Selection.}
-        $\SeedTreePaths(\calT, \mathbf{h})$ marks and collects the publishing nodes.
-  \item \textbf{Reconstruction (verifier).}
-        $\ReconstructSeeds(\tpath, \mathbf{h}, \salt)$ re-expands only from the
-        published nodes.
-\end{enumerate}
+During signing, the Fiat--Shamir challenge string
+$\mathbf{h} = (h_0, \ldots, h_{t-1}) \in \{0, \ldots, s-1\}^t$ of fixed
+weight~$w$ partitions the rounds into two sets: the $w$ rounds with
+$h_i \neq 0$, for which the signer publishes the coset representative
+$(\mu_i, \nu_i) = (A\tilde{A}_i^{-1},\, B^{-1}\tilde{B}_i)$ and must
+\emph{conceal} $\sigma_i$, and the remaining $t - w$ rounds with $h_i = 0$,
+for which $\sigma_i$ is disclosed so that the verifier can re-expand
+$(\tilde{A}_i, \tilde{B}_i)$ and recover the commitment $h_i$.
+
+On the verifier side, the required leaf seeds are recovered; the $w$ hidden seeds, corresponding to
+rounds with $h_i \neq 0$, are provably unreachable from any published node.
+
 
 \paragraph{Secret-extraction opportunity.}
 For round $i$ with $h_i = 1$, the signer reveals its ZK response.  If an attacker
@@ -205,68 +246,9 @@ obtains both the response and $\eseed_i$, the secret equivalence pair $(A, B)$ i
 recoverable by linear algebra.  The Reference Tree is the sole enforcement mechanism
 preventing this dual revelation.
 
-\begin{example}
-Figure~\ref{fig:meds-tree} shows a complete \GGM\ tree for $t = 4$ with
-challenge $\mathbf{h} = (0,1,0,1)$, so $\calH = \{1,3\}$ and $\calR = \{0,2\}$.
-Nodes $s_3$ and $s_5$ enter $\tpath$.
-\end{example}
-
-\begin{figure}[tb]
-\centering
-\begin{tikzpicture}[x=1.1cm, y=1.15cm]
-  % Level 0
-  \node[hidnode]  (s0) at (2,  0)  {$s_0$};
-  % Level 1
-  \node[hidnode]  (s1) at (0.5,-1) {$s_1$};
-  \node[hidnode]  (s2) at (3.5,-1) {$s_2$};
-  % Level 2 (leaves)
-  \node[pathnode] (s3) at (-0.5,-2){$s_3$};
-  \node[hidnode]  (s4) at ( 1.5,-2){$s_4$};
-  \node[pathnode] (s5) at ( 2.5,-2){$s_5$};
-  \node[hidnode]  (s6) at ( 4.5,-2){$s_6$};
-  % Ephemeral seed labels
-  \node[leaflbl] at (-0.5,-2.55){$\eseed_0$};
-  \node[leaflbl] at ( 1.5,-2.55){$\eseed_1$};
-  \node[leaflbl] at ( 2.5,-2.55){$\eseed_2$};
-  \node[leaflbl] at ( 4.5,-2.55){$\eseed_3$};
-  % Edges
-  \draw[treeedge] (s0)--(s1); \draw[treeedge] (s0)--(s2);
-  \draw[treeedge] (s1)--(s3); \draw[treeedge] (s1)--(s4);
-  \draw[treeedge] (s2)--(s5); \draw[treeedge] (s2)--(s6);
-  % Legend
-  \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
-          above right=0.6cm and -1cm of s1,
-          matrix of nodes, nodes={font=\tiny, inner sep=2pt},
-          column sep=4pt, row sep=1pt] {
-    \node[hidnode,  minimum size=8pt]{}; & \node{$\calF=1$};  \\
-    \node[pathnode, minimum size=8pt]{}; & \node{in $\tpath$}; \\
-  };
-\end{tikzpicture}
-\caption{MEDS complete \GGM\ flag tree, $t=4$.
-         Challenge $\mathbf{h}=(0,1,0,1)$ hides $\calH=\{1,3\}$.
-         Path nodes $s_3$ and $s_5$ (blue) give the verifier $\eseed_0$ and
-         $\eseed_2$.  A fault on $s_4$ or $s_6$ exposes the corresponding hidden
-         seed alongside its ZK response.}
-\label{fig:meds-tree}
-\end{figure}
-
-\begin{table}[tb]
-\centering
-\caption{MEDS parameter sets~\cite{ChouNPRRST23}.}
-\label{tab:meds-params}
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-Parameter set & $n$ & $k$ & $q$ & $t$ & $s$ \\
-\midrule
-MEDS-9923b    & 14 &  7 & 509 & 192 & 2 \\
-MEDS-13220b   & 22 & 11 & 127 & 192 & 2 \\
-MEDS-41711b   & 30 & 15 & 509 & 392 & 2 \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 % ============================================================
-\subsection{CROSS}
+\subsubsection{CROSS}
 \label{sec:cross}
 % ============================================================
 
@@ -280,21 +262,43 @@ so the hidden and revealed index sets are
 $\calH = \{i : c_i = 1\}$ and $\calR = \{i : c_i = 0\}$,
 identical in structure to MEDS.
 
-\paragraph{Tree type.}
-CROSS uses a complete \GGM\ seed tree.  Round~1 of CROSS uses the same
-complete binary tree as LESS-v1.  The Round~2 specification~\cite{CROSSspec}
-adopts a combined seed-and-Merkle-tree structure, but the seed-publishing
-component remains structurally equivalent to the $\SeedTreePaths$ mechanism
-of MEDS (Section~\ref{sec:meds}).
+\paragraph{Role of the seed tree in signing and verification.}
+Each leaf $\mathsf{Seed}_i$, for $0 \le i < t$, is a $\lambda$-bit
+ephemeral seed from which the pair of randomness vectors
+$({\bf e}'_i,\, {\bf u}'_i) \in G \times \mathbb{F}_p^n$ is derived via
+$\mathsf{CSPRNG}(\mathsf{Seed}_i)$.
+These vectors are the sole secret material for round $i$: from them the
+signer computes the linear transitive map ${\bf v}_i = {\bf e} \star
+({\bf e}'_i)^{-1} \in G$ and the two commitments
+$\mathsf{cmt}_0[i] = \mathrm{Hash}(({\bf v}_i \star {\bf u}'_i){\bf H}^\top
+\mid {\bf v}_i)$ and $\mathsf{cmt}_1[i] = \mathrm{Hash}({\bf u}'_i \mid
+{\bf e}'_i)$.
+The seed tree thus compactly encodes all $t$ pairs of ephemeral vectors
+required by the iterated Sigma protocol from a single master seed.
 
-\paragraph{Publishing mechanism.}
-Flag propagation follows exactly the same three-phase bottom-up rule as
-MEDS: initialise all flags to~$0$ except the root, label leaves from the
-binary challenge, propagate upward by disjunction.  The published path gives
-the verifier access to all $\eseed_i$ with $c_i = 0$, while every $\eseed_i$
-with $c_i = 1$ remains hidden.  The structural identity with MEDS means
-that every fault location identified for MEDS (Section~\ref{sec:meds}) applies
-to CROSS without modification.
+During signing, the Fiat--Shamir second challenge vector
+$\mathsf{chall}_2 \in \mathcal{B}(t,w)$ of fixed Hamming weight $w$ partitions
+the rounds into two sets: the $w$ rounds with $\mathsf{chall}_2[i] = 1$,
+for which the signer publishes the explicit response
+$\mathsf{resp}[i] = ({\bf y}_i, {\bf v}_i)$ and must \emph{conceal}
+$\mathsf{Seed}_i$, and the remaining $t - w$ rounds with
+$\mathsf{chall}_2[i] = 0$, for which $\mathsf{Seed}_i$ itself is disclosed
+so that the verifier can re-expand $({\bf e}'_i, {\bf u}'_i)$, recompute
+${\bf y}_i = {\bf u}'_i + \mathsf{chall}_1[i] \cdot {\bf e}'_i$, and
+recover $\mathsf{cmt}_1[i]$.
+
+Additionally, CROSS uses a parallel \emph{Merkle tree} over the $t$
+commitments $\mathsf{cmt}_0[i]$ to avoid transmitting all $t$ digests
+explicitly: for the $w$ rounds where $\mathsf{chall}_2[i] = 1$, the
+corresponding $\mathsf{cmt}_0[i]$ values cannot be recomputed by the
+verifier (since $\mathsf{Seed}_i$ is hidden), and are instead authenticated
+via a Merkle proof of size $O(w \log t)$.
+
+On the verifier side, the received seed-path nodes are expanded downward to
+reconstruct all unrevealed leaf seeds; the $w$ hidden seeds, corresponding
+to rounds with $\mathsf{chall}_2[i] = 1$, are provably unreachable from any
+published node, ensuring that the ephemeral vectors $({\bf e}'_i,
+{\bf u}'_i)$ — and hence the secret key ${\bf e}$ — remain protected.
 
 \paragraph{Secret-extraction opportunity.}
 For round $i$ with $c_i = 1$, the signer reveals a ZK response encoding the
@@ -304,59 +308,8 @@ recoverable by the linear-algebra argument of ZKFault~\cite{ZKFault},
 which demonstrated full key recovery from a single fault for all CROSS
 parameter sets.
 
-\begin{example}
-Figure~\ref{fig:cross-tree} shows a complete \GGM\ tree for $t = 4$ with
-binary challenge $\mathbf{c} = (0,1,0,1)$, so $\calH = \{1,3\}$ and
-$\calR = \{0,2\}$.  Nodes $s_3$ and $s_5$ enter $\tpath$.
-The tree topology and the flag-propagation logic are identical to the MEDS
-example of Figure~\ref{fig:meds-tree}; only the underlying hard problem
-and response format differ.  A fault on $s_4$ or $s_6$ exposes the
-corresponding hidden seed alongside its R-SDP response, enabling recovery
-of the long-term secret.
-\end{example}
-
-\begin{figure}[tb]
-\centering
-\begin{tikzpicture}[x=1.1cm, y=1.15cm]
-  % Level 0
-  \node[hidnode]  (s0) at (2,  0)  {$s_0$};
-  % Level 1
-  \node[hidnode]  (s1) at (0.5,-1) {$s_1$};
-  \node[hidnode]  (s2) at (3.5,-1) {$s_2$};
-  % Level 2 (leaves)
-  \node[pathnode] (s3) at (-0.5,-2){$s_3$};
-  \node[hidnode]  (s4) at ( 1.5,-2){$s_4$};
-  \node[pathnode] (s5) at ( 2.5,-2){$s_5$};
-  \node[hidnode]  (s6) at ( 4.5,-2){$s_6$};
-  % Ephemeral-seed labels + challenge values
-  \node[leaflbl] at (-0.5,-2.6){$\eseed_0,\; c_0{=}0$};
-  \node[leaflbl] at ( 1.5,-2.6){$\eseed_1,\; c_1{=}1$};
-  \node[leaflbl] at ( 2.5,-2.6){$\eseed_2,\; c_2{=}0$};
-  \node[leaflbl] at ( 4.5,-2.6){$\eseed_3,\; c_3{=}1$};
-  % Edges
-  \draw[treeedge] (s0)--(s1); \draw[treeedge] (s0)--(s2);
-  \draw[treeedge] (s1)--(s3); \draw[treeedge] (s1)--(s4);
-  \draw[treeedge] (s2)--(s5); \draw[treeedge] (s2)--(s6);
-  % Legend
-  \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
-          above right=0.6cm and -1cm of s1,
-          matrix of nodes, nodes={font=\tiny, inner sep=2pt},
-          column sep=4pt, row sep=1pt] {
-    \node[hidnode,  minimum size=8pt]{}; & \node{$\calF=1$ (hidden)};  \\
-    \node[pathnode, minimum size=8pt]{}; & \node{$\calF=0$, in $\tpath$}; \\
-  };
-\end{tikzpicture}
-\caption{CROSS complete \GGM\ flag tree, $t=4$, binary challenge
-         $\mathbf{c}=(0,1,0,1)$.  The tree structure is identical to the MEDS
-         example (Figure~\ref{fig:meds-tree}): path nodes $s_3$ and $s_5$ (blue)
-         give the verifier $\eseed_0$ and $\eseed_2$.  A fault on $s_4$ or
-         $s_6$ exposes the corresponding hidden seed alongside its R-SDP
-         response, enabling full key recovery as shown in ZKFault~\cite{ZKFault}.}
-\label{fig:cross-tree}
-\end{figure}
-
 % ============================================================
-\subsection{MPCitH / VOLEitH Family (FAEST, Mirath, SDitH, RYDE)}
+\subsubsection{MPCitH / VOLEitH Family (FAEST, Mirath, SDitH, RYDE)}
 \label{sec:mpcith}
 % ============================================================
 

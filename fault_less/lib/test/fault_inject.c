@@ -52,7 +52,10 @@ static fault_model_t g_fault_model       = FAULT_NONE;
 /* ------------------------------------------------------------------ */
 /*  Modified BuildGGM with injectable faults                          */
 /* ------------------------------------------------------------------ */
-
+#define TO_PUBLISH 0
+#define NOT_TO_PUBLISH 1
+#define PARENT(i) ( ((i)%2) ? (((i)-1)/2) : (((i)-2)/2) )
+#define SIBLING(i) ( ((i)%2) ? (i)+1 : (i)-1 )
 #define LEFT_CHILD(i)  (2*(i)+1)
 #define RIGHT_CHILD(i) (2*(i)+2)
 
@@ -386,6 +389,98 @@ static int is_internal_node(int node)
     return 0;
 }
 
+static
+void label_leaves(unsigned char flag_tree[NUM_NODES_SEED_TREE],
+                     const unsigned char indices_to_publish[T])
+{
+    const uint16_t cons_leaves[TREE_SUBROOTS] = TREE_CONSECUTIVE_LEAVES;
+    const uint16_t leaves_start_indices[TREE_SUBROOTS] = TREE_LEAVES_START_INDICES;
+
+    unsigned int cnt = 0;
+    for (size_t i=0; i<TREE_SUBROOTS; i++) {
+        for (size_t j=0; j<cons_leaves[i]; j++) {
+            flag_tree[leaves_start_indices[i]+j] = indices_to_publish[cnt];
+            cnt++;
+        }
+    }
+}
+
+
+static void compute_seeds_to_publish(
+    /* linearized binary tree of boolean nodes containing
+     * flags for each node 1-filled nodes are to be released */
+    unsigned char flags_tree_to_publish[NUM_NODES_SEED_TREE],
+    /* Boolean Array indicating which of the T seeds must be
+     * released convention as per the above defines */
+    const unsigned char indices_to_publish[T]) {
+    /* the indices to publish may be less than the full leaves, copy them
+     * into the linearized tree leaves */
+    label_leaves(flags_tree_to_publish, indices_to_publish);
+
+    const uint16_t off[LOG2(T)+1] = TREE_OFFSETS;
+    const uint16_t npl[LOG2(T)+1] = TREE_NODES_PER_LEVEL;
+    const uint16_t leaves_start_indices[TREE_SUBROOTS] = TREE_LEAVES_START_INDICES;
+
+    /* compute the value for the internal nodes of the tree starting from
+     * the leaves, right to left */
+    unsigned int start_node = leaves_start_indices[0];
+    for (int level=LOG2(T); level>0; level--) {
+        for (int i=npl[level]-2; i>=0; i-=2) {
+            uint16_t current_node = start_node + i;
+            uint16_t parent_node = PARENT(current_node) + (off[level-1] >> 1);
+            if ((flags_tree_to_publish[current_node] == TO_PUBLISH) &&
+                (flags_tree_to_publish[SIBLING(current_node)] == TO_PUBLISH)){
+                 flags_tree_to_publish[parent_node] = TO_PUBLISH;
+            } else {
+                 flags_tree_to_publish[parent_node] = NOT_TO_PUBLISH;
+            }
+        }
+        start_node -= npl[level-1];
+    }
+}
+
+
+static void get_published_nodes(const unsigned char indices_to_publish[T],
+                                int *published_nodes,
+                                int *count)
+{
+    unsigned char flags_tree_to_publish[NUM_NODES_SEED_TREE] = {NOT_TO_PUBLISH};
+    compute_seeds_to_publish(flags_tree_to_publish, indices_to_publish);
+
+    const uint16_t off[LOG2(T)+1] = TREE_OFFSETS;
+    const uint16_t npl[LOG2(T)+1] = TREE_NODES_PER_LEVEL;
+
+    int start_node = 1;
+    *count = 0;
+
+    for (int level = 1; level <= LOG2(T); level++) {
+        for (int node_in_level = 0; node_in_level < npl[level]; node_in_level++) {
+            uint16_t current_node = start_node + node_in_level;
+            uint16_t father_node = PARENT(current_node) + (off[level-1] >> 1);
+            if (flags_tree_to_publish[current_node] == TO_PUBLISH &&
+                flags_tree_to_publish[father_node] == NOT_TO_PUBLISH) {
+                published_nodes[(*count)++] = current_node;
+            }
+        }
+        start_node += npl[level];
+    }
+}
+
+
+static void print_published_nodes(const unsigned char indices_to_publish[T])
+{
+    int published_nodes[T];
+    int count = 0;
+    get_published_nodes(indices_to_publish, published_nodes, &count);
+
+    fprintf(stderr, "Published nodes in golden signature (%d):", count);
+    for (int i = 0; i < count; i++) {
+        fprintf(stderr, " %d", published_nodes[i]);
+    }
+    fprintf(stderr, "\n");
+}
+
+
 /* ------------------------------------------------------------------ */
 /*  Main: run golden + faulted experiments                            */
 /* ------------------------------------------------------------------ */
@@ -448,6 +543,11 @@ int main(int argc, char **argv)
     /* Extract the golden challenge string */
     uint8_t golden_challenge[T];
     SampleChallenge(golden_challenge, golden_sig.digest);
+    unsigned char golden_indices_to_publish[T];
+    for (uint32_t i = 0; i < T; i++)
+        golden_indices_to_publish[i] = !!(golden_challenge[i]);
+    print_published_nodes(golden_indices_to_publish);
+
 
     /* ---- CSV header ---- */
     printf("node,level,fault_model,verify_result,sig_matches_golden,"
@@ -459,7 +559,7 @@ int main(int argc, char **argv)
     int faults_done = 0;
     g_fault_model = model;
 
-    for (int node = 0; node < NUM_NODES_SEED_TREE; node++) {
+    for (int node = 30; node < NUM_NODES_SEED_TREE; node++) {
         if (!is_internal_node(node)) continue;
         if (max_faults > 0 && faults_done >= max_faults) break;
 
@@ -470,6 +570,13 @@ int main(int argc, char **argv)
         size_t faulted_seeds = LESS_sign_faulted(&sk, msg, mlen,
                                                   &faulted_sig, fixed_salt);
         (void)faulted_seeds;
+
+        uint8_t faulted_challenge[T];
+        SampleChallenge(faulted_challenge, faulted_sig.digest);
+        unsigned char faulted_indices_to_publish[T];
+        for (uint32_t i = 0; i < T; i++)
+            faulted_indices_to_publish[i] = !!(faulted_challenge[i]);
+        print_published_nodes(faulted_indices_to_publish);
 
         int faulted_ok = LESS_verify(&pk, msg, mlen, &faulted_sig);
 
