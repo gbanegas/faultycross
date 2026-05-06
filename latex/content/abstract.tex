@@ -406,7 +406,8 @@ commitment digest.
     \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$ At the start of each signing, RYDE and Mirath both sample a fresh $\lambda$-bit master seed and a $2\lambda$-bit public salt.
     \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$ 
 
-    From $(\mathsf{rseed},\, \mathsf{salt})$, RYDE and Mirthe build a binary tree of $N = \sum_{e=1}^{\tau} N_e$ internal nodes by top-down \textsf{ExpandSeed} expansion, storing the result in a heap-indexed array $mathsf{tree}[0 \ldots 2N-1]$.
+    From $(\mathsf{rseed},\, \mathsf{salt})$, RYDE and Mirath build a binary tree of $N = \sum_{e=1}^{\tau} N_e$ internal nodes by 
+    top-down \textsf{ExpandSeed} expansion, storing the result in a heap-indexed array $\mathsf{tree}[0 \ldots 2N-1]$.
     The $t = \sum_e N_e$ leaf seeds are then read off as
 \[
   \mathsf{seeds}[e][i] \leftarrow \mathsf{tree}\bigl[N - 1 + \psi(e,i)\bigr],
