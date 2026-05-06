@@ -80,16 +80,11 @@ may allow an attacker to reconstruct $\eseed_i$.
 \subsection{Mapping Schemes to the GZKST Model}
 \label{sec:mapping}
 
-We propose in this section to segment each of the ZK-based PQ signatures aforementionned into the elements of the GZKST tuple we defined in \ref{def:gzkst}.
-
-
-
+We propose in this section to segment each of the ZK-based PQ signatures 
+aforementionned into the elements of the GZKST tuple we defined in \ref{def:gzkst}.
 
 
 % ------------------------------------------------------------
-
-
-
 \subsubsection{LESS-V2}
 
 \begin{itemize}
@@ -334,7 +329,7 @@ re-computes $\tilde{\mathbf{G}}_i$ to verify the commitment $d$.
     \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$: The root seed is of size $\lam$ and the salt $2\lam$. They are both theoretically drawn uniformly at random.
     \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$: 
 
-CROSS-v1 uses a complete \GGM\ tree identical in structure to LESS-v1.
+CROSS-v1 uses a complete $\GGM$ tree identical in structure to LESS-v1.
 CROSS-v2 may adopt an optimised variant; the reference implementation uses a
 $\SeedTreePaths$ mechanism structurally equivalent to that of MEDS.
 
@@ -466,3 +461,240 @@ negligible bias in the challenge distribution.
 \{\psi(e, i^*[e])\}_{e \in [1:\tau]})$ (line~27), which marks the $\tau$ hidden leaf positions, propagates deletions upward by replacing any internal node whose both children are revealed by the parent (bottom-up collapsing), and serialises the surviving boundary nodes in order.
 
 \end{itemize}
+
+
+\subsection{Oracle Abstraction}
+\label{sec:oracle}
+
+We previously presented the abstract view of the \GGM-tree and its
+instantiations in LESS, MEDS, CROSS, and MPCitH.
+We now formalise the attacker's interface in scheme-agnostic terms,
+extending the \GZKST tuple with a fault model and a secret-extraction
+procedure.
+
+\paragraph{Faulted signing oracle.}
+Let $\Pi = (\Setup,\Expand,\Chal,\Decide,\Publish,\Recon)$ be a
+\GZKST\ instance with secret type $\calS$, and let
+$(\sk, \pk)$ be a fixed key pair.
+We model the adversary's access to the victim's signing device as a
+\emph{faulted oracle}:
+
+\begin{definition}[Faulted Signing Oracle]
+\label{def:fault-oracle}
+Fix a node $v^* \in V(\calT)$.
+The \emph{faulted signing oracle} $\Oracle^{v^*}(\sk, \pk)$ takes a
+message $\msg$ and executes the signing algorithm with a single
+modification: during $\Publish(\calT, \calH)$, the flag value is
+forced to
+\[
+  \calF(v^*) \;\leftarrow\; 0,
+\]
+regardless of whether $\calF(v^*)$ equals $1$ in the honest execution.
+Upward propagation is applied as normal after this assignment.
+The oracle returns the resulting (possibly faulted) signature $\sig^*$.
+\end{definition}
+
+\noindent
+The fault is \emph{effective} if the original value $\calF(v^*)$ was
+$1$ and $v^*$ is an ancestor of at least one leaf $\eseed_i$ with
+$i \in \calH$: in this case, the published path $\tpath$ now contains
+a node from which $\eseed_i$ is derivable, directly violating
+Invariant~\ref{inv:hiding}.
+The fault is \emph{ineffective} otherwise (the node was already
+publishable, or all hidden leaves lie in the sibling subtree).
+
+\begin{remark}
+The fault model of Definition~\ref{def:fault-oracle} is realised by
+several concrete physical mechanisms: an instruction-skip fault that
+bypasses the store $\calF(v) \leftarrow \calF(\ell) \vee \calF(r)$,
+a stuck-at-zero perturbation forcing $\calF(v^*)=0$, a bit-flip
+$(1 \to 0)$ via Rowhammer, or a clock-glitch that skips the validity
+check on a specific tree node.  All of these are documented in the
+literature~\cite{ZKFault,FaultToForge2025,JendralD25}.
+\end{remark}
+
+\paragraph{Dual revelation.}
+The invariant that the $\Publish$ phase must enforce is that, for
+every hidden round $i \in \calH$, the signer simultaneously publishes:
+\begin{itemize}
+  \item[(i)] the ZK \emph{response} $\resp_i$, which encodes the
+             relationship between $\eseed_i$ and the long-term secret
+             $\sk$; and
+  \item[(ii)] a path $\tpath$ from which $\eseed_i$ is
+              \emph{not} derivable.
+\end{itemize}
+An effective fault breaks condition~(ii): the attacker now holds both
+$\eseed_i$ (reachable from the faulted path) and $\resp_i$ (always
+present in the signature).  This \emph{dual revelation} is the
+primitive from which all secret-extraction procedures in this work
+are built.
+
+\begin{figure}[htp]
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.2cm,
+  >=Stealth
+]
+\tikzset{
+  box/.style={
+    draw,
+    rounded corners=4pt,
+    minimum width=3.2cm,
+    minimum height=2.8cm,
+    align=center,
+    line width=0.8pt
+  },
+  io/.style={
+    font=\small
+  },
+  arrow/.style={
+    ->,
+    line width=0.7pt
+  }
+}
+
+% Oracle box
+\node[box] (O) {$\mathcal{O}$};
+
+% Inputs (left side)
+\node[io, left=2.8cm of O, yshift=0.8cm] (s) {$\eseed_i$};
+\node[io, below=0.6cm of s] (r) {$\resp_i$};
+\node[io, below=0.6cm of r] (pk) {$\mathsf{pk}$};
+
+% Output (right side)
+\node[io, right=2.8cm of O] (out) {$\sk'$};
+
+% Arrows
+\draw[arrow] (s.east) -- (O.west |- s.east);
+\draw[arrow] (r.east) -- (O.west |- r.east);
+\draw[arrow] (pk.east) -- (O.west |- pk.east);
+
+\draw[arrow] (O.east) -- (out.west);
+
+% Optional label
+\node[font=\small, above=0.2cm of O]
+{Oracle abstraction};
+
+\end{tikzpicture}
+\end{center}
+\caption{Figure representation of the Oracle.}
+\end{figure}
+
+\paragraph{Secret extraction.}
+We extend the \GZKST\ tuple with a seventh, scheme-specific procedure:
+
+\begin{definition}[Extract]
+\label{def:extract}
+$\Extract(\eseed_i, \resp_i, \pk) \to \sk'$: given the leaked seed
+$\eseed_i$ and the ZK response $\resp_i$ for the same round $i \in \calH$,
+recover the (partial) secret $\sk' \subseteq \calS$.
+\end{definition}
+
+For the schemes studied in this work, $\Extract$ takes the following
+concrete forms:
+\begin{itemize}
+  \item \textbf{MEDS}.
+        We can see that the response for a hidden round $i$ with $h_i = j$ is
+        $(\mu_i, \nu_i) = (\widetilde{A}_i A_j^{-1},\, B_j^{-1}
+        \widetilde{B}_i)$.
+        Expanding $\eseed_i$ yields $(\widetilde{A}_i, \widetilde{B}_i)$,
+        so
+        \[
+          A_j^{-1} \;=\; \widetilde{A}_i^{-1} \cdot \mu_i,
+          \qquad
+          B_j^{-1} \;=\; \nu_i \cdot \widetilde{B}_i^{-1}.
+        \]
+        Both operations are direct matrix inversions over $\mathbb{F}_q$;
+        no column-reconstruction step is required.
+  \item \textbf{LESS-v2}.
+        The response is a coset representative
+        $\CosetRep(\pi_{b[i]} \circ \tilde{\pi}_i^*)$.
+        Expanding $\eseed_i$ gives the partial monomial matrix
+        $\tilde{\pi}_i^*$, and the secret permutation $\pi_{b[i]}$ is
+        recovered via the column-extraction argument of
+        Lemma~1 in~\cite{FaultToForge2025}.
+  \item \textbf{CROSS}.
+        The response encodes $\mathbf{v}_i = \mathbf{e} \star
+        (\mathbf{e}'_i)^{-1}$.
+        Expanding $\eseed_i$ gives $\mathbf{e}'_i$, so
+        $\mathbf{e} = \mathbf{v}_i \star \mathbf{e}'_i$ directly.
+  \item \textbf{MPCitH / VOLEitH}.
+        The hidden seed generates the prover's witness share for epoch
+        $e$; recovering it reconstructs the full witness by linear
+        combination across the $N-1$ revealed shares.
+\end{itemize}
+
+\paragraph{Full key recovery.}
+When $|\calS| = s - 1 > 1$ (as in MEDS with $s \geq 3$, and
+LESS with $s \geq 3$), a single effective fault recovers only the secret
+indexed by $h_i$.  Full recovery requires observing each index
+$j \in \{1,\ldots,s-1\}$ at least once.
+
+\begin{algorithm}[tb]
+\caption{GZKST key recovery from faulted oracle}
+\label{alg:key-recovery}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\Input{Faulted oracle $\Oracle^{v^*}$, public key $\pk$}
+\Output{Recovered secret key $\widehat{\sk}$}
+$\mathsf{Collected} \leftarrow \emptyset$\;
+\While{$|\mathsf{Collected}| < |\calS|$}{
+  $\sig^* \leftarrow \Oracle^{v^*}(\msg)$ for an arbitrary $\msg$\;
+  \If{$\sig^*$ is \emph{effective}}{
+    \For{each $i \in \mathsf{leaked}(\sig^*)$}{
+      $\sk' \leftarrow \Extract\!\left(\eseed_i,\, \resp_i,\, \pk\right)$\;
+      $\mathsf{Collected} \leftarrow \mathsf{Collected} \cup \{(j, \sk')\}$
+        where $j = c_i$\;
+    }
+  }
+}
+\Return $\widehat{\sk} \leftarrow \mathsf{Collect}$\;
+\end{algorithm}
+
+\noindent
+Detecting whether a received signature is effective is feasible for
+the adversary: given the fault location $v^*$ and the challenge $\mathbf{c}$
+(recoverable from the digest $d$ in the signature), the adversary can
+recompute the honest flag tree, check whether $\calF(v^*)$ was $1$, and
+verify that at least one hidden leaf falls in the subtree of $v^*$.
+This detection procedure is described in detail for LESS in~\cite{ZKFault}
+and applies unchanged to MEDS and CROSS.
+
+\paragraph{Expected query count.}
+Let $\ell$ denote the number of leaves in the subtree rooted at $v^*$.
+The expected number of effective faulted queries to collect all
+$s-1$ secrets follows a coupon-collector argument:
+
+\begin{proposition}
+\label{prop:query-count}
+Let $E_{\mathrm{dist}} = (s-1)\!\left(1 - \left(1 -
+\tfrac{1}{s-1}\right)^{\!\bar{w}}\right)$ be the expected number of
+\emph{distinct} secrets recovered per effective query, where
+$\bar{w} = w \cdot \ell / t$ is the expected number of hidden leaves in
+the subtree.  The expected total number of effective queries is
+\[
+  \mathbb{E}[Q] \;\approx\; \frac{s-1}{E_{\mathrm{dist}}}.
+\]
+\end{proposition}
+
+For all real MEDS parameter sets (Table~\ref{tab:meds_params}), faulting
+the root ($v^* = $ root, $\ell = t$) gives $\bar{w} = w$ and
+$E_{\mathrm{dist}} \approx s - 1$, so $\mathbb{E}[Q] \approx 1$: a
+\emph{single} effective faulted query suffices to recover the full
+secret key with high probability.  This is confirmed by the simulation
+in \S\ref{sec:app}.
+
+\paragraph{From key recovery to forgery.}
+Once Algorithm~\ref{alg:key-recovery} terminates, the adversary holds
+a complete signing key $\widehat{\sk}$ and can produce valid signatures
+on any message $\msg^*$ — including messages never submitted to any
+oracle.  This constitutes a full break of
+Existential Unforgeability under Chosen-Message Attacks (EUF-CMA):
+
+\begin{corollary}
+\label{cor:euf-cma}
+If $\Pi$ is a \GZKST-based signature scheme and there exists an
+efficient adversary that can induce the fault of
+Definition~\ref{def:fault-oracle} at a fixed node $v^*$, then
+$\Pi$ is not EUF-CMA-secure in the fault model.
+\end{corollary}

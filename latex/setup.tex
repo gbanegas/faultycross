@@ -1,7 +1,5 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-
-
 \usepackage{amsmath,amssymb,mathtools}
 \usepackage{booktabs}
 \usepackage{array}
@@ -16,12 +14,17 @@
 \usepackage{microtype}
 \usepackage{parskip}
 \usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,matrix,calc}
+\usepackage{parskip}
+\usepackage[ruled,      % horizontal rules at top/bottom
+            linesnumbered,
+            noline,     % no vertical sidebar line
+            noend       % no "end" keywords
+           ]{algorithm2e}
 
 
 % ---------- TikZ for tree figures ----------
-\usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,shapes.geometric,matrix,calc}
-
 % Node fill colours (flag-tree diagrams)
 \definecolor{nodegray}{RGB}{230,228,222}
 \definecolor{nodepub}{RGB}{209,239,219}
@@ -47,25 +50,10 @@
 
 
 % ---------- Algorithms ----------
-%\usepackage{algorithm}
-%\usepackage{algpseudocode}
-%\algnewcommand\algorithmicinput{\textbf{Input:}}
-%\algnewcommand\algorithmicoutput{\textbf{Output:}}
-%\algnewcommand\Input{\item[\algorithmicinput]}
-%\algnewcommand\Output{\item[\algorithmicoutput]}
-\usepackage{parskip}
 \newcommand{\retlabel}[1]{\textcolor{notegreen}{\footnotesize\textit{#1}}}
 
-%% ── Thin horizontal rule ─────────────────────────────────────
 \newcommand{\algohrule}{\vspace{2pt}\hrule height 0.4pt\vspace{4pt}}
-
-\usepackage[ruled,      % horizontal rules at top/bottom
-            linesnumbered,
-            noline,     % no vertical sidebar line
-            noend       % no "end" keywords
-           ]{algorithm2e}
-
-           \SetAlgoSkip{medskip}
+\SetAlgoSkip{medskip}
 \SetAlgoInsideSkip{smallskip}
 \DontPrintSemicolon
 \SetKwComment{Comment}{\quad\textcolor{notegreen}{\(\triangleright\) }}{}
@@ -84,6 +72,7 @@
 % ---------- Extra theorem-like environments ----------
 \spnewtheorem{assumption}[theorem]{Assumption}{\bfseries}{\itshape}
 \spnewtheorem{invariant}[theorem]{Invariant}{\bfseries}{\rmfamily}
+
 
 % ---------- List spacing ----------
 \setlist[itemize]{topsep=2pt,  itemsep=1pt, parsep=0pt}

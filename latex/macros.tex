@@ -13,77 +13,80 @@
 \newcommand{\seedbytes}{\lambda_s}  % seed length in bytes
 
 % --- Calligraphic sets (abstract model) ---------------------
-\newcommand{\calH}{\mathcal{H}}     % hidden-index set
-\newcommand{\calR}{\mathcal{R}}     % revealed-index set
-\newcommand{\calT}{\mathcal{T}}     % seed tree
-\newcommand{\calS}{\mathcal{S}}     % secret-type space
-\newcommand{\calF}{\mathcal{F}}     % flag labelling  F:V(T)->{0,1}
+\newcommand{\calH}{\ensuremath{\mathcal{H}}}
+\newcommand{\calR}{\ensuremath{\mathcal{R}}}
+\newcommand{\calT}{\ensuremath{\mathcal{T}}}
+\newcommand{\calS}{\ensuremath{\mathcal{S}}}
+\newcommand{\calF}{\ensuremath{\mathcal{F}}}
+\newcommand{\Oracle}{\ensuremath{\mathcal{O}}}
 
 % --- Seeds --------------------------------------------------
-\newcommand{\seed}{\mathsf{seed}}
-\newcommand{\seedsk}{\mathsf{seed}_{\sk}}
-\newcommand{\seedpk}{\mathsf{seed}_{\pk}}
-\newcommand{\seedtree}{\mathsf{seed}_{\mathrm{tree}}}
+\newcommand{\seed}{\ensuremath{\mathsf{seed}}}
+\newcommand{\seedsk}{\ensuremath{\mathsf{seed}_{\sk}}}
+\newcommand{\seedpk}{\ensuremath{\mathsf{seed}_{\pk}}}
+\newcommand{\seedtree}{\ensuremath{\mathsf{seed}_{\mathrm{tree}}}}
 \newcommand{\eseed}{\widetilde{s}}  % ephemeral leaf seed  ~s_i
 
 % --- Keys ---------------------------------------------------
-\newcommand{\pk}{\mathsf{pk}}
-\newcommand{\sk}{\mathsf{sk}}
+\newcommand{\pk}{\ensuremath{\mathsf{pk}}}
+\newcommand{\sk}{\ensuremath{\mathsf{sk}}}
 
 % --- Signature components -----------------------------------
-\newcommand{\salt}{\mathsf{salt}}
-\newcommand{\cmt}{\mathsf{cmt}}
-\newcommand{\msg}{\mathsf{msg}}
-\newcommand{\rsp}{\mathsf{rsp}}
-\newcommand{\idx}{\mathsf{idx}}
-\newcommand{\tpath}{\mathsf{path}}  % tree path (avoid clash with tikz \path)
+\newcommand{\salt}{\ensuremath{\mathsf{salt}}}
+\newcommand{\cmt}{\ensuremath{\mathsf{cmt}}}
+\newcommand{\msg}{\ensuremath{\mathsf{msg}}}
+\newcommand{\rsp}{\ensuremath{\mathsf{rsp}}}
+\newcommand{\idx}{\ensuremath{\mathsf{idx}}}
+\newcommand{\tpath}{\ensuremath{\mathsf{path}}}  % tree path (avoid clash with tikz \path)
 
 % --- GZKST abstract algorithms ------------------------------
-\newcommand{\GZKST}{\textsf{GZKST}}
-\newcommand{\Setup}{\textsf{Setup}}
-\newcommand{\Expand}{\textsf{Expand}}
-\newcommand{\Chal}{\textsf{Chal}}
-\newcommand{\Decide}{\textsf{Decide}}
-\newcommand{\Publish}{\textsf{Publish}}
-\newcommand{\Recon}{\textsf{Recon}}
+\newcommand{\GZKST}{\ensuremath{\mathsf{GZKST}}}
+\newcommand{\Setup}{\ensuremath{\mathsf{Setup}}}
+\newcommand{\Expand}{\ensuremath{\mathsf{Expand}}}
+\newcommand{\Chal}{\ensuremath{\mathsf{Chal}}}
+\newcommand{\Decide}{\ensuremath{\mathsf{Decide}}}
+\newcommand{\Publish}{\ensuremath{\mathsf{Publish}}}
+\newcommand{\Recon}{\ensuremath{\mathsf{Recon}}}
+\newcommand{\sig}{\ensuremath{\mathsf{sig}}}
+\newcommand{\resp}{\ensuremath{\mathsf{resp}}}
+\newcommand{\Extract}{\ensuremath{\mathsf{Extract}}}
 
 % --- LESS-specific algorithms -------------------------------
-\newcommand{\CF}{\textsf{CF}}
-\newcommand{\Blind}{\textsf{Blind}}
-\newcommand{\CosetRep}{\textsf{CosetRep}}
-\newcommand{\RREF}{\textsf{RREF}}
-\newcommand{\BuildGGM}{\textsf{BuildGGM}}
-\newcommand{\GGMPath}{\textsf{GGMPath}}
-\newcommand{\RebuildGGM}{\textsf{RebuildGGM}}
-\newcommand{\LabelLeaves}{\textsf{LabelLeaves}}
-\newcommand{\ComputeSeeds}{\textsf{ComputeSeeds}}
-\newcommand{\SampleChallenge}{\textsf{SampleChallenge}}
-\newcommand{\SampleGenerator}{\textsf{SampleGenerator}}
-\newcommand{\SampleMonomial}{\textsf{SampleMonomial}}
-\newcommand{\SeedLeaves}{\textsf{SeedLeaves}}
-\newcommand{\CheckCosetRep}{\textsf{CheckCosetRep}}
+\newcommand{\CF}{\ensuremath{\mathsf{CF}}}
+\newcommand{\Blind}{\ensuremath{\mathsf{Blind}}}
+\newcommand{\CosetRep}{\ensuremath{\mathsf{CosetRep}}}
+\newcommand{\RREF}{\ensuremath{\mathsf{RREF}}}
+\newcommand{\BuildGGM}{\ensuremath{\mathsf{BuildGGM}}}
+\newcommand{\GGMPath}{\ensuremath{\mathsf{GGMPath}}}
+\newcommand{\RebuildGGM}{\ensuremath{\mathsf{RebuildGGM}}}
+\newcommand{\LabelLeaves}{\ensuremath{\mathsf{LabelLeaves}}}
+\newcommand{\ComputeSeeds}{\ensuremath{\mathsf{ComputeSeeds}}}
+\newcommand{\SampleChallenge}{\ensuremath{\mathsf{SampleChallenge}}}
+\newcommand{\SampleGenerator}{\ensuremath{\mathsf{SampleGenerator}}}
+\newcommand{\SampleMonomial}{\ensuremath{\mathsf{SampleMonomial}}}
+\newcommand{\SeedLeaves}{\ensuremath{\mathsf{SeedLeaves}}}
+\newcommand{\CheckCosetRep}{\ensuremath{\mathsf{CheckCosetRep}}}
 
 % --- MEDS/CROSS-specific ------------------------------------
-\newcommand{\SeedTree}{\textsf{SeedTree}}
-\newcommand{\SeedTreePaths}{\textsf{SeedTreePaths}}
-\newcommand{\BuildSeeds}{\textsf{BuildSeeds}}
-\newcommand{\ReconstructSeeds}{\textsf{ReconstructSeeds}}
+\newcommand{\SeedTree}{\ensuremath{\mathsf{SeedTree}}}
+\newcommand{\SeedTreePaths}{\ensuremath{\mathsf{SeedTreePaths}}}
+\newcommand{\BuildSeeds}{\ensuremath{\mathsf{BuildSeeds}}}
+\newcommand{\ReconstructSeeds}{\ensuremath{\mathsf{ReconstructSeeds}}}
 \newcommand{\pimap}[2]{\pi_{#1,#2}}
 
 % --- Cryptographic primitives -------------------------------
-\newcommand{\GGM}{\textsf{GGM}}
-\newcommand{\Hash}{\textsf{Hash}}
-\newcommand{\XOF}{\textsf{XOF}}
-\newcommand{\SHAKE}{\textsf{SHAKE}}
-\newcommand{\PRG}{G}               % PRG symbol: G:{0,1}^lambda -> {0,1}^{2lambda}
-\newcommand{\PRGl}{G_0}            % left half of PRG output
-\newcommand{\PRGr}{G_1}            % right half of PRG output
+\newcommand{\GGM}{\ensuremath{\mathsf{GGM}}}
+\newcommand{\Hash}{\ensuremath{\mathsf{Hash}}}
+\newcommand{\XOF}{\ensuremath{\mathsf{XOF}}}
+\newcommand{\SHAKE}{\ensuremath{\mathsf{SHAKE}}}
+\newcommand{\PRG}{\ensuremath{\mathsf{G}}}               % PRG symbol: G:{0,1}^lambda -> {0,1}^{2lambda}
+\newcommand{\PRGl}{\ensuremath{\mathsf{G_0}}}            % left half of PRG output
+\newcommand{\PRGr}{\ensuremath{\mathsf{G_1}}}            % right half of PRG output
 
 % --- Signature scheme algorithms ----------------------------
-\newcommand{\KeyGen}{\textsf{KeyGen}}
-\newcommand{\Sign}{\textsf{Sign}}
-\newcommand{\Verify}{\textsf{Verify}}
-
+\newcommand{\KeyGen}{\ensuremath{\mathsf{KeyGen}}}
+\newcommand{\Sign}{\ensuremath{\mathsf{Sign}}}
+\newcommand{\Verify}{\ensuremath{\mathsf{Verify}}}
 % --- Flag array (implementation level) ----------------------
 \newcommand{\flags}{\mathtt{flags}}  % the flag array in algorithms
 
@@ -123,26 +126,25 @@
 
 % Pandoc list compatibility (kept for safety, but no longer generated)
 \providecommand{\tightlist}{}
-
-\newcommand{\SF}{\mathsf{SF}}
-\newcommand{\ParseHash}{\mathsf{ParseHash}}
-\newcommand{\SeedPath}{\mathsf{SeedTreeToPath}}
-\newcommand{\PathToSeedTree}{\mathsf{PathToSeedTree}}
-\newcommand{\ExpandInvMat}{\mathsf{ExpandInvMat}}
-\newcommand{\ExpandSys}{\mathsf{ExpandSystMat}}
-\newcommand{\DecompressG}{\mathsf{DecompressG}}
-\newcommand{\CompressG}{\mathsf{CompressG}}
-\newcommand{\Compress}{\mathsf{Compress}}
-\newcommand{\ExpandSystMat}{\mathsf{ExpandSystMat}}
-\newcommand{\ExpandFqs}{\mathsf{ExpandFqs}}
-\newcommand{\Solve}{\mathsf{Solve}}
-\newcommand{\ToBytes}{\mathsf{ToBytes}}
-\newcommand{\SeedTreeToPath}{\mathsf{SeedTreeToPath}}
+\newcommand{\SF}{\ensuremath{\mathsf{SF}}}
+\newcommand{\ParseHash}{\ensuremath{\mathsf{ParseHash}}}
+\newcommand{\SeedPath}{\ensuremath{\mathsf{SeedTreeToPath}}}
+\newcommand{\PathToSeedTree}{\ensuremath{\mathsf{PathToSeedTree}}}
+\newcommand{\ExpandInvMat}{\ensuremath{\mathsf{ExpandInvMat}}}
+\newcommand{\ExpandSys}{\ensuremath{\mathsf{ExpandSystMat}}}
+\newcommand{\DecompressG}{\ensuremath{\mathsf{DecompressG}}}
+\newcommand{\CompressG}{\ensuremath{\mathsf{CompressG}}}
+\newcommand{\Compress}{\ensuremath{\mathsf{Compress}}}
+\newcommand{\ExpandSystMat}{\ensuremath{\mathsf{ExpandSystMat}}}
+\newcommand{\ExpandFqs}{\ensuremath{\mathsf{ExpandFqs}}}
+\newcommand{\Solve}{\ensuremath{\mathsf{Solve}}}
+\newcommand{\ToBytes}{\ensuremath{\mathsf{ToBytes}}}
+\newcommand{\SeedTreeToPath}{\ensuremath{\mathsf{SeedTreeToPath}}}
 
 
 %% ── Keyword styling (mimic handwriting informality) ──────────
 \SetKwFor{ForAll}{for}{do}{}
 \SetKwIF{If}{ElseIf}{Else}{if}{}{else if}{else}{}
-\SetKwData{pk}{pk}
-\SetKwData{sk}{sk}
-\SetKwData{Sgn}{Sgn}
+\SetKwData{pk}{\ensuremath{\mathsf{pk}}}
+\SetKwData{sk}{\ensuremath{\mathsf{sk}}}
+\SetKwData{Sgn}{\ensuremath{\mathsf{Sgn}}}
