@@ -10,12 +10,17 @@
 \usepackage{enumitem}
 \usepackage{xcolor}
 \usepackage{url}
-\usepackage[hidelinks]{hyperref}
+\usepackage[breaklinks,colorlinks=true, citecolor=blue, linkcolor=magenta]{hyperref}
 \usepackage{comment}
+\usepackage{palatino}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{float}
+
 
 % ---------- TikZ for tree figures ----------
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,shapes.geometric,matrix}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,matrix,calc}
 
 % Node fill colours (flag-tree diagrams)
 \definecolor{nodegray}{RGB}{230,228,222}
@@ -23,6 +28,7 @@
 \definecolor{nodehid}{RGB}{248,215,215}
 \definecolor{nodepath}{RGB}{207,231,252}
 \definecolor{nodefault}{RGB}{255,236,204}
+\definecolor{notegreen}{RGB}{34,139,34}
 
 \tikzset{
   seednode/.style = {circle, minimum size=17pt, inner sep=1pt,
@@ -39,13 +45,41 @@
   leaflbl/.style  = {font=\tiny, inner sep=0pt}
 }
 
+
 % ---------- Algorithms ----------
-\usepackage{algorithm}
-\usepackage{algpseudocode}
-\algnewcommand\algorithmicinput{\textbf{Input:}}
-\algnewcommand\algorithmicoutput{\textbf{Output:}}
-\algnewcommand\Input{\item[\algorithmicinput]}
-\algnewcommand\Output{\item[\algorithmicoutput]}
+%\usepackage{algorithm}
+%\usepackage{algpseudocode}
+%\algnewcommand\algorithmicinput{\textbf{Input:}}
+%\algnewcommand\algorithmicoutput{\textbf{Output:}}
+%\algnewcommand\Input{\item[\algorithmicinput]}
+%\algnewcommand\Output{\item[\algorithmicoutput]}
+\usepackage{parskip}
+\newcommand{\retlabel}[1]{\textcolor{notegreen}{\footnotesize\textit{#1}}}
+
+%% ── Thin horizontal rule ─────────────────────────────────────
+\newcommand{\algohrule}{\vspace{2pt}\hrule height 0.4pt\vspace{4pt}}
+
+\usepackage[ruled,      % horizontal rules at top/bottom
+            linesnumbered,
+            noline,     % no vertical sidebar line
+            noend       % no "end" keywords
+           ]{algorithm2e}
+
+           \SetAlgoSkip{medskip}
+\SetAlgoInsideSkip{smallskip}
+\DontPrintSemicolon
+\SetKwComment{Comment}{\quad\textcolor{notegreen}{\(\triangleright\) }}{}
+\newcommand{\algocomment}[1]{\Comment*[r]{\textcolor{notegreen}{\footnotesize #1}}}
+\newcommand{\outputline}[1]{%
+  \noindent\textbf{Return:}\quad #1%
+}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\SetKwFor{ForAll}{for}{do}{}
+\SetKwIF{If}{ElseIf}{Else}{if}{}{else if}{else}{}
+\SetKwData{Sgn}{Sgn}
+ 
+
 
 % ---------- Extra theorem-like environments ----------
 \spnewtheorem{assumption}[theorem]{Assumption}{\bfseries}{\itshape}

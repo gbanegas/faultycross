@@ -328,22 +328,6 @@ re-derives $(\tilde{\mathbf{A}}_i, \tilde{\mathbf{B}}_i)$ and
 re-computes $\tilde{\mathbf{G}}_i$ to verify the commitment $d$.
 \end{itemize}
 
-
-\begin{table}[tb]
-\centering
-\caption{MEDS parameter sets~\cite{ChouNPRRST23}.}
-\label{tab:meds-params}
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-Parameter set & $n$ & $k$ & $q$ & $t$ & $s$ \\
-\midrule
-MEDS-9923b    & 14 &  7 & 509 & 192 & 2 \\
-MEDS-13220b   & 22 & 11 & 127 & 192 & 2 \\
-MEDS-41711b   & 30 & 15 & 509 & 392 & 2 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 \subsubsection{CROSS}
 
 \begin{itemize}
@@ -414,6 +398,7 @@ from which the verifier re-derives $({\bf e}'_i, {\bf u}'_i)$,
 recomputes $\mathsf{cmt}_1[i]$, and checks consistency with the signed
 commitment digest.
 
+\end{itemize}
 
 \subsubsection{MPCitH / VOLEitH Family }
 
