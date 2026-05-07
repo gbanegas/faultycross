@@ -6,8 +6,7 @@ Section~\ref{sec:background}.
 \begin{definition}[\GZKST]
 \label{def:gzkst}
 A \emph{Generic ZK Seed Tree} (\GZKST) is a tuple
-$\Pi = (\Setup,\allowbreak\ \Expand, \Chal,
-\Decide, \Publish, \Recon)$
+$\Pi = (\Setup,\,\allowbreak \Expand,\, \Chal,\, \Decide,\, \Publish,\, \Recon)$
 parametrised by:
 \begin{itemize}
   \item $\lam$: the security parameter;
@@ -76,7 +75,6 @@ changes $\calF(v)$ from $1$ to $0$ for any $v$ that is an ancestor of some
 $\eseed_i$ with $i \in \calH$ \emph{breaks Invariant~\ref{inv:hiding}} and
 may allow an attacker to reconstruct $\eseed_i$.
 
-% ------------------------------------------------------------
 \subsection{Mapping Schemes to the GZKST Model}
 \label{sec:mapping}
 
@@ -87,7 +85,6 @@ instantiation of the six algorithms and verify that
 Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by construction.
 
 
-% ------------------------------------------------------------
 \subsubsection{LESS-V2}
 
 \begin{proposition}[LESS-v2 is a \GZKST\ instance]
@@ -97,7 +94,7 @@ $\calS = \{\pi_1, \ldots, \pi_{s-1}\}$ (the $s-1$ secret monomial permutations),
 $t$ parallel repetitions, and an \emph{incomplete} \GGM\ tree of height
 $\lceil \log_2 t \rceil$.
 Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by construction
-of the three-phase flag tree.
+of the three-phase flag tree; see Appendix~\ref{app:proof-less} for the full proof.
 \end{proposition}
 
 \begin{remark}[Invariants under incomplete trees]
@@ -107,9 +104,7 @@ $\lceil \log_2 t \rceil - 1$.  The index-tracking arrays
 $\mathsf{npl}$, $\mathsf{ll}$, $\mathsf{off}$, and $\mathsf{lsi}$ ensure that
 $\LabelLeaves$ and $\ComputeSeeds$ visit the correct nodes regardless of level.
 Both invariants therefore hold for any tree shape produced by the LESS-v2 expansion
-(see Appendix~\hl{XXXXX}). Figure~\ref{fig:less-trees} shows an example 
-of the expanded GGM tree as well as the hidden subtree, published nodes 
-and published path.
+(see Appendix~\ref{app:proof-less}).
 \end{remark}
 
 \begin{figure}[tb]
@@ -203,13 +198,15 @@ signals a revealed (resp.\ hidden) round.
     \item $\Decide(\mathbf{c}) \to (\calH, \calR)$:
 $\calH = \mathrm{supp}(\mathbf{b})$, $\calR = \{0,\ldots,t-1\} \setminus \calH$.
     \item $\Publish(\calT, \calH) \to \tpath$:
-LESS-v2 builds an auxiliary flag tree of the same shape via three phases:
-(i)~\emph{initialisation}: every node receives $\calF = 1$ except the root;
-(ii)~\emph{leaf labelling} ($\LabelLeaves$):
+LESS-v2 builds an auxiliary flag tree of the same shape via two phases:
+(i)~\emph{leaf labelling} ($\LabelLeaves$):
 $\calF(\mathrm{leaf}_i) = \mathbf{1}[i \in \calH]$;
-(iii)~\emph{upward propagation} ($\ComputeSeeds$): $\calF(v) = \calF(\ell) \vee \calF(r)$.
-The path $\tpath = \{v : \calF(v) = 0,\; \calF(\mathrm{parent}(v)) = 1\}$ is
-the minimal publishable boundary (Figure~\ref{fig:less-trees}b).
+(ii)~\emph{upward propagation} ($\ComputeSeeds$): $\calF(v) = \calF(\ell) \vee \calF(r)$
+for each internal node $v$ with children $\ell$ and $r$
+(the root's flag is determined solely by this propagation).
+The path $\tpath = \{v : \calF(v) = 0,\; \calF(\mathrm{parent}(v)) = 1\}$
+(with the convention that $\calF(\mathrm{parent}(\mathrm{root})) = 1$)
+is the minimal publishable boundary (Figure~\ref{fig:less-trees}b).
     \item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_i : i \in \calR\}$:
 $\PathToSeedTree$ places received nodes on an empty tree of the same shape
 and re-expands downward via $\PRG$ until all $t$ leaves are filled.
@@ -226,7 +223,7 @@ $\calS = \{(A_j^{-1}, B_j^{-1})\}_{j=1}^{s-1}$,
 $t$ parallel repetitions, and a \emph{complete} \GGM\ tree of height
 $\lceil \log_2 t \rceil$.
 Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by the
-$\SeedTreeToPath$ construction.
+$\SeedTreeToPath$ construction; see Appendix~\ref{app:proof-meds}.
 \end{proposition}
 
 \begin{itemize}
@@ -264,7 +261,7 @@ Invariants~\ref{inv:correctness} and~\ref{inv:hiding} by the same argument
 as MEDS (Proposition~\ref{prop:meds-gzkst}).
 The additional Merkle proof over $\{\mathsf{cmt}_0[i]\}_{i \in \calH}$ is
 a CROSS-specific commitment-authenticity mechanism orthogonal to the
-\GZKST seed-hiding invariants.
+\GZKST\ seed-hiding invariants.
 \end{proposition}
 
 \begin{itemize}
@@ -339,9 +336,10 @@ The $N_e - 1$ recovered shares per epoch reconstruct the full witness by linear 
 
 We previously presented the abstract view of the \GGM-tree and its
 instantiations in LESS, MEDS, CROSS, and MPCitH.
-We now formalise the attacker's interface in scheme-agnostic terms,
+We now formalize the attacker's interface in an abstract manner,
 extending the \GZKST tuple with a fault model and a secret-extraction
 procedure.
+
 
 \paragraph{Faulted signing oracle.}
 Let $\Pi = (\Setup,\Expand,\Chal,\Decide,\Publish,\Recon)$ be a
@@ -438,18 +436,18 @@ For the schemes studied in this work, $\Extract$ takes the following
 concrete forms:
 \begin{itemize}
   \item \textbf{MEDS}.
-        For a hidden round $i$ with $h_i = j$, the response is
-        $(\mu_i, \nu_i) = (\widetilde{A}_i A_j^{-1},\, B_j^{-1}
-        \widetilde{B}_i)$.
+        For a hidden round $i$ with $h_i = j$, the signer publishes
+        $(\mu_i, \nu_i) = (A_j\widetilde{A}_i^{-1},\, B_j^{-1}\widetilde{B}_i)$
+        (consistent with the background description in \S\ref{sec:meds}).
         Expanding $\eseed_i$ yields $(\widetilde{A}_i, \widetilde{B}_i)$,
         so
         \[
-          A_j^{-1} \;=\; \widetilde{A}_i^{-1} \cdot \mu_i,
+          A_j \;=\; \mu_i \cdot \widetilde{A}_i,
           \qquad
           B_j^{-1} \;=\; \nu_i \cdot \widetilde{B}_i^{-1}.
         \]
-        Both operations are direct matrix inversions over $\mathbb{F}_q$;
-        no column-reconstruction step is required.
+        Both operations are direct matrix multiplications (and one inversion)
+        over $\mathbb{F}_q$; no column-reconstruction step is required.
   \item \textbf{LESS-v2}.
         The response is a coset representative
         $\CosetRep(\pi_{b[i]} \circ \tilde{\pi}_i^*)$.
@@ -498,13 +496,15 @@ $\mathsf{Collected} \leftarrow \emptyset$\;
 \begin{proposition}[Correctness of Algorithm~\ref{alg:key-recovery}]
 \label{prop:alg-correctness}
 Let $\Pi$ be a \GZKST\ instance and suppose the fault at $v^*$ is effective
-on every invocation of $\Oracle^{v^*}$.
+on every invocation of $\Oracle^{v^*}$, and let
+$p_{\min} = 1 - \bigl(1 - \tfrac{1}{s-1}\bigr)^{\!\bar{w}}$.
 Algorithm~\ref{alg:key-recovery} terminates and outputs $\widehat{\sk} = \sk$
 with probability at least $1 - \delta$ after at most
-$\lceil (s-1)/E_{\mathrm{dist}} \rceil \cdot \lceil \log(1/\delta) \rceil$
-effective oracle queries.
+$\left\lceil \dfrac{s-1}{p_{\min}} \cdot \ln\!\dfrac{1}{\delta} \right\rceil$
+effective oracle queries; see Appendix~\ref{app:proof-recovery} for the full proof.
 \end{proposition}
 
+\noindent
 Detecting whether a received signature is effective is feasible for
 the adversary: given the fault location $v^*$ and the challenge $\mathbf{c}$
 (recoverable from the digest $d$ in the signature), the adversary recomputes
@@ -518,18 +518,28 @@ Let $\ell$ denote the number of leaves in the subtree rooted at $v^*$.
 
 \begin{proposition}
 \label{prop:query-count}
-Let $E_{\mathrm{dist}} = (s-1)\!\left(1 - \left(1 -
-\tfrac{1}{s-1}\right)^{\!\bar{w}}\right)$ be the expected number of
-\emph{distinct} secrets per effective query, where
-$\bar{w} = w \cdot \ell / t$.  Then $\mathbb{E}[Q] \approx (s-1)/E_{\mathrm{dist}}$;
-see Appendix~\hl{XXXX} for the derivation.
+Let $\bar{w} = w \cdot \ell / t$ be the average number of hidden leaves in the
+subtree of $v^*$, and let
+$p_{\min} = 1 - \bigl(1 - \tfrac{1}{s-1}\bigr)^{\!\bar{w}}$.
+The expected total number of effective queries satisfies
+\[
+  \mathbb{E}[Q] \;\leq\; \frac{s-1}{p_{\min}}.
+\]
+The quantity $E_{\mathrm{dist}} = (s-1)\,p_{\min}$ equals the
+expected number of \emph{distinct} secret indices revealed per effective
+query when exactly $\bar{w}$ hidden leaves fall in the subtree; it serves
+as a convenient approximation but is an upper bound on the true
+per-query expectation when $\bar{w}$ is random (by Jensen's inequality,
+since $x \mapsto (1-\tfrac{1}{s-1})^x$ is convex).
+See Appendix~\ref{app:proof-query} for the derivation.
 \end{proposition}
 
-For all real MEDS parameter sets (Table~\ref{tab:scheme-params}), faulting
-the root ($v^* = $ root, $\ell = t$) gives $\bar{w} = w$ and
-$E_{\mathrm{dist}} \approx s - 1$, so $\mathbb{E}[Q] \approx 1$: a
-\emph{single} effective faulted query suffices with high probability,
-confirmed by the simulation in \S\ref{sec:app}.
+For all MEDS parameter sets (Table~\ref{tab:scheme-params}), faulting
+the root ($v^* = \mathrm{root}$, $\ell = t$) gives $\bar{w} = w$; for
+those parameters $w \gg 1$, so $p_{\min} \approx 1$ and
+$\mathbb{E}[Q] \lesssim s - 1$, which is at most~$5$ across all sets.
+In practice a single effective query suffices with high probability,
+as confirmed by the simulation in \S\ref{sec:app}.
 
 \paragraph{From key recovery to forgery.}
 Once Algorithm~\ref{alg:key-recovery} terminates, the adversary holds
