@@ -78,21 +78,40 @@ hold for any incomplete tree shape produced by the LESS-v2 expansion.
 \label{app:proof-meds}
 % ------------------------------------------------------------
 
-MEDS uses $\SeedTreeToPath$, which implements a top-down erasure: starting from
-a fully built tree, for each $i \in \calH$ the algorithm removes the label of
-$\mathrm{leaf}_i$ and propagates the removal upward, erasing every ancestor
-whose entire subtree has had all labels removed.
+$\SeedTreeToPath$ implements the following erasure: for each $i \in \calH$
+the algorithm (i)~removes the label of $\mathrm{leaf}_i$, and
+(ii)~propagates the removal upward—a node $v$ loses its label as soon as
+\emph{at least one} leaf in its subtree has been removed.
+By induction this is equivalent to the OR-propagation
+$\calF(v) = \calF(\ell) \vee \calF(r)$ of LESS-v2.
 
 \begin{claim}
+\label{claim:meds-retain}
 After the erasure pass, a node $v$ retains its label if and only if
-$\calF(v) = 0$ in the sense of~\eqref{eq:flag-char}, i.e., $v$'s subtree
-contains no hidden leaf.
+$\calF(v) = 0$ in the sense of~\eqref{eq:flag-char},
+i.e., \emph{every} leaf descendant of $v$ is in $\calR$ (no hidden leaf
+in $v$'s subtree).
 \end{claim}
 \begin{proof}
-A node is erased iff every leaf in its subtree has been removed, which holds
-iff every leaf in its subtree is in $\calH$.  Equivalently, a node retains its
-label iff its subtree contains at least one revealed leaf, i.e., $\calF(v) = 0$.
+$(\Rightarrow)$
+Suppose $v$ is retained.  By definition of the upward propagation, no
+ancestor of any hidden leaf is retained.  Hence $v$'s subtree contains no
+hidden leaf, i.e., $\calF(v) = 0$.
+
+$(\Leftarrow)$
+Suppose $\calF(v) = 0$, i.e., every leaf in $v$'s subtree is in $\calR$.
+The erasure step removes only hidden leaves and their ancestors.  Since
+$v$'s subtree contains no hidden leaf, no removal is triggered in
+$v$'s subtree, so $v$ retains its label.
 \end{proof}
+
+\begin{remark}
+The claim corrects a previous version of this proof that stated ``a node
+retains its label iff its subtree contains at least one revealed leaf.''
+The correct condition is stronger: \emph{all} leaves must be revealed
+($\calF(v) = 0$), which is consistent with the LESS-v2 construction and
+with the actual \textsc{SeedTreeToPath} code.
+\end{remark}
 
 The published path $\tpath$ consists of the highest surviving nodes in the tree,
 serialised in depth-first order; equivalently,
@@ -180,18 +199,31 @@ hidden seed is an identity (not an approximation), so $\Extract$ returns exactly
 $\sk' = $ the secret component indexed by $j = c_i$.
 
 \paragraph{Termination.}
-Define the \emph{progress probability} at step $q$ as
+We work under the assumption of Proposition~\ref{prop:alg-correctness}:
+$v^* = \mathrm{root}$, so the subtree of $v^*$ is the entire tree and
+$L = |\calH \cap \mathrm{leaves}(\mathrm{root})| = |\calH| = w$
+exactly---a deterministic quantity, not a random variable.
+Define
 \[
-  p_{\min} \;=\; 1 - \left(1 - \frac{1}{s-1}\right)^{\!\bar{w}},
+  p_{\min}
+  \;=\; 1 - \left(\frac{s-2}{s-1}\right)^{\!w}
+  \;=\; 1 - \left(1 - \frac{1}{s-1}\right)^{\!w}.
 \]
-where $\bar{w} = w \cdot \ell / t \geq 1$ is the expected number of hidden
-leaves in the subtree of $v^*$.  Since each hidden leaf's challenge index
-$c_i$ is uniform in $\{1,\ldots,s-1\}$ independently of which components
-have already been collected, we have
+For any $r \geq 1$ uncollected secrets, the probability that at least one of
+the $w$ hidden leaves reveals a new secret index is
+\[
+  p_r
+  \;=\; 1 - \left(1 - \frac{r}{s-1}\right)^{\!w}
+  \;\geq\; 1 - \left(1 - \frac{1}{s-1}\right)^{\!w}
+  \;=\; p_{\min}
+  \;>\; 0,
+\]
+where the inequality holds because $1 - r/(s-1)$ is decreasing in $r$, so
+$r = 1$ gives the weakest bound.  Hence
 \[
   \Pr\bigl[\mathsf{new}(q) \geq 1 \;\big|\; \mathsf{Collected}\bigr]
   \;\geq\; p_{\min} \;>\; 0
-  \qquad \text{for all } s \geq 2,\; \bar{w} \geq 1.
+  \qquad \text{for all } s \geq 2,\; w \geq 1.
 \]
 Let $T_j$ be the number of effective queries to go from
 $|\mathsf{Collected}| = j-1$ to $|\mathsf{Collected}| = j$.
@@ -203,19 +235,19 @@ Algorithm~\ref{alg:key-recovery} terminates with probability~$1$.
 
 \paragraph{Expected query count and tail bound.}
 Let $R_k$ be the number of uncollected secret indices after $k$ effective
-queries, and let $r = R_{k-1} > 0$.  Each of the $\bar{w}$ hidden leaves
-in the subtree independently draws a uniform index from $\{1,\ldots,s-1\}$,
-so the probability that \emph{none} of the $\bar{w}$ draws falls in the
-remaining set of size $r$ is $\bigl((s-1-r)/(s-1)\bigr)^{\bar{w}}$.
+queries, and let $r = R_{k-1} > 0$.  Each of the $w$ hidden leaves
+(recall $v^* = \mathrm{root}$, so all $w$ hidden leaves are exposed)
+independently draws a uniform index from $\{1,\ldots,s-1\}$,
+so the probability that \emph{none} of the $w$ draws falls in the
+remaining set of size $r$ is $\bigl((s-1-r)/(s-1)\bigr)^{w}$.
 Hence the probability of revealing at least one new index is
 \begin{equation}
-  p_r \;=\; 1 - \left(\frac{s-1-r}{s-1}\right)^{\!\bar{w}}
-           \;=\; 1 - \left(1 - \frac{r}{s-1}\right)^{\!\bar{w}}.
+  p_r \;=\; 1 - \left(\frac{s-1-r}{s-1}\right)^{\!w}
+           \;=\; 1 - \left(1 - \frac{r}{s-1}\right)^{\!w}.
   \label{eq:pr-exact}
 \end{equation}
-Since $r \geq 1$ and $\bigl(1 - r/(s-1)\bigr)^{\bar{w}} \leq
-\bigl(1 - 1/(s-1)\bigr)^{\bar{w}}$, we have $p_r \geq p_{\min}$ for
-all $r \geq 1$.
+Since $1 - r/(s-1)$ is decreasing in $r$, we have
+$p_r \geq p_{\min} = 1-(1-1/(s-1))^w$ for all $r \geq 1$.
 
 The expected total number of effective queries is
 \begin{equation}
@@ -223,8 +255,7 @@ The expected total number of effective queries is
   \;\leq\; \frac{m}{p_{\min}} \;=\; \frac{s-1}{p_{\min}},
   \label{eq:exp-Q}
 \end{equation}
-where the equality uses the standard coupon-collector identity for the
-case where each query attempts $\bar{w}$ independent draws.
+where the inequality uses $p_r \geq p_{\min}$ for all $r \geq 1$.
 
 For the tail bound, each $T_j \leq k_0$ with probability at least
 $1 - (1 - p_{\min})^{k_0}$ (geometric tail), so by a union bound over
@@ -251,55 +282,51 @@ by correctness of $\Extract$.
 % ------------------------------------------------------------
 
 \paragraph{Setup.}
-Let $v^*$ be the faulted node with $\ell$ leaf descendants.
+We work in the root-fault setting of Proposition~\ref{prop:query-count}:
+$v^* = \mathrm{root}$, so $\ell = t$ and $L = w$ exactly (deterministic).
 By the Fiat--Shamir uniformity assumption, the challenge index $c_i$ is
-uniform in $\{1,\ldots,s-1\}$ independently for each
-$i \in \calH \cap \mathrm{leaves}(v^*)$.
-The actual number of hidden leaves in the subtree,
-$L = |\calH \cap \mathrm{leaves}(v^*)|$, is a hypergeometric random variable
-with mean $\bar{w} = w \cdot \ell / t$.
+uniform in $\{1,\ldots,s-1\}$ independently for each $i \in \calH$.
 
-\paragraph{Distinct secrets per query (fixed $L = \ell_h$).}
-Conditioning on $L = \ell_h$, the number of \emph{distinct} secret indices
+\paragraph{Distinct secrets per query.}
+Conditioning on $L = w$, the number of \emph{distinct} secret indices
 revealed in one effective query has expectation
 \begin{align}
-  \mathbb{E}[\text{\#distinct} \mid L = \ell_h]
-  &= (s-1)\!\left(1 - \left(1 - \frac{1}{s-1}\right)^{\!\ell_h}\right),
+  \mathbb{E}[\text{\#distinct} \mid L = w]
+  &= (s-1)\!\left(1 - \left(1 - \frac{1}{s-1}\right)^{\!w}\right)
+  \;=\; E_{\mathrm{dist}},
   \label{eq:edist-exact}
 \end{align}
 by linearity of expectation and symmetry of the uniform distribution.
 
-\paragraph{Averaging over $L$ and the Jensen remark.}
-Taking expectation over $L$,
+\paragraph{Jensen remark for general fault location.}
+When $v^* \neq \mathrm{root}$ and $L$ is a hypergeometric random variable
+with mean $\bar{w} = w\ell/t$, taking expectation over $L$ gives
 \[
   \mathbb{E}[\text{\#distinct}]
   = (s-1)\!\left(1 - \mathbb{E}\!\left[\left(1-\tfrac{1}{s-1}\right)^{\!L}\right]\right).
 \]
-Since $f(x) = \alpha^x$ with $\alpha = 1 - 1/(s-1) \in (0,1)$ satisfies
-$f''(x) = (\ln\alpha)^2 \alpha^x > 0$ (convex), Jensen's inequality gives
-$\mathbb{E}[f(L)] \geq f(\mathbb{E}[L]) = \alpha^{\bar{w}}$.
-Hence
+Since $f(x) = \alpha^x$ with $\alpha = 1 - 1/(s-1) \in (0,1)$ is convex,
+Jensen's inequality gives $\mathbb{E}[f(L)] \geq f(\bar{w}) = \alpha^{\bar{w}}$,
+hence
 \begin{equation}
   \mathbb{E}[\text{\#distinct}]
   \;\leq\; (s-1)\!\left(1 - \left(1-\frac{1}{s-1}\right)^{\!\bar{w}}\right)
-  \;=:\; E_{\mathrm{dist}}.
+  \;=:\; E_{\mathrm{dist}}^{\bar{w}}.
   \label{eq:edist}
 \end{equation}
-That is, $E_{\mathrm{dist}}$ is an \emph{upper bound} on the true expected
-number of distinct secrets per query; the exact value requires knowing the
-distribution of $L$.  For a deterministic fault on a fixed node this
-distinction vanishes ($L$ is determined by the challenge), so
-$E_{\mathrm{dist}}$ is exact when conditioned on a specific query.
+$E_{\mathrm{dist}}^{\bar{w}}$ is an \emph{upper} bound on expected per-query
+gain, which implies a \emph{lower} bound on $\mathbb{E}[Q]$.  It cannot be
+used to derive an upper bound on $\mathbb{E}[Q]$; the upper bound in
+Proposition~\ref{prop:query-count} follows solely from the direct inequality
+$p_r \geq p_{\min}$ established in the root-fault setting.
 
-\paragraph{Total queries.}
+\paragraph{Total queries (root fault).}
 From equation~\eqref{eq:pr-exact} in Appendix~A.5,
-$p_r = 1 - \bigl((s-1-r)/(s-1)\bigr)^{\bar{w}}$,
-and the coupon-collector identity gives
+$p_r = 1 - \bigl(1 - r/(s-1)\bigr)^{w}$ (with $L = w$ deterministic),
+and since $p_r \geq p_{\min}$ for all $r \geq 1$,
 \[
   \mathbb{E}[Q] = \sum_{r=1}^{m} \frac{1}{p_r} \leq \frac{m}{p_{\min}}
   = \frac{s-1}{p_{\min}},
 \]
-since $p_r \geq p_{\min}$ for all $r \geq 1$.  Note that
-$p_{\min} = E_{\mathrm{dist}}/(s-1)$, so this bound equals
-$(s-1)^2/E_{\mathrm{dist}}$, which for $p_{\min} \approx 1$ (large~$w$)
+which for $p_{\min} \approx 1$ (all MEDS parameter sets, cf.\ Table~\ref{tab:meds-eq})
 gives $\mathbb{E}[Q] \lesssim s-1$.
