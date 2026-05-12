@@ -1,0 +1,245 @@
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 4
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"hal.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 ".././hal/hal.c"
+  18              		.section	.text.change_ok_led,"ax",%progbits
+  19              		.align	1
+  20              		.weak	change_ok_led
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	change_ok_led:
+  26              	.LFB11:
+  27              		.cfi_startproc
+   1:.././hal/hal.c **** /*
+   2:.././hal/hal.c ****     This file is part of the ChipWhisperer Example Targets
+   3:.././hal/hal.c ****     Copyright (C) 2012-2015 NewAE Technology Inc.
+   4:.././hal/hal.c **** 
+   5:.././hal/hal.c ****     This program is free software: you can redistribute it and/or modify
+   6:.././hal/hal.c ****     it under the terms of the GNU General Public License as published by
+   7:.././hal/hal.c ****     the Free Software Foundation, either version 3 of the License, or
+   8:.././hal/hal.c ****     (at your option) any later version.
+   9:.././hal/hal.c **** 
+  10:.././hal/hal.c ****     This program is distributed in the hope that it will be useful,
+  11:.././hal/hal.c ****     but WITHOUT ANY WARRANTY; without even the implied warranty of
+  12:.././hal/hal.c ****     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  13:.././hal/hal.c ****     GNU General Public License for more details.
+  14:.././hal/hal.c **** 
+  15:.././hal/hal.c ****     You should have received a copy of the GNU General Public License
+  16:.././hal/hal.c ****     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  17:.././hal/hal.c **** */
+  18:.././hal/hal.c **** 
+  19:.././hal/hal.c **** #include "hal.h"
+  20:.././hal/hal.c **** 
+  21:.././hal/hal.c **** __attribute__((weak)) void led_ok(unsigned int status)
+  28              		.loc 1 21 28 view -0
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  32 0000 7047     		bx	lr
+  33              		.cfi_endproc
+  34              	.LFE11:
+  36              		.section	.text.change_err_led,"ax",%progbits
+  37              		.align	1
+  38              		.weak	change_err_led
+  39              		.syntax unified
+  40              		.thumb
+  41              		.thumb_func
+  43              	change_err_led:
+  44              	.LVL0:
+  45              	.LFB1:
+  22:.././hal/hal.c **** {
+  23:.././hal/hal.c **** }
+  24:.././hal/hal.c **** 
+  25:.././hal/hal.c **** __attribute__((weak)) void led_error(unsigned int status)
+  26:.././hal/hal.c **** {
+  46              		.loc 1 26 1 view -0
+  47              		.cfi_startproc
+  48              		@ args = 0, pretend = 0, frame = 0
+  49              		@ frame_needed = 0, uses_anonymous_args = 0
+  50              		@ link register save eliminated.
+  27:.././hal/hal.c **** }
+  51              		.loc 1 27 1 view .LVU2
+  52 0000 7047     		bx	lr
+  53              		.cfi_endproc
+  54              	.LFE1:
+  56              		.section	.text._close,"ax",%progbits
+  57              		.align	1
+  58              		.weak	_close
+  59              		.syntax unified
+  60              		.thumb
+  61              		.thumb_func
+  63              	_close:
+  64              	.LFB2:
+  28:.././hal/hal.c **** 
+  29:.././hal/hal.c **** #ifdef __GNUC__
+  30:.././hal/hal.c **** #if ((__GNUC__ > 11) || \
+  31:.././hal/hal.c ****      ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 3)))
+  32:.././hal/hal.c **** __attribute__((weak)) void _close() {}
+  65              		.loc 1 32 37 view -0
+  66              		.cfi_startproc
+  67              		@ args = 0, pretend = 0, frame = 0
+  68              		@ frame_needed = 0, uses_anonymous_args = 0
+  69              		@ link register save eliminated.
+  70              		.loc 1 32 38 view .LVU4
+  71 0000 7047     		bx	lr
+  72              		.cfi_endproc
+  73              	.LFE2:
+  75              		.section	.text._fstat,"ax",%progbits
+  76              		.align	1
+  77              		.weak	_fstat
+  78              		.syntax unified
+  79              		.thumb
+  80              		.thumb_func
+  82              	_fstat:
+  83              	.LFB13:
+  84              		.cfi_startproc
+  33:.././hal/hal.c **** __attribute__((weak)) void _fstat() {}
+  85              		.loc 1 33 28 view -0
+  86              		@ args = 0, pretend = 0, frame = 0
+  87              		@ frame_needed = 0, uses_anonymous_args = 0
+  88              		@ link register save eliminated.
+  89 0000 7047     		bx	lr
+  90              		.cfi_endproc
+  91              	.LFE13:
+  93              		.section	.text._getpid,"ax",%progbits
+  94              		.align	1
+  95              		.weak	_getpid
+  96              		.syntax unified
+  97              		.thumb
+  98              		.thumb_func
+ 100              	_getpid:
+ 101              	.LFB15:
+ 102              		.cfi_startproc
+  34:.././hal/hal.c **** __attribute__((weak)) void _getpid() {}
+ 103              		.loc 1 34 28 view -0
+ 104              		@ args = 0, pretend = 0, frame = 0
+ 105              		@ frame_needed = 0, uses_anonymous_args = 0
+ 106              		@ link register save eliminated.
+ 107 0000 7047     		bx	lr
+ 108              		.cfi_endproc
+ 109              	.LFE15:
+ 111              		.section	.text._isatty,"ax",%progbits
+ 112              		.align	1
+ 113              		.weak	_isatty
+ 114              		.syntax unified
+ 115              		.thumb
+ 116              		.thumb_func
+ 118              	_isatty:
+ 119              	.LFB17:
+ 120              		.cfi_startproc
+  35:.././hal/hal.c **** __attribute__((weak)) void _isatty() {}
+ 121              		.loc 1 35 28 view -0
+ 122              		@ args = 0, pretend = 0, frame = 0
+ 123              		@ frame_needed = 0, uses_anonymous_args = 0
+ 124              		@ link register save eliminated.
+ 125 0000 7047     		bx	lr
+ 126              		.cfi_endproc
+ 127              	.LFE17:
+ 129              		.section	.text._kill,"ax",%progbits
+ 130              		.align	1
+ 131              		.weak	_kill
+ 132              		.syntax unified
+ 133              		.thumb
+ 134              		.thumb_func
+ 136              	_kill:
+ 137              	.LFB19:
+ 138              		.cfi_startproc
+  36:.././hal/hal.c **** __attribute__((weak)) void _kill() {}
+ 139              		.loc 1 36 28 view -0
+ 140              		@ args = 0, pretend = 0, frame = 0
+ 141              		@ frame_needed = 0, uses_anonymous_args = 0
+ 142              		@ link register save eliminated.
+ 143 0000 7047     		bx	lr
+ 144              		.cfi_endproc
+ 145              	.LFE19:
+ 147              		.section	.text._lseek,"ax",%progbits
+ 148              		.align	1
+ 149              		.weak	_lseek
+ 150              		.syntax unified
+ 151              		.thumb
+ 152              		.thumb_func
+ 154              	_lseek:
+ 155              	.LFB21:
+ 156              		.cfi_startproc
+  37:.././hal/hal.c **** __attribute__((weak)) void _lseek() {}
+ 157              		.loc 1 37 28 view -0
+ 158              		@ args = 0, pretend = 0, frame = 0
+ 159              		@ frame_needed = 0, uses_anonymous_args = 0
+ 160              		@ link register save eliminated.
+ 161 0000 7047     		bx	lr
+ 162              		.cfi_endproc
+ 163              	.LFE21:
+ 165              		.section	.text._read,"ax",%progbits
+ 166              		.align	1
+ 167              		.weak	_read
+ 168              		.syntax unified
+ 169              		.thumb
+ 170              		.thumb_func
+ 172              	_read:
+ 173              	.LFB23:
+ 174              		.cfi_startproc
+  38:.././hal/hal.c **** __attribute__((weak)) void _read() {}
+ 175              		.loc 1 38 28 view -0
+ 176              		@ args = 0, pretend = 0, frame = 0
+ 177              		@ frame_needed = 0, uses_anonymous_args = 0
+ 178              		@ link register save eliminated.
+ 179 0000 7047     		bx	lr
+ 180              		.cfi_endproc
+ 181              	.LFE23:
+ 183              		.section	.text._write,"ax",%progbits
+ 184              		.align	1
+ 185              		.weak	_write
+ 186              		.syntax unified
+ 187              		.thumb
+ 188              		.thumb_func
+ 190              	_write:
+ 191              	.LFB25:
+ 192              		.cfi_startproc
+  39:.././hal/hal.c **** __attribute__((weak)) void _write() {}
+ 193              		.loc 1 39 28 view -0
+ 194              		@ args = 0, pretend = 0, frame = 0
+ 195              		@ frame_needed = 0, uses_anonymous_args = 0
+ 196              		@ link register save eliminated.
+ 197 0000 7047     		bx	lr
+ 198              		.cfi_endproc
+ 199              	.LFE25:
+ 201              		.text
+ 202              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 hal.c
+     /tmp/ccuJ5cK1.s:19     .text.change_ok_led:00000000 $t
+     /tmp/ccuJ5cK1.s:25     .text.change_ok_led:00000000 change_ok_led
+     /tmp/ccuJ5cK1.s:37     .text.change_err_led:00000000 $t
+     /tmp/ccuJ5cK1.s:43     .text.change_err_led:00000000 change_err_led
+     /tmp/ccuJ5cK1.s:57     .text._close:00000000 $t
+     /tmp/ccuJ5cK1.s:63     .text._close:00000000 _close
+     /tmp/ccuJ5cK1.s:76     .text._fstat:00000000 $t
+     /tmp/ccuJ5cK1.s:82     .text._fstat:00000000 _fstat
+     /tmp/ccuJ5cK1.s:94     .text._getpid:00000000 $t
+     /tmp/ccuJ5cK1.s:100    .text._getpid:00000000 _getpid
+     /tmp/ccuJ5cK1.s:112    .text._isatty:00000000 $t
+     /tmp/ccuJ5cK1.s:118    .text._isatty:00000000 _isatty
+     /tmp/ccuJ5cK1.s:130    .text._kill:00000000 $t
+     /tmp/ccuJ5cK1.s:136    .text._kill:00000000 _kill
+     /tmp/ccuJ5cK1.s:148    .text._lseek:00000000 $t
+     /tmp/ccuJ5cK1.s:154    .text._lseek:00000000 _lseek
+     /tmp/ccuJ5cK1.s:166    .text._read:00000000 $t
+     /tmp/ccuJ5cK1.s:172    .text._read:00000000 _read
+     /tmp/ccuJ5cK1.s:184    .text._write:00000000 $t
+     /tmp/ccuJ5cK1.s:190    .text._write:00000000 _write
+
+NO UNDEFINED SYMBOLS
