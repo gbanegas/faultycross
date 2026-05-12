@@ -1,0 +1,60 @@
+\begin{thebibliography}{10}
+
+\bibitem{LESS-spec}
+M.~Baldi, A.~Barenghi, L.~Beckwith, J.-F. Biasse, T.~Chou, A.~Esser, K.~Gaj, P.~Karl, K.~Mohajerani, G.~Pelosi, E.~Persichetti, M.-J.~O. Saarinen, P.~Santini, R.~Wallace, and F.~Zweydinger.
+\newblock Less: Linear code equivalence signature scheme --- round 2 specification.
+\newblock NIST PQC Round 2, 2025.
+\newblock \url{https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/spec-files/less-spec-round2-web.pdf}.
+
+\bibitem{CROSSspec}
+Marco Baldi, Alessandro Barenghi, Michele Battagliola, Sebastian Bitzer, Marco Gianvecchio, Patrick Karl, Felice Manganiello, Alessio Pavoni, Gerardo Pelosi, Paolo Santini, Jonas Schupp, Edoardo Signorini, Freeman Slaughter, Antonia Wachter-Zeh, and Violetta Weger.
+\newblock {CROSS}: Codes and restricted objects signature scheme --- specification document, version~2.0.
+\newblock {NIST} {PQC} Round~2 submission, 2025.
+
+\bibitem{BaldiBPSWW24}
+Marco Baldi, Sebastian Bitzer, Alessio Pavoni, Paolo Santini, Antonia Wachter-Zeh, and Violetta Weger.
+\newblock Zero knowledge protocols and signatures from the restricted syndrome decoding problem.
+\newblock In {\em Public-Key Cryptography --- {PKC} 2024, Part~{II}}, volume 14603 of {\em Lecture Notes in Computer Science}, pages 243--274. Springer, 2024.
+
+\bibitem{BandaBK26}
+Harrison Banda, Jan Brinkmann, and Juliane Kr{\"{a}}mer.
+\newblock Fault attacks on mpcith signature schemes.
+\newblock In Magali Bardet and Ruben Niederhagen, editors, {\em Post-Quantum Cryptography - 17th International Workshop, PQCrypto 2026, Saint-Malo, France, April 14-16, 2026, Proceedings, Part {II}}, Lecture Notes in Computer Science, pages 409--442. Springer, 2026.
+
+\bibitem{OneTree}
+Carsten Baum, Lennart Braun, Cyprien~Delpech de~Saint~Guilhem, Michael Klo{\ss}, Christian Majenz, Shibam Mukherjee, Emmanuela Orsini, Sebastian Ramacher, Christian Rechberger, Lawrence Roy, and Peter Scholl.
+\newblock One tree to rule them all: Optimizing {GGM} trees and {OWF} instantiations for post-quantum signatures.
+\newblock In {\em Advances in Cryptology --- {ASIACRYPT} 2024}, Lecture Notes in Computer Science. Springer, 2024.
+\newblock ePrint 2024/490.
+
+\bibitem{ChouNPRRST23}
+Tung Chou, Ruben Niederhagen, Edoardo Persichetti, Tovohery~Hajatiana Randrianarisoa, Krijn Reijnders, Simona Samardjiska, and Monika Trimoska.
+\newblock Take your {MEDS}: Digital signatures from matrix code equivalence.
+\newblock In {\em Progress in Cryptology --- {AFRICACRYPT} 2023}, volume 14064 of {\em Lecture Notes in Computer Science}, pages 28--52. Springer, 2023.
+
+\bibitem{GGM86}
+O.~Goldreich, S.~Goldwasser, and S.~Micali.
+\newblock How to construct random functions.
+\newblock {\em Journal of the ACM}, 33(4):792--807, 1986.
+
+\bibitem{HuangHHYSTY26}
+Xiao Huang, Zhuo Huang, Yituo He, Quan Yuan, Chao Sun, Mehdi Tibouchi, and Yu~Yu.
+\newblock Faultless key recovery: Iteration-skip and loop-abort fault attacks on {LESS}.
+\newblock {\em {IACR} Cryptol. ePrint Arch.}, 2026:117, 2026.
+
+\bibitem{JendralD25}
+S{\"{o}}nke Jendral and Elena Dubrova.
+\newblock Side-channel and fault injection attacks on voleith signature schemes: {A} case study of masked {FAEST}.
+\newblock {\em {IACR} Cryptol. ePrint Arch.}, 2025:378, 2025.
+
+\bibitem{ZKFault}
+Puja Mondal, Supriya Adhikary, Suparna Kundu, and Angshuman Karmakar.
+\newblock Zkfault: Fault attack analysis on zero-knowledge based post-quantum digital signature schemes.
+\newblock In Kai{-}Min Chung and Yu~Sasaki, editors, {\em Advances in Cryptology - {ASIACRYPT} 2024 - 30th International Conference on the Theory and Application of Cryptology and Information Security, Kolkata, India, December 9-13, 2024, Proceedings, Part {VIII}}, Lecture Notes in Computer Science, pages 132--167. Springer, 2024.
+
+\bibitem{FaultToForge2025}
+Puja Mondal, Suparna Kundu, Hikaru Nishiyama, Supriya Adhikary, Daisuke Fujimoto, Yuichi Hayashi, and Angshuman Karmakar.
+\newblock Fault to forge: Fault assisted forging attacks on {LESS} signature scheme.
+\newblock {\em {IACR} Cryptol. ePrint Arch.}, 2025:1838, 2025.
+
+\end{thebibliography}

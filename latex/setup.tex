@@ -1,7 +1,5 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-
-
 \usepackage{amsmath,amssymb,mathtools}
 \usepackage{booktabs}
 \usepackage{array}
@@ -10,19 +8,59 @@
 \usepackage{enumitem}
 \usepackage{xcolor}
 \usepackage{url}
-\usepackage[hidelinks]{hyperref}
+\usepackage[breaklinks,colorlinks=true, citecolor=blue, linkcolor=magenta]{hyperref}
 \usepackage{comment}
+\usepackage{palatino}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,matrix,calc}
+\usepackage{parskip}
+\usepackage[ruled,      % horizontal rules at top/bottom
+            linesnumbered,
+            noline,     % no vertical sidebar line
+            noend       % no "end" keywords
+           ]{algorithm2e}
+\usepackage{color,soul}
+\allowdisplaybreaks
+\usepackage{multirow}
+
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstset{
+    basicstyle=\ttfamily\small, % Smaller font
+    columns=flexible,
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{gray},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{red},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=1,
+    language=C
+}
 
 % ---------- TikZ for tree figures ----------
-\usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,shapes.geometric,matrix}
-
 % Node fill colours (flag-tree diagrams)
 \definecolor{nodegray}{RGB}{230,228,222}
 \definecolor{nodepub}{RGB}{209,239,219}
 \definecolor{nodehid}{RGB}{248,215,215}
 \definecolor{nodepath}{RGB}{207,231,252}
 \definecolor{nodefault}{RGB}{255,236,204}
+\definecolor{notegreen}{RGB}{34,139,34}
 
 \tikzset{
   seednode/.style = {circle, minimum size=17pt, inner sep=1pt,
@@ -39,17 +77,31 @@
   leaflbl/.style  = {font=\tiny, inner sep=0pt}
 }
 
+
 % ---------- Algorithms ----------
-\usepackage{algorithm}
-\usepackage{algpseudocode}
-\algnewcommand\algorithmicinput{\textbf{Input:}}
-\algnewcommand\algorithmicoutput{\textbf{Output:}}
-\algnewcommand\Input{\item[\algorithmicinput]}
-\algnewcommand\Output{\item[\algorithmicoutput]}
+\newcommand{\retlabel}[1]{\textcolor{notegreen}{\footnotesize\textit{#1}}}
+
+\newcommand{\algohrule}{\vspace{2pt}\hrule height 0.4pt\vspace{4pt}}
+\SetAlgoSkip{medskip}
+\SetAlgoInsideSkip{smallskip}
+\DontPrintSemicolon
+\SetKwComment{Comment}{\quad\textcolor{notegreen}{\(\triangleright\) }}{}
+\newcommand{\algocomment}[1]{\Comment*[r]{\textcolor{notegreen}{\footnotesize #1}}}
+\newcommand{\outputline}[1]{%
+  \noindent\textbf{Return:}\quad #1%
+}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\SetKwFor{ForAll}{for}{do}{}
+\SetKwIF{If}{ElseIf}{Else}{if}{}{else if}{else}{}
+\SetKwData{Sgn}{Sgn}
+ 
+
 
 % ---------- Extra theorem-like environments ----------
 \spnewtheorem{assumption}[theorem]{Assumption}{\bfseries}{\itshape}
 \spnewtheorem{invariant}[theorem]{Invariant}{\bfseries}{\rmfamily}
+
 
 % ---------- List spacing ----------
 \setlist[itemize]{topsep=2pt,  itemsep=1pt, parsep=0pt}
