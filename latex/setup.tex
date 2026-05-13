@@ -27,30 +27,42 @@
 \usepackage{color,soul}
 \allowdisplaybreaks
 \usepackage{multirow}
+% --- Colors ---
+\definecolor{kwblue}{RGB}{0,92,175}
+\definecolor{kwgreen}{RGB}{0,120,90}
+\definecolor{strred}{RGB}{180,40,40}
+\definecolor{numgray}{RGB}{120,120,120}
+\definecolor{rulegray}{RGB}{220,220,220}
 
-\definecolor{codegray}{rgb}{0.5,0.5,0.5}
-\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
-
+% --- Listings style ---
 \lstset{
-    basicstyle=\ttfamily\small, % Smaller font
-    columns=flexible,
-    backgroundcolor=\color{backcolour},
-    commentstyle=\color{gray},
-    keywordstyle=\color{blue},
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{red},
-    basicstyle=\ttfamily\footnotesize,
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    numbers=left,                    
-    numbersep=5pt,                  
-    showspaces=false,                
+    language=C,
+    basicstyle=\ttfamily\tiny,
+    columns=fullflexible,
+    backgroundcolor=\color{white},
+    frame=single,
+    rulecolor=\color{rulegray},
+    framesep=3pt,
+    frameround=tttt,
+    keywordstyle=\color{kwblue}\bfseries,
+    keywordstyle=[2]\color{kwgreen}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{strred},
+    numbers=left,
+    numberstyle=\tiny\color{numgray},
+    stepnumber=1,
+    numbersep=6pt,
+    breaklines=true,
+    breakatwhitespace=false,
+    keepspaces=true,
+    showspaces=false,
     showstringspaces=false,
-    showtabs=false,                  
-    tabsize=1,
-    language=C
+    showtabs=false,
+    tabsize=2,
+    xleftmargin=6pt,
+    xrightmargin=2pt,
+    aboveskip=4pt,
+    belowskip=4pt
 }
 
 % ---------- TikZ for tree figures ----------
