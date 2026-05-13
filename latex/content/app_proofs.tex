@@ -1,0 +1,332 @@
+
+Throughout this appendix, $\calT$ denotes a \GGM\ seed tree with leaf set
+$\{0,\ldots,t-1\}$ and $\calF : V(\calT) \to \{0,1\}$ its flag labelling,
+as produced by the $\Publish$ phase of the relevant \GZKST\ instance.
+We use the convention $\calF(v) = 1$ to mean that $v$'s subtree contains at
+least one hidden leaf ($i \in \calH$), and $\calF(v) = 0$ to mean that all
+leaf descendants of $v$ are revealed ($i \in \calR$).
+
+% ------------------------------------------------------------
+\subsection{Proof of Proposition~\ref{prop:less-gzkst}
+  (LESS-v2 is a \GZKST\ instance)}
+\label{app:proof-less}
+% ------------------------------------------------------------
+
+Let $\calT$ be the LESS-v2 seed tree with $\lceil \log_2 t \rceil$ levels.
+After the three-phase flag-tree construction the flag values are:
+\begin{align}
+  \calF(\mathrm{leaf}_i) &= \mathbf{1}[i \in \calH], \quad i \in \{0,\ldots,t-1\},
+  \label{eq:leaf-flag}\\
+  \calF(v) &= \calF(\ell) \vee \calF(r), \quad \text{for every internal node } v
+  \text{ with children } \ell, r.
+  \label{eq:or-prop}
+\end{align}
+Equations~\eqref{eq:leaf-flag}--\eqref{eq:or-prop} jointly imply:
+\begin{equation}
+  \calF(v) = 1 \iff \exists\, i \in \calH : \mathrm{leaf}_i
+  \text{ is a descendant of } v.
+  \label{eq:flag-char}
+\end{equation}
+The published path is
+$\tpath = \{v : \calF(v) = 0,\; \calF(\mathrm{parent}(v)) = 1\}$
+(with the convention that $\calF(\mathrm{parent}(\mathrm{root})) = 1$).
+
+\begin{proof}[Proof of Invariant~\ref{inv:correctness} (Correctness)]
+Let $i \in \calR$.  Consider the root-to-leaf path
+$\pi_i = (v_0 = \mathrm{root},\, v_1,\, \ldots,\, v_d = \mathrm{leaf}_i)$.
+
+Since $|\calH| \geq 1$ (the challenge weight satisfies $w \geq 1$), at least one
+leaf has flag~$1$.  By~\eqref{eq:flag-char}, $\calF(v_0) = \calF(\mathrm{root}) = 1$.
+
+Since $i \in \calR$, equation~\eqref{eq:leaf-flag} gives $\calF(v_d) = 0$.
+
+Because $\calF(v_0) = 1$ and $\calF(v_d) = 0$, the path $\pi_i$ contains
+at least two nodes with different flags.  Define
+$k = \min\{j \in \{0,\ldots,d\} : \calF(v_j) = 0\}$.
+Then $k \geq 1$ (since $\calF(v_0) = 1$), $\calF(v_k) = 0$, and
+$\calF(v_{k-1}) = 1$.  Hence $v_k \in \tpath$, and $v_k$ lies on
+the root-to-leaf path $\pi_i$, establishing Invariant~\ref{inv:correctness}.
+\end{proof}
+
+\begin{proof}[Proof of Invariant~\ref{inv:hiding} (ZK hiding)]
+Let $i \in \calH$ and let $v$ be any proper ancestor of $\mathrm{leaf}_i$
+(including the root).  Since $\mathrm{leaf}_i$ is a descendant of $v$ and
+$i \in \calH$, equation~\eqref{eq:flag-char} gives $\calF(v) = 1$.
+Hence no ancestor of $\mathrm{leaf}_i$ can satisfy $\calF(v) = 0$, so no
+ancestor of $\mathrm{leaf}_i$ lies in $\tpath$.  Invariant~\ref{inv:hiding}
+holds.
+\end{proof}
+
+\begin{proof}[Extension to incomplete trees (Remark~\ref{rem:incomplete})]
+When $t$ is not a power of~$2$, the LESS-v2 tree is incomplete: some leaves
+appear at depth $\lceil \log_2 t \rceil - 1$ rather than $\lceil \log_2 t \rceil$.
+The index-tracking arrays $\mathsf{npl}$, $\mathsf{ll}$, $\mathsf{off}$, and
+$\mathsf{lsi}$ ensure that $\LabelLeaves$ correctly identifies which nodes are
+leaves and assigns flags according to~\eqref{eq:leaf-flag}, and that
+$\ComputeSeeds$ performs the bottom-up OR pass~\eqref{eq:or-prop} over the
+actual tree structure.
+
+The proofs of both invariants above are purely graph-theoretic and depend only
+on the properties~\eqref{eq:leaf-flag}--\eqref{eq:flag-char}, which hold
+regardless of whether leaves appear at a uniform depth.  Hence both invariants
+hold for any incomplete tree shape produced by the LESS-v2 expansion.
+\end{proof}
+
+% ------------------------------------------------------------
+\subsection{ Proof of Proposition~\ref{prop:meds-gzkst}
+  (MEDS is a \GZKST\ instance)}
+\label{app:proof-meds}
+% ------------------------------------------------------------
+
+$\SeedTreeToPath$ implements the following erasure: for each $i \in \calH$
+the algorithm (i)~removes the label of $\mathrm{leaf}_i$, and
+(ii)~propagates the removal upward—a node $v$ loses its label as soon as
+\emph{at least one} leaf in its subtree has been removed.
+By induction this is equivalent to the OR-propagation
+$\calF(v) = \calF(\ell) \vee \calF(r)$ of LESS-v2.
+
+\begin{claim}
+\label{claim:meds-retain}
+After the erasure pass, a node $v$ retains its label if and only if
+$\calF(v) = 0$ in the sense of~\eqref{eq:flag-char},
+i.e., \emph{every} leaf descendant of $v$ is in $\calR$ (no hidden leaf
+in $v$'s subtree).
+\end{claim}
+\begin{proof}
+$(\Rightarrow)$
+Suppose $v$ is retained.  By definition of the upward propagation, no
+ancestor of any hidden leaf is retained.  Hence $v$'s subtree contains no
+hidden leaf, i.e., $\calF(v) = 0$.
+
+$(\Leftarrow)$
+Suppose $\calF(v) = 0$, i.e., every leaf in $v$'s subtree is in $\calR$.
+The erasure step removes only hidden leaves and their ancestors.  Since
+$v$'s subtree contains no hidden leaf, no removal is triggered in
+$v$'s subtree, so $v$ retains its label.
+\end{proof}
+
+\begin{remark}
+The claim corrects a previous version of this proof that stated ``a node
+retains its label iff its subtree contains at least one revealed leaf.''
+The correct condition is stronger: \emph{all} leaves must be revealed
+($\calF(v) = 0$), which is consistent with the LESS-v2 construction and
+with the actual \textsc{SeedTreeToPath} code.
+\end{remark}
+
+The published path $\tpath$ consists of the highest surviving nodes in the tree,
+serialised in depth-first order; equivalently,
+$\tpath = \{v : v \text{ retains its label},\; \mathrm{parent}(v) \text{ was erased}\}$.
+By the claim, this is $\{v : \calF(v) = 0,\; \calF(\mathrm{parent}(v)) = 1\}$,
+which is identical to the LESS-v2 definition.
+
+Invariants~\ref{inv:correctness} and~\ref{inv:hiding} follow by the same
+argument as in Appendix~A.1.
+
+% ------------------------------------------------------------
+\subsection{Proof of Proposition~\ref{prop:cross-gzkst}
+  (CROSS is a \GZKST\ instance)}
+\label{app:proof-cross}
+% ------------------------------------------------------------
+
+The seed-tree component of CROSS ($\SeedTreePaths$) is structurally equivalent
+to MEDS's $\SeedTreeToPath$ (see Section~\ref{sec:mapping}).  The argument of
+Appendix~A.2 therefore applies directly, establishing
+Invariants~\ref{inv:correctness} and~\ref{inv:hiding} for the seed-hiding part.
+
+The additional Merkle proof over $\{\mathsf{cmt}_0[i]\}_{i \in \calH}$ is an
+authenticity mechanism for the commitment digests that the verifier cannot
+recompute from the revealed seeds.  It neither publishes any seed in
+$\{\eseed_i : i \in \calH\}$ nor affects the seed-path computation, and is
+therefore orthogonal to both invariants.
+
+% ------------------------------------------------------------
+\subsection{Proof of Proposition~\ref{prop:mpcith-gzkst}
+  (MPCitH/VOLEitH family is a \GZKST\ instance)}
+\label{app:proof-mpcith}
+% ------------------------------------------------------------
+
+For each epoch $e \in \{1,\ldots,\tau\}$, the tree has $N_e$ leaves with
+exactly one hidden leaf at position $i^*[e]$.
+$\mathsf{GetSiblingPath}$ publishes the \emph{co-path}: for each node on the
+root-to-hidden-leaf path, the sibling is added to $\tpath$.
+
+Formally, let $\pi^*_e = (u_0 = \mathrm{root},\, u_1,\, \ldots,\, u_d = \mathrm{leaf}_{i^*[e]})$
+be the root-to-hidden-leaf path in epoch $e$.  The co-path for epoch $e$ is
+$\tpath_e = \{ \mathrm{sibling}(u_k) : k = 1, \ldots, d \}$,
+and $\tpath = \bigcup_e \tpath_e$.
+
+\begin{proof}[Proof of Invariant~\ref{inv:correctness}]
+Let $(e, i)$ with $i \neq i^*[e]$ be a revealed pair.  Let $k$ be the shallowest
+level at which the path from the root to $\mathrm{leaf}_i$ and the path
+$\pi^*_e$ diverge; denote the node on $\pi^*_e$ at level $k$ by $u_k$ and its
+sibling by $\mathrm{sibling}(u_k)$.
+
+Since the paths diverge at level $k$, the subtree below $\mathrm{sibling}(u_k)$
+contains $\mathrm{leaf}_i$ but not $\mathrm{leaf}_{i^*[e]}$.
+Since $\mathrm{sibling}(u_k) \in \tpath_e$, the verifier holds this node and
+can expand its subtree downward to recover $\eseed_{(e,i)}$.
+\end{proof}
+
+\begin{proof}[Proof of Invariant~\ref{inv:hiding}]
+The co-path $\tpath_e$ consists of siblings of nodes on $\pi^*_e$, never
+nodes on $\pi^*_e$ itself.  In particular, no ancestor of $\mathrm{leaf}_{i^*[e]}$
+is in $\tpath_e$.  Expanding any node in $\tpath_e$ downward therefore never
+reaches $\mathrm{leaf}_{i^*[e]}$.
+
+For epoch $e' \neq e$, the co-paths $\tpath_{e'}$ belong to a different
+epoch's tree (or a different sub-tree of the interleaved structure), and
+contain no node that is an ancestor of $\mathrm{leaf}_{i^*[e]}$.
+Hence $\tpath$ contains no ancestor of any hidden leaf, establishing
+Invariant~\ref{inv:hiding}.
+\end{proof}
+
+% ------------------------------------------------------------
+\subsection{Proof of Proposition~\ref{prop:alg-correctness}
+  (Correctness of Algorithm~\ref{alg:key-recovery})}
+\label{app:proof-recovery}
+% ------------------------------------------------------------
+
+Let $m = |\calS| = s - 1$.  We model collection of secret components as a
+\emph{generalised coupon-collector} problem with $m$ distinct coupons.
+
+\paragraph{Correctness of Extract.}
+For each scheme, Definition~\ref{def:extract} specifies $\Extract$ as a closed-form
+algebraic procedure: matrix inversion over $\mathbb{F}_q$ (MEDS), column extraction
+(LESS), a group operation (CROSS), or linear combination of shares (MPCitH).
+Each procedure is deterministic and correct given the dual revelation
+$(\eseed_i, \resp_i)$: the algebraic relationship between the response and the
+hidden seed is an identity (not an approximation), so $\Extract$ returns exactly
+$\sk' = $ the secret component indexed by $j = c_i$.
+
+\paragraph{Termination.}
+We work under the assumption of Proposition~\ref{prop:alg-correctness}:
+$v^* = \mathrm{root}$, so the subtree of $v^*$ is the entire tree and
+$L = |\calH \cap \mathrm{leaves}(\mathrm{root})| = |\calH| = w$
+exactly---a deterministic quantity, not a random variable.
+Define
+\[
+  p_{\min}
+  \;=\; 1 - \left(\frac{s-2}{s-1}\right)^{\!w}
+  \;=\; 1 - \left(1 - \frac{1}{s-1}\right)^{\!w}.
+\]
+For any $r \geq 1$ uncollected secrets, the probability that at least one of
+the $w$ hidden leaves reveals a new secret index is
+\[
+  p_r
+  \;=\; 1 - \left(1 - \frac{r}{s-1}\right)^{\!w}
+  \;\geq\; 1 - \left(1 - \frac{1}{s-1}\right)^{\!w}
+  \;=\; p_{\min}
+  \;>\; 0,
+\]
+where the inequality holds because $1 - r/(s-1)$ is decreasing in $r$, so
+$r = 1$ gives the weakest bound.  Hence
+\[
+  \Pr\bigl[\mathsf{new}(q) \geq 1 \;\big|\; \mathsf{Collected}\bigr]
+  \;\geq\; p_{\min} \;>\; 0
+  \qquad \text{for all } s \geq 2,\; w \geq 1.
+\]
+Let $T_j$ be the number of effective queries to go from
+$|\mathsf{Collected}| = j-1$ to $|\mathsf{Collected}| = j$.
+Conditional on $|\mathsf{Collected}| = j-1$, each query succeeds with
+probability at least $p_{\min}$, so $T_j$ is stochastically dominated by
+a $\mathrm{Geom}(p_{\min})$ random variable, which is finite almost
+surely.  Hence $Q = \sum_{j=1}^{m} T_j$ is finite almost surely, and
+Algorithm~\ref{alg:key-recovery} terminates with probability~$1$.
+
+\paragraph{Expected query count and tail bound.}
+Let $R_k$ be the number of uncollected secret indices after $k$ effective
+queries, and let $r = R_{k-1} > 0$.  Each of the $w$ hidden leaves
+(recall $v^* = \mathrm{root}$, so all $w$ hidden leaves are exposed)
+independently draws a uniform index from $\{1,\ldots,s-1\}$,
+so the probability that \emph{none} of the $w$ draws falls in the
+remaining set of size $r$ is $\bigl((s-1-r)/(s-1)\bigr)^{w}$.
+Hence the probability of revealing at least one new index is
+\begin{equation}
+  p_r \;=\; 1 - \left(\frac{s-1-r}{s-1}\right)^{\!w}
+           \;=\; 1 - \left(1 - \frac{r}{s-1}\right)^{\!w}.
+  \label{eq:pr-exact}
+\end{equation}
+Since $1 - r/(s-1)$ is decreasing in $r$, we have
+$p_r \geq p_{\min} = 1-(1-1/(s-1))^w$ for all $r \geq 1$.
+
+The expected total number of effective queries is
+\begin{equation}
+  \mathbb{E}[Q] \;=\; \sum_{r=1}^{m} \frac{1}{p_r}
+  \;\leq\; \frac{m}{p_{\min}} \;=\; \frac{s-1}{p_{\min}},
+  \label{eq:exp-Q}
+\end{equation}
+where the inequality uses $p_r \geq p_{\min}$ for all $r \geq 1$.
+
+For the tail bound, each $T_j \leq k_0$ with probability at least
+$1 - (1 - p_{\min})^{k_0}$ (geometric tail), so by a union bound over
+$m = s-1$ stages,
+\[
+  \Pr[Q > k] \;\leq\; (s-1)\cdot(1-p_{\min})^{\lfloor k/(s-1)\rfloor}.
+\]
+Setting $(s-1)(1-p_{\min})^{\lfloor k/(s-1)\rfloor} \leq \delta$ and
+solving gives $k \leq \bigl\lceil \tfrac{s-1}{p_{\min}} \cdot
+\ln\tfrac{s-1}{\delta} \bigr\rceil$, establishing the bound in
+Proposition~\ref{prop:alg-correctness}.
+
+\paragraph{Output correctness.}
+When the loop terminates, $|\mathsf{Collected}| = m$, and for each
+$j \in \{1,\ldots,s-1\}$ there is exactly one entry $(j, \sk'_j) \in \mathsf{Collected}$
+with $\sk'_j = A_j^{-1}$ (or the corresponding secret for each scheme).
+The $\mathsf{Collect}$ step assembles these into $\widehat{\sk}$, which equals $\sk$
+by correctness of $\Extract$.
+
+% ------------------------------------------------------------
+\subsection{Derivation of Proposition~\ref{prop:query-count}
+  (Expected query count)}
+\label{app:proof-query}
+% ------------------------------------------------------------
+
+\paragraph{Setup.}
+We work in the root-fault setting of Proposition~\ref{prop:query-count}:
+$v^* = \mathrm{root}$, so $\ell = t$ and $L = w$ exactly (deterministic).
+By the Fiat--Shamir uniformity assumption, the challenge index $c_i$ is
+uniform in $\{1,\ldots,s-1\}$ independently for each $i \in \calH$.
+
+\paragraph{Distinct secrets per query.}
+Conditioning on $L = w$, the number of \emph{distinct} secret indices
+revealed in one effective query has expectation
+\begin{align}
+  \mathbb{E}[\text{\#distinct} \mid L = w]
+  &= (s-1)\!\left(1 - \left(1 - \frac{1}{s-1}\right)^{\!w}\right)
+  \;=\; E_{\mathrm{dist}},
+  \label{eq:edist-exact}
+\end{align}
+by linearity of expectation and symmetry of the uniform distribution.
+
+\paragraph{Jensen remark for general fault location.}
+When $v^* \neq \mathrm{root}$ and $L$ is a hypergeometric random variable
+with mean $\bar{w} = w\ell/t$, taking expectation over $L$ gives
+\[
+  \mathbb{E}[\text{\#distinct}]
+  = (s-1)\!\left(1 - \mathbb{E}\!\left[\left(1-\tfrac{1}{s-1}\right)^{\!L}\right]\right).
+\]
+Since $f(x) = \alpha^x$ with $\alpha = 1 - 1/(s-1) \in (0,1)$ is convex,
+Jensen's inequality gives $\mathbb{E}[f(L)] \geq f(\bar{w}) = \alpha^{\bar{w}}$,
+hence
+\begin{equation}
+  \mathbb{E}[\text{\#distinct}]
+  \;\leq\; (s-1)\!\left(1 - \left(1-\frac{1}{s-1}\right)^{\!\bar{w}}\right)
+  \;=:\; E_{\mathrm{dist}}^{\bar{w}}.
+  \label{eq:edist}
+\end{equation}
+$E_{\mathrm{dist}}^{\bar{w}}$ is an \emph{upper} bound on expected per-query
+gain, which implies a \emph{lower} bound on $\mathbb{E}[Q]$.  It cannot be
+used to derive an upper bound on $\mathbb{E}[Q]$; the upper bound in
+Proposition~\ref{prop:query-count} follows solely from the direct inequality
+$p_r \geq p_{\min}$ established in the root-fault setting.
+
+\paragraph{Total queries (root fault).}
+From equation~\eqref{eq:pr-exact} in Appendix~A.5,
+$p_r = 1 - \bigl(1 - r/(s-1)\bigr)^{w}$ (with $L = w$ deterministic),
+and since $p_r \geq p_{\min}$ for all $r \geq 1$,
+\[
+  \mathbb{E}[Q] = \sum_{r=1}^{m} \frac{1}{p_r} \leq \frac{m}{p_{\min}}
+  = \frac{s-1}{p_{\min}},
+\]
+which for $p_{\min} \approx 1$ (all MEDS parameter sets, cf.\ Table~\ref{tab:meds-eq})
+gives $\mathbb{E}[Q] \lesssim s-1$.
