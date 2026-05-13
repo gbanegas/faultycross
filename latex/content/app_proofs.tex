@@ -139,46 +139,6 @@ recompute from the revealed seeds.  It neither publishes any seed in
 $\{\eseed_i : i \in \calH\}$ nor affects the seed-path computation, and is
 therefore orthogonal to both invariants.
 
-% ------------------------------------------------------------
-\subsection{Proof of Proposition~\ref{prop:mpcith-gzkst}
-  (MPCitH/VOLEitH family is a \GZKST\ instance)}
-\label{app:proof-mpcith}
-% ------------------------------------------------------------
-
-For each epoch $e \in \{1,\ldots,\tau\}$, the tree has $N_e$ leaves with
-exactly one hidden leaf at position $i^*[e]$.
-$\mathsf{GetSiblingPath}$ publishes the \emph{co-path}: for each node on the
-root-to-hidden-leaf path, the sibling is added to $\tpath$.
-
-Formally, let $\pi^*_e = (u_0 = \mathrm{root},\, u_1,\, \ldots,\, u_d = \mathrm{leaf}_{i^*[e]})$
-be the root-to-hidden-leaf path in epoch $e$.  The co-path for epoch $e$ is
-$\tpath_e = \{ \mathrm{sibling}(u_k) : k = 1, \ldots, d \}$,
-and $\tpath = \bigcup_e \tpath_e$.
-
-\begin{proof}[Proof of Invariant~\ref{inv:correctness}]
-Let $(e, i)$ with $i \neq i^*[e]$ be a revealed pair.  Let $k$ be the shallowest
-level at which the path from the root to $\mathrm{leaf}_i$ and the path
-$\pi^*_e$ diverge; denote the node on $\pi^*_e$ at level $k$ by $u_k$ and its
-sibling by $\mathrm{sibling}(u_k)$.
-
-Since the paths diverge at level $k$, the subtree below $\mathrm{sibling}(u_k)$
-contains $\mathrm{leaf}_i$ but not $\mathrm{leaf}_{i^*[e]}$.
-Since $\mathrm{sibling}(u_k) \in \tpath_e$, the verifier holds this node and
-can expand its subtree downward to recover $\eseed_{(e,i)}$.
-\end{proof}
-
-\begin{proof}[Proof of Invariant~\ref{inv:hiding}]
-The co-path $\tpath_e$ consists of siblings of nodes on $\pi^*_e$, never
-nodes on $\pi^*_e$ itself.  In particular, no ancestor of $\mathrm{leaf}_{i^*[e]}$
-is in $\tpath_e$.  Expanding any node in $\tpath_e$ downward therefore never
-reaches $\mathrm{leaf}_{i^*[e]}$.
-
-For epoch $e' \neq e$, the co-paths $\tpath_{e'}$ belong to a different
-epoch's tree (or a different sub-tree of the interleaved structure), and
-contain no node that is an ancestor of $\mathrm{leaf}_{i^*[e]}$.
-Hence $\tpath$ contains no ancestor of any hidden leaf, establishing
-Invariant~\ref{inv:hiding}.
-\end{proof}
 
 % ------------------------------------------------------------
 \subsection{Proof of Proposition~\ref{prop:alg-correctness}

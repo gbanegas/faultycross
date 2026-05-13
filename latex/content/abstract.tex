@@ -318,63 +318,6 @@ Upward propagation is applied as normal after this assignment.
 The oracle returns the resulting (possibly faulted) signature $\sig^*$.
 \end{definition}
 
-\begin{proposition}[MPCitH/VOLEitH family is a \GZKST\ instance]
-\label{prop:mpcith-gzkst}
-Mirath and RYDE instantiate Definition~\ref{def:gzkst} with secret type
-$\calS$ equal to the prover's full witness, $t = \sum_e N_e$ repetitions
-indexed by pairs $(e, i)$, and the two-tier incomplete binary tree with
-interleaving map $\psi$.
-Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by the
-$\mathsf{GetSiblingPath}$ construction: exactly one leaf per epoch is
-hidden, and its co-path is published to let the verifier re-expand all
-$N_e - 1$ revealed shares.
-\end{proposition}
-
-\begin{itemize}
-    \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$: Fresh $\lam$-bit master seed and $2\lam$-bit salt at the start of each signing.
-    \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$:
-A binary tree of $N = \sum_e N_e$ internal nodes is built top-down via
-$\mathsf{ExpandSeed}$ into a heap array $\mathsf{tree}[0\ldots 2N-1]$.
-Leaf seeds are read as
-$\mathsf{es}_{(e,i)} = \mathsf{tree}[N - 1 + \psi(e,i)]$,
-where $\psi(e,i)$ is the interleaving map placing epoch-$e$ leaves at the correct flat index.
-    \item $\Chal(\cmt, \msg) \to \mathbf{c}$:
-Two Fiat--Shamir rounds yield challenges $h_1$ and $h_2$.
-From $h_2$, $\mathsf{ExpandChallenge2}$ produces one hidden index $i^*[e]$
-per epoch; $c_{(e,i)} = 0$ iff $i = i^*[e]$ (hidden), $c_{(e,i)} \neq 0$ otherwise.
-    \item $\Decide(\mathbf{c}) \to (\calH, \calR)$:
-$\calH = \{(e,i^*[e]) : e \in \{1,\ldots,\tau\}\}$, giving $|\calH| = \tau$ deterministically.
-The grinding loop rejects $h_2$ if the path exceeds $T_{\mathsf{open}}$ nodes.
-    \item $\Publish(\calT, \calH) \to \tpath$:
-$\mathsf{GetSiblingPath}(\mathsf{tree}, \{\psi(e,i^*[e])\}_e)$ marks the $\tau$ hidden
-leaves, propagates deletions upward by bottom-up collapsing, and serialises
-surviving boundary nodes.
-    \item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_{(e,i)} : (e,i) \in \calR\}$:
-Co-path nodes are placed on an empty heap-indexed tree and expanded downward via $\mathsf{ExpandSeed}$.
-The $N_e - 1$ recovered shares per epoch reconstruct the full witness by linear combination; the hidden share at $i^*[e]$ remains empty.
-\end{itemize}
-
-\paragraph{Flag structure for MPCitH.}
-For epoch $e$, define a per-epoch flag
-\[
-  \calF_e(v) = \mathbf{1}\bigl[
-    \mathrm{leaf}_{i^*[e]} \text{ is a descendant of } v
-  \bigr].
-\]
-The global flag is $\calF(v) = \bigvee_{e=1}^{\tau} \calF_e(v)$, i.e., a
-node is hidden iff it lies on the root-to-hidden-leaf path in at least one
-epoch.  The co-path $\tpath_e = \{\mathrm{sibling}(u_k) : k=1,\ldots,d\}$
-(siblings of nodes on the hidden path) satisfies
-$\calF_e(\mathrm{sibling}(u_k)) = 0$ for all $k$ (no hidden leaf in those
-sibling subtrees), and every sibling's parent satisfies
-$\calF_e(\mathrm{parent}) = 1$.
-Hence $\tpath = \bigcup_e \tpath_e$ is precisely the set
-$\{v : \calF(v) = 0,\; \calF(\mathrm{parent}(v)) = 1\}$,
-the same boundary definition used by LESS-v2 and MEDS.
-Invariants~\ref{inv:correctness} and~\ref{inv:hiding} are established
-formally in Appendix~\ref{app:proof-mpcith}.
-
-
 \subsection{Oracle Abstraction}
 \label{sec:oracle}
 
@@ -423,7 +366,7 @@ bypasses the store $\calF(v) \leftarrow \calF(\ell) \vee \calF(r)$,
 a stuck-at-zero perturbation forcing $\calF(v^*)=0$, a bit-flip
 $(1 \to 0)$ via Rowhammer, or a clock-glitch that skips the validity
 check on a specific tree node.  All of these are documented in the
-literature~\cite{ZKFault,FaultToForge2025,JendralD25}.
+literature~\cite{ZKFault,FaultToForge2025}.
 \end{remark}
 
 \paragraph{Dual revelation.}
@@ -504,10 +447,6 @@ concrete forms:
         (\mathbf{e}'_i)^{-1}$.
         Expanding $\eseed_i$ gives $\mathbf{e}'_i$, so
         $\mathbf{e} = \mathbf{v}_i \star \mathbf{e}'_i$ directly.
-  \item \textbf{MPCitH / VOLEitH}.
-        The hidden seed generates the prover's witness share for epoch
-        $e$; recovering it reconstructs the full witness by linear
-        combination across the $N-1$ revealed shares.
 \end{itemize}
 
 \paragraph{Full key recovery.}
