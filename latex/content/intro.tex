@@ -36,6 +36,44 @@ This paper provides the following:
 \subsection{Related Work}
 \label{sec:relwork}
 
+In the context of fault attacks against post-quantum signature schemes, several 
+works have been proposed in recent years, particularly targeting schemes that rely on 
+\GGM{}-tree-like constructions or related seed-tree compression techniques, such as 
+LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, and MPC-in-the-Head-based 
+schemes~\cite{ryde2025,FAESTv22025}.
+
+In~\cite{ZKFault}, the authors present a fault attack that exploits the tree-based 
+compression mechanism used in zero-knowledge-based code-based signature schemes. 
+Their primary target is the first version of LESS~\cite{LESS-spec}, for which they 
+provide a detailed analysis showing how fault injections in the seed-tree construction 
+can lead to the recovery of secret information and ultimately the signing key. The 
+work further extends the attack analysis to CROSS and briefly 
+discusses how similar ideas could be adapted to MEDS~\cite{ChouNPRRST23}, since 
+these schemes rely on related seed-tree compression techniques.
+
+More recently,~\cite{FaultToForge2025} revisits these attacks in the context of the second 
+version of LESS (LESS-v2). Since LESS-v2 replaces the complete \GGM{}-tree structure of 
+LESS-v1 with an incomplete tree construction, the original attack from~\cite{ZKFault} no 
+longer applies directly. The authors therefore introduce new fault-assisted forgery 
+attacks targeting the incomplete binary decision-tree generation and seed-publication 
+process. In particular, they identify several fault-injection surfaces within the 
+incomplete tree-generation logic and propose practical instruction-skip-based fault 
+models capable of disclosing hidden ephemeral seeds. A key contribution of the work 
+is the observation that recovering the full signing key is unnecessary for universal 
+forgery; instead, recovering secret-equivalent information, namely the permutations 
+associated with the secret monomial matrices, is sufficient to forge valid signatures.
+
+Still attacking LESS-v2,~\cite{HuangHHYSTY26} presents an alternative attack strategy 
+against LESS-v2 that completely avoids targeting the complex tree structure itself. 
+Instead, the attack focuses on the simple \texttt{for-loop} responsible for 
+transforming the digest vector $b$ into the binary vector $f$ before the incomplete 
+\GGM{}-tree is generated. Using \emph{iteration-skip} and \emph{loop-abort} fault models, 
+the authors exploit the linear and deterministic nature of this preprocessing stage to recover 
+secret information with high probability. Unlike~\cite{FaultToForge2025}, whose main goal is 
+universal forgery through recovery of secret-equivalent permutations, the attack in~\cite{HuangHHYSTY26} aims 
+at full key recovery while also eliminating the need to heuristically target fault locations 
+within the incomplete tree-generation procedure.
+
 Table~\ref{tab:relwork} summarises the prior art on fault attacks against
 \GGM-tree-based post-quantum signature schemes.
 
