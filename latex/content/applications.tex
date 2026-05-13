@@ -1,0 +1,123 @@
+This subsection details a fault injection (FI) attack conducted on the C reference implementation of the MEDS signature algorithm. We focus on exploiting the tree traversal logic used in the path construction to leak hidden seeds.
+
+\subsection{Target Analysis}
+The primary target of our analysis is the $\SeedTreePath$ function, specifically targeting the logic represented in the signing phase of the MEDS algorithm (instruction 16 of algorithm~\ref{alg:sign_meds}). In the reference implementation, both $\SeedTreePath$ (path generation) and $\SeedTree$ (tree reconstruction) are handled by a unified function, \texttt{stree\_to\_path\_to\_stree}, which operates in two modes defined by a \texttt{mode} parameter.
+
+\begin{lstlisting}[caption={\texttt{stree\_to\_path\_to\_stree} implementation}]
+void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, uint8_t *salt, int mode) {
+    int h = 0, i = 0;
+    unsigned int id = 0, idx = 0;
+    unsigned int indices[MEDS_w] = {0};
+    for (int i = 0; i < MEDS_t; i++) {
+        if (h_digest[i] > 0) {
+            indices[idx++] = i;
+        }
+    }
+    while (1==1) {
+        int index_leaf = 0;
+        while ((indices[id] >> (MEDS_seed_tree_height-h)) == i) 
+        {// Traverse down toward the secret leaf
+            h += 1;
+            i <<= 1;
+            if (h > MEDS_seed_tree_height) {
+                h -= 1;
+                i >>= 1;
+                if (id + 1 < MEDS_w) id++; 
+                index_leaf = 1; // Flag node as hidden
+                break;
+            }
+        }
+        if (index_leaf == 0) {
+            if (mode == STREE_TO_PATH) {
+                memcpy(path, &stree[MEDS_st_seed_bytes * SEED_TREE_ADDR(h, i)], MEDS_st_seed_bytes);
+                path += MEDS_st_seed_bytes;
+            } else {
+                memcpy(&stree[MEDS_st_seed_bytes * SEED_TREE_ADDR(h, i)], path, MEDS_st_seed_bytes);
+                path += MEDS_st_seed_bytes;
+                t_hash(stree, salt, h, i);
+            }
+        }
+        // Backtracking logic
+        while ((i & 1) == 1) {
+            h -= 1;
+            i >>= 1;
+        }
+        i += 1; 
+        if ((i << (MEDS_seed_tree_height - h)) >= MEDS_t) return;
+    }
+}
+\end{lstlisting}\label{lst:path}
+
+The algorithm identifies secret leaves (where $h[i] > 0$) and performs a Depth-First Search (DFS). The exploration halts as soon as it reaches a node that is no longer an ancestor of the hidden leaf. This node is then appended to the signature path. If the exploration reaches a target hidden leaf, the \texttt{index\_leaf} flag is set to ensure the leaf seed remains unpublished and we move on the next hidden leaf.
+
+\subsubsection{Objective}
+The adversary's goal is to manipulate the control flow via fault injection to leak unpublished seeds (internal nodes or leaves) into the public signature path, ultimately compromising the security of the signature scheme.
+
+\subsection{Experimental Setup}
+Our experimental platform consists of a \textbf{CW303-STM32F3} target board, featuring an ARM Cortex-M4 STM32F303RCT7 processor. Clock glitching is performed using a \textbf{ChipWhisperer-Lite}. As a proof-of-concept, the target board is flashed exclusively with the \texttt{stree\_to\_path\_to\_stree} function, using fixed values for the reference tree, salt, and challenge.
+
+\subsection{Fault Models}
+We propose three fault models targeting different stages of the tree traversal.
+
+\subsubsection{Model 1: Full Tree Recovery (Root Leakage)}
+This attack aims to reveal the root seed, which effectively compromises the entire tree. By injecting a fault that causes the skip of the first iteration of \texttt{while} loop at line 13 of listing~\ref{lst:path}, the DFS halts immediately at the root ($h=0, i=0$). The root is incorrectly identified as a node ready for publication.
+
+\paragraph{Detection and recovery.} The signature path contains only a single non-zero element. Verification is performed by expanding this single seed into a full tree and checking if the resulting signature is accepted.
+
+\subsubsection{Model 2: Hidden Leaf Recovery}
+This model targets the specific instruction \texttt{index\_leaf = 1;} at line 20 of listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
+
+\paragraph{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iteration of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
+
+\subsubsection{Model 3: Subtree Recovery (Index Corruption)}
+By glitching the loop \texttt{if (id + 1 < MEDS\_w)} at line 19 of listing~\ref{lst:path}, the algorithm fails to update the target index \texttt{id}. The traversal logic becomes desynchronized, resulting in the algorithm treating subsequent branches as public. All leaves to the right of the faulted \texttt{id} become computable.
+\paragraph{Detection and recovery. } This fault is hard to detect without a reference signature. However, one can simulate tree reconstructions for all possible faulted \texttt{id} values to verify which leads to a valid signature. (up to $w$ verifications)
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.78cm, y=1.0cm]
+  \tikzstyle{neutnode} = [circle, draw=gray!60, fill=nodehid, text=black, minimum size=12pt, inner sep=0pt, font=\scriptsize]
+  \tikzstyle{faulted_leaf} = [circle, draw=red!60, fill=nodehid, text=black, minimum size=12pt, inner sep=0pt, font=\scriptsize]
+  \tikzstyle{pubnode}  = [circle, draw=green!50!black, fill=nodepath, minimum size=12pt, inner sep=0pt, font=\scriptsize]
+  \tikzstyle{fpubnode}  = [circle, draw=red!50!black, fill=nodepath, minimum size=12pt, inner sep=0pt, font=\scriptsize]
+  \tikzstyle{zeronode} = [circle, draw=gray!60, fill=nodepub, minimum size=12pt, inner sep=0pt, font=\scriptsize]
+  \tikzstyle{treeedge} = [gray!40, rounded corners=2pt,->, thin]
+  \tikzstyle{leaflbl}  = [font=\tiny, below=1pt]
+  \node[neutnode](s0) at (3.5,0){$s_0$};
+  \node[neutnode](s1) at (1.5,-.75){$s_1$};
+  \node[fpubnode](s2) at (5.5,-.75){$s_2$};
+  \node[neutnode](s3) at (.5,-1.5){$s_3$};
+  \node[fpubnode] (s4) at (2.5,-1.5){$s_4$};
+  \node[zeronode](s5) at (4.5,-1.5){$s_5$};
+  \node[zeronode] (s6) at (6.5,-1.5){$s_6$};
+  \node[pubnode] (s7) at (0,-2.4){$s_7$};
+  \node[faulted_leaf](s8) at (1,-2.4){$s_8$};
+  \node[fpubnode](s9) at (2,-2.4){$s_9$};
+  \node[zeronode](s10) at (3,-2.4){$s_{10}$};
+  \node[leaflbl] at (0,-2.9){$\eseed_0$};
+  \node[leaflbl] at (1,-2.9){$\eseed_1$};
+  \node[leaflbl] at (2,-2.9){$\eseed_2$};
+  \node[leaflbl] at (3,-2.9){$\eseed_3$};
+  \node[leaflbl] at (4.5,-2.0){$\eseed_4$};
+  \node[leaflbl] at (6.5,-2.0){$\eseed_5$};
+  \draw[treeedge](s0)--(s1);\draw[treeedge](s0)--(s2);
+  \draw[treeedge](s1)--(s3);\draw[treeedge](s1)--(s4);
+  \draw[treeedge](s2)--(s5);\draw[treeedge](s2)--(s6);
+  \draw[treeedge](s3)--(s7);\draw[treeedge](s3)--(s8);
+  \draw[treeedge](s4)--(s9);\draw[treeedge](s4)--(s10);
+\end{tikzpicture}
+\caption{Effect of fault model 3 on the example at~\ref{fig:less-trees}, if the glitch occured while \texttt{id==1}. The returned path is $\{s_7,s_9,s_4,s_2\}$ and all leaves are computable except $x_1$.}
+\end{figure}
+
+
+
+
+\subsection{Results and Observations (WIP)}
+All three fault models were successfully reproduced. 
+\begin{enumerate}
+    \item \textbf{Full Tree Recovery:} The most frequent result due to the vulnerability of the initial loop.
+    \item \textbf{Subtree Recovery:} Highly common; it often manifested at the first hidden leaf, successfully revealing $w-1$ hidden leaves.
+    \item \textbf{Hidden Leaf Recovery:} The most difficult to achieve, likely due to compiler optimizations that condensed the assignment and \texttt{break} logic into fewer clock cycles.
+
+    TODO : make numbered statistics
+\end{enumerate}

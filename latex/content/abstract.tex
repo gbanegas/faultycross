@@ -303,7 +303,20 @@ from which $({\bf e}'_i, {\bf u}'_i)$ are re-derived and $\mathsf{cmt}_1[i]$
 is recomputed for verification.
 \end{itemize}
 
-\subsubsection{MPCitH / VOLEitH Family }
+\begin{definition}[Faulted Signing Oracle]
+\label{def:fault-oracle}
+Fix a node $v^* \in V(\calT)$.
+The \emph{faulted signing oracle} $\Oracle^{v^*}(\sk, \pk)$ takes a
+message $\msg$ and executes the signing algorithm with a single
+modification: during $\Publish(\calT, \calH)$, the flag value is
+forced to
+\[
+  \calF(v^*) \;\leftarrow\; 0,
+\]
+regardless of whether $\calF(v^*)$ equals $1$ in the honest execution.
+Upward propagation is applied as normal after this assignment.
+The oracle returns the resulting (possibly faulted) signature $\sig^*$.
+\end{definition}
 
 \begin{proposition}[MPCitH/VOLEitH family is a \GZKST\ instance]
 \label{prop:mpcith-gzkst}
