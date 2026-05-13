@@ -279,7 +279,7 @@ a CROSS-specific commitment-authenticity mechanism orthogonal to the
     \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$: Root seed of size $\lam$ bits and salt of size $2\lam$ bits, both drawn uniformly at random.
     \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$:
 A complete binary tree (CROSS-v1 identical to LESS-v1; CROSS-v2 uses the
-$\SeedTreePaths$ mechanism of MEDS) where each parent seed is concatenated
+$\SeedTreePath$ mechanism of MEDS) where each parent seed is concatenated
 with the salt and node index and processed by SHAKE to yield two $\lam$-bit child seeds.
     \item $\Chal(\cmt, \msg) \to \mathbf{c}$:
 CROSS applies Fiat--Shamir in two rounds.
