@@ -152,7 +152,7 @@ Let $m = |\calS| = s - 1$.  We model collection of secret components as a
 \paragraph{Correctness of Extract.}
 For each scheme, Definition~\ref{def:extract} specifies $\Extract$ as a closed-form
 algebraic procedure: matrix inversion over $\mathbb{F}_q$ (MEDS), column extraction
-(LESS), a group operation (CROSS), or linear combination of shares (MPCitH).
+(LESS), or a group operation (CROSS).
 Each procedure is deterministic and correct given the dual revelation
 $(\eseed_i, \resp_i)$: the algebraic relationship between the response and the
 hidden seed is an identity (not an approximation), so $\Extract$ returns exactly
