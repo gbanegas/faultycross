@@ -369,6 +369,13 @@ check on a specific tree node.  All of these are documented in the
 literature~\cite{ZKFault,FaultToForge2025}.
 \end{remark}
 
+\begin{remark}
+  We assume that our faulted oracle has an algorithm \texttt{SolverS}
+  that efficiently solves secrets of type $\calS$. For example, when
+  instantiating our oracle against LESS, we use Lemma~1 from~\cite{ZKFault}
+  to solve the secret type.
+\end{remark}
+
 \paragraph{Dual revelation.}
 The invariant that the $\Publish$ phase must enforce is that, for
 every hidden round $i \in \calH$, the signer simultaneously publishes:
