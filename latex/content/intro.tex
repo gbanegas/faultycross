@@ -1,20 +1,51 @@
+Digital signatures form the backbone of several aspects of modern 
+digital life, ranging from firmware updates and secure boot mechanisms 
+to messaging applications and public-key infrastructures. Their 
+primary goal is to guarantee authenticity: in principle, only the 
+holder of the secret signing key should be able to produce a valid 
+signature for a given message. Additionally, digital signatures 
+provide integrity and non-repudiation, ensuring that a message has 
+not been modified and that the signer cannot later deny having 
+produced the signature. Because of their widespread deployment in 
+security-critical systems, the compromise of a digital signature 
+scheme may have severe consequences, including malicious software 
+updates, device impersonation, and unauthorized access to sensitive 
+communications.
+
+The security of widely used classical signature schemes, such as 
+RSA-based constructions and elliptic-curve-based signatures 
+relying on the Elliptic Curve Discrete Logarithm Problem, would 
+be compromised by sufficiently large quantum computers through 
+algorithms such as Shor's algorithm. This threat has motivated 
+the development of post-quantum cryptography, whose goal is to 
+design cryptographic schemes resistant to both classical and 
+quantum adversaries. Among the most promising candidates are 
+zero-knowledge-based signature schemes relying on Fiat--Shamir 
+transformations of interactive identification protocols. Several 
+recent constructions, including LESS~\cite{LESS-spec}, 
+CROSS~\cite{CROSSspec}, and MEDS~\cite{ChouNPRRST23}, use 
+\GGM-tree-like seed compression techniques to reduce signature size 
+by compactly representing large collections of ephemeral randomness. 
+During signing, these schemes selectively reveal only the seeds 
+associated with public rounds while keeping challenge-dependent 
+seeds hidden. Although this mechanism is essential for efficiency, 
+recent works have shown that it also introduces an important 
+fault-attack surface: faults affecting the seed-publication logic 
+may leak hidden seeds together with their corresponding 
+zero-knowledge responses, enabling the recovery of secret 
+information and, ultimately, full key recovery or forgery 
+attacks~\cite{FaultToForge2025,ZKFault}.
+
+%In 2022, the National Institute 
+%of Standards and Technology selected the first set of post-quantum 
+%digital signature schemes as part of its standardization process, 
+%marking a major step toward the deployment of quantum-resistant 
+%cryptography.
+
+
+
+
 \begin{comment}
-The Goldreich--Goldwasser--Micali (\GGM) construction~\cite{GGM86} was originally
-proposed as a way to build pseudorandom functions from any pseudorandom generator
-(\PRG).  In the context of post-quantum digital signatures based on zero-knowledge
-proofs, the \GGM\ tree serves a completely different but equally central purpose:
-it is a \emph{seed-compression mechanism} that allows a signer to commit to $t$
-independent ephemeral seeds using only a single master seed, while later revealing
-a subset of those seeds to a verifier without exposing the hidden ones.
-
-This role makes the \GGM\ tree a \emph{single point of failure} with respect to
-physical attacks.  Any fault that causes the tree to misclassify a hidden seed as
-publishable immediately breaks the Zero-Knowledge (ZK) property of the underlying
-protocol, leaking secret-equivalent information.  The key observation of this work
-is that this vulnerability is \emph{not specific to any one scheme}---it is a
-structural consequence of how the \GGM\ tree is used in all ZK-based post-quantum
-signature schemes, including LESS-v2, MEDS, CROSS, FAEST, Mirath, SDitH, and others.
-
 \paragraph{Contributions.}
 This paper provides the following:
 \begin{enumerate}
