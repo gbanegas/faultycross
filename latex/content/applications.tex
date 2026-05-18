@@ -3,7 +3,7 @@ This subsection details a fault injection (FI) attack conducted on the C referen
 \subsection{Target Analysis}
 The primary target of our analysis is the $\SeedTreePath$ function, specifically targeting the logic represented in the signing phase of the MEDS algorithm (instruction 16 of algorithm~\ref{alg:sign_meds}). In the reference implementation, both $\SeedTreePath$ (path generation) and $\SeedTree$ (tree reconstruction) are handled by a unified function, \texttt{stree\_to\_path\_to\_stree}, which operates in two modes defined by a \texttt{mode} parameter.
 
-\begin{lstlisting}[caption={\texttt{stree\_to\_path\_to\_stree} implementation}]
+\begin{lstlisting}[style=cstyle,caption={\texttt{stree\_to\_path\_to\_stree} implementation}]
 void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, uint8_t *salt, int mode) {
     int h = 0, i = 0;
     unsigned int id = 0, idx = 0;
@@ -15,15 +15,15 @@ void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, ui
     }
     while (1==1) {
         int index_leaf = 0;
-        while ((indices[id] >> (MEDS_seed_tree_height-h)) == i) 
+        `\highlight{yhl}{while ((indices[id] >> (MEDS\_seed\_tree\_height-h)) == i)}` 
         {// Traverse down toward the secret leaf
             h += 1;
             i <<= 1;
             if (h > MEDS_seed_tree_height) {
                 h -= 1;
                 i >>= 1;
-                if (id + 1 < MEDS_w) id++; 
-                index_leaf = 1; // Flag node as hidden
+                `\highlight{rhl}{if (id + 1 < MEDS\_w) id++; }`
+                `\highlight{bhl}{index\_leaf = 1;}` // Flag node as hidden
                 break;
             }
         }
@@ -48,7 +48,7 @@ void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, ui
 }
 \end{lstlisting}\label{lst:path}
 
-The algorithm identifies secret leaves (where $h[i] > 0$) and performs a Depth-First Search (DFS). The exploration halts as soon as it reaches a node that is no longer an ancestor of the hidden leaf. This node is then appended to the signature path. If the exploration reaches a target hidden leaf, the \texttt{index\_leaf} flag is set to ensure the leaf seed remains unpublished and we move on the next hidden leaf.
+The algorithm identifies secret leaves (where $h[i] > 0$) and performs a Depth-First Search (DFS). The exploration halts as soon as it reaches a node that is no longer an ancestor of the hidden leaf. This node is then appended to the signature path. If the exploration reaches a target hidden leaf, the \texttt{index\_leaf} flag is set to ensure the leaf seed remains unpublished and we move on to the next hidden leaf.
 
 \subsubsection{Objective}
 The adversary's goal is to manipulate the control flow via fault injection to leak unpublished seeds (internal nodes or leaves) into the public signature path, ultimately compromising the security of the signature scheme.
@@ -67,7 +67,7 @@ This attack aims to reveal the root seed, which effectively compromises the enti
 \subsubsection{Model 2: Hidden Leaf Recovery}
 This model targets the specific instruction \texttt{index\_leaf = 1;} at line 20 of listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
 
-\paragraph{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iteration of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
+\paragraph{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iterations of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
 
 \subsubsection{Model 3: Subtree Recovery (Index Corruption)}
 By glitching the loop \texttt{if (id + 1 < MEDS\_w)} at line 19 of listing~\ref{lst:path}, the algorithm fails to update the target index \texttt{id}. The traversal logic becomes desynchronized, resulting in the algorithm treating subsequent branches as public. All leaves to the right of the faulted \texttt{id} become computable.
@@ -107,17 +107,109 @@ By glitching the loop \texttt{if (id + 1 < MEDS\_w)} at line 19 of listing~\ref{
   \draw[treeedge](s4)--(s9);\draw[treeedge](s4)--(s10);
 \end{tikzpicture}
 \caption{Effect of fault model 3 on the example at~\ref{fig:less-trees}, if the glitch occured while \texttt{id==1}. The returned path is $\{s_7,s_9,s_4,s_2\}$ and all leaves are computable except $x_1$.}
+\label{fig:faulted_path}
 \end{figure}
 
 
 
 
-\subsection{Results and Observations (WIP)}
-All three fault models were successfully reproduced. 
-\begin{enumerate}
-    \item \textbf{Full Tree Recovery:} The most frequent result due to the vulnerability of the initial loop.
-    \item \textbf{Subtree Recovery:} Highly common; it often manifested at the first hidden leaf, successfully revealing $w-1$ hidden leaves.
-    \item \textbf{Hidden Leaf Recovery:} The most difficult to achieve, likely due to compiler optimizations that condensed the assignment and \texttt{break} logic into fewer clock cycles.
+\subsection{Results and Observations}
 
-    TODO : make numbered statistics
-\end{enumerate}
+We successfully executed the fault models on the Chipwhisperer board. This section detailed the compiler and glitcher configurations that were required to obtain the desired faults.
+All three fault models were successfully reproduced. 
+
+\subsubsection{Full tree recovery}
+
+\paragraph{Compilation.} This attack is carried out on a code compiled with the default \texttt{-Os} optimization.
+
+\paragraph{Trigger position.} We have found the most efficient way to make the while condition fail from the first iteration is to fault the initialization of the involved variables (corresponding to lines 2 and 3 of \ref{lst:path}). The compiled result is in \ref{lst:f1asm}.
+
+\begin{lstlisting}[style=asmstyle]
+0800062c <stree_to_path_to_stree_glitch>:
+...
+ 8000704:	f001 fa18 	bl	8001b38 <trigger_high> // trigger_high();
+ 8000708:	f04f 0800 	mov.w	r8, #0             // unsigned int id = 0;
+ 800070c:	4645      	mov	r5, r8                 // int i = 0;
+ 800070e:	4647      	mov	r7, r8                 // int h = 0;
+...
+\end{lstlisting}\label{lst:f1asm}
+
+\paragraph{Parameters. } We fault for 3 clock cycles. A glitch is successful if the returned path only contains the root node. Figure~\ref{fig:fault1_results} shows that the attack was successful for :
+\begin{itemize}
+    \item An offset neighboring $-13.5$ with a positive offset
+    \item A width neighboring $13.5$ with a negative offset
+    \item A sum of a width and offset of approximatively $13.5$
+\end{itemize}
+
+Which leads us to think that the approximate ideal moment to aim for this attack is $13.5\%$ of a clock cycle prior to one of the targetted instructions.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{content/images/glitch_heatmap_1_repeat4.png} 
+    \caption{Glitch success frequency by glitch width and offset for fault model 1, with 10 tries per parameter pair.}
+    \label{fig:fault1_results}
+\end{figure}
+
+\subsubsection{Subtree recovery}
+
+\paragraph{Compilation.} This is carried out on a code compiled with the default \texttt{-Os} optimization.
+
+\paragraph{Trigger position.} We set the trigger to frame lines $19$ of \ref{lst:path}. The compiled result is in \ref{lst:f2asm}.
+
+
+\begin{lstlisting}[style=asmstyle]
+080006d2 <stree_to_path_to_stree_glitch>:
+...
+ 8000726:	f001 fa09 	bl	8001b3c <trigger_high> // trigger_high();
+ 800072a:	f108 0401 	add.w	r4, r8, #1  
+ 800072e:	2c05      	cmp	r4, #5                 //if (id+1 < MEDS_w)
+ 8000730:	bf88      	it	hi
+ 8000732:	4644      	movhi	r4, r8             // id++ ;
+ 8000734:	f001 fa09 	bl	8001b4a <trigger_low>  // trigger_low();
+...
+\end{lstlisting}\label{lst:f2asm}
+
+
+\paragraph{Parameters.} The evaluation of the condition and the incrementation of \texttt{id} require 3 clock cycles. We therefore set \texttt{repeat} to $3$. We consider the attack successful if we obtain the faulted path pattern described by figure~\ref{fig:faulted_path}.
+
+
+
+
+\subsubsection{Single hidden leaf recovery}
+
+\paragraph{Compilation.} Higher compiler optimization levels made it difficult to precisely target the flags. Specifically, the \texttt{-O1}, \texttt{-O2}, \texttt{-O3}, and \texttt{-Os} optimization flags resulted in compiled assembly code that omitted the explicit assignment instruction entirely, relying instead on complex control-flow manipulations to achieve the same logical outcome. To resolve this issue, we enforced the \texttt{-O0} optimization level strictly on the targeted function. Applying \texttt{-O0} to the entire project was unfeasible, as it increased the binary size beyond the storage capacity of the target board.
+
+\paragraph{Trigger position.} For the unoptimized version, we position the glitch high trigger right before the \texttt{index\_leaf} assignment and the low trigger right after. This results in the compiled code in listing~\ref{lst:f3asm}. 
+\begin{lstlisting}[style=asmstyle]
+0800062c <stree_to_path_to_stree_glitch>:
+...
+ 80006be:	f001 fd3f 	bl	8002140 <trigger_high> // trigger_high();
+ 80006c2:	2301      	movs	r3, #1             // index_leaf = 1;
+ 80006c4:	62bb      	str	r3, [r7, #40]	@ 0x28
+ 80006c6:	f001 fd43 	bl	8002150 <trigger_low>  // trigger_low();
+...
+\end{lstlisting}\label{lst:f3asm}
+
+\paragraph{Parameters.} The disassembled code shows that the assignement is done in two instructions, first The CPU loads the immediate integer value 1 directly into the register \texttt{r3}, then it takes that value 1 from \texttt{r3} and writes it out to memory. According to ARM documentation, each of these instruction is 1 clock cycle long. We test the attack by setting the \texttt{repeat} parameter of the glitch controller to 2 and 3. 
+
+In both cases, we notice a higher probability of success with an offset of $1$ and a positive width, or a width of $-1$ and a positive offset.
+
+\begin{figure}[htbp]
+    \centering
+
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{content/images/glitch_heatmap_3_repeat2.png} 
+        \caption{\texttt{repeat=2}}
+    \end{subfigure}
+    \hfill 
+
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{content/images/glitch_heatmap_3_repeat3.png} % Replace with your image filename
+        \caption{\texttt{repeat=3}}
+    \end{subfigure}
+    
+    \caption{Glitch success frequency by glitch width and offset for fault model 3, with 10 tries per parameter pair.}
+    \label{fig:fault3_results}
+\end{figure}

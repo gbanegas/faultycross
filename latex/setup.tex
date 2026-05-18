@@ -15,6 +15,8 @@
 \usepackage{parskip}
 \usepackage{float}
 \usepackage{listings}
+\usepackage{graphicx}
+\usepackage{subcaption} 
 \usepackage{float}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,shapes.geometric,matrix,calc}
@@ -33,11 +35,21 @@
 \definecolor{strred}{RGB}{180,40,40}
 \definecolor{numgray}{RGB}{120,120,120}
 \definecolor{rulegray}{RGB}{220,220,220}
+\definecolor{mGreen}{rgb}{0,0.6,0}
+\definecolor{mGray}{rgb}{0.5,0.5,0.5}
+\definecolor{mPurple}{rgb}{0.58,0,0.82}
+\definecolor{asmBlue}{rgb}{0.1,0.3,0.7}
+\definecolor{backgroundMesh}{rgb}{0.97,0.97,0.97}
+\definecolor{hlColor}{rgb}{0.98, 0.93, 0.75} 
+\definecolor{yhl}{rgb}{0.98, 0.95, 0.75}
+\definecolor{rhl}{rgb}{1.0, 0.85, 0.90}
+\definecolor{bhl}{rgb}{0.85, 0.90, 1.0}
+\newcommand{\highlight}[2]{\colorbox{#1}{#2}}
 
 % --- Listings style ---
-\lstset{
+\lstdefinestyle{cStyle}{
     language=C,
-    basicstyle=\ttfamily\tiny,
+    basicstyle=\ttfamily\scriptsize,
     columns=fullflexible,
     backgroundcolor=\color{white},
     frame=single,
@@ -62,7 +74,24 @@
     xleftmargin=6pt,
     xrightmargin=2pt,
     aboveskip=4pt,
-    belowskip=4pt
+    belowskip=4pt,
+    escapeinside={`}{`}
+}
+
+\lstdefinestyle{asmStyle}{
+    backgroundcolor=\color{white},   
+    commentstyle=\color{mGreen}\itshape,
+    keywordstyle=\color{asmBlue}\bfseries,
+    numberstyle=\tiny\color{mGray},
+    basicstyle=\ttfamily\scriptsize,
+    breaklines=true,                 
+    numbers=left,                    
+    numbersep=8pt,                  
+    frame=single, % Adds a clean border frame around assembly blocks
+    frameround=tttt,
+    tabsize=4,
+    language=Ant, 
+    morekeywords={stmdb, ldrb, cbz, str, bne, lsl, asrs, lsr, movs, bl} 
 }
 
 % ---------- TikZ for tree figures ----------
