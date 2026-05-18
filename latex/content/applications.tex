@@ -134,14 +134,14 @@ All three fault models were successfully reproduced.
 ...
 \end{lstlisting}\label{lst:f1asm}
 
-\paragraph{Parameters. } We fault for 3 clock cycles. A glitch is successful if the returned path only contains the root node. Figure~\ref{fig:fault1_results} shows that the attack was successful for :
+\paragraph{Parameters. } We fault for 4 clock cycles. A glitch is successful if the returned path contains the root node. Figure~\ref{fig:fault1_results} shows that the attack was successful for :
 \begin{itemize}
     \item An offset neighboring $-13.5$ with a positive offset
     \item A width neighboring $13.5$ with a negative offset
     \item A sum of a width and offset of approximatively $13.5$
 \end{itemize}
 
-Which leads us to think that the approximate ideal moment to aim for this attack is $13.5\%$ of a clock cycle prior to one of the targetted instructions.
+\paragraph{Todo.} Interpretation.
 
 \begin{figure}[H]
     \centering
@@ -172,6 +172,12 @@ Which leads us to think that the approximate ideal moment to aim for this attack
 
 \paragraph{Parameters.} The evaluation of the condition and the incrementation of \texttt{id} require 3 clock cycles. We therefore set \texttt{repeat} to $3$. We consider the attack successful if we obtain the faulted path pattern described by figure~\ref{fig:faulted_path}.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{content/images/glitch_heatmap_2_repeat3.png}
+    \caption{Glitch success frequency by glitch width and offset for fault model 2, with 10 tries per parameter pair.}
+    \label{fig:fault2_results}
+\end{figure}
 
 
 
