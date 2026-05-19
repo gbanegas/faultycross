@@ -72,15 +72,13 @@ regardless of whether leaves appear at a uniform depth.  Hence both invariants
 hold for any incomplete tree shape produced by the LESS-v2 expansion.
 \end{proof}
 
-% ------------------------------------------------------------
-\subsection{ Proof of Proposition~\ref{prop:meds-gzkst}
+\subsection{Proof of Proposition~\ref{prop:meds-gzkst}
   (MEDS is a \GZKST\ instance)}
 \label{app:proof-meds}
-% ------------------------------------------------------------
 
 $\SeedTreeToPath$ implements the following erasure: for each $i \in \calH$
 the algorithm (i)~removes the label of $\mathrm{leaf}_i$, and
-(ii)~propagates the removal upward—a node $v$ loses its label as soon as
+(ii)~propagates the removal upward---a node $v$ loses its label as soon as
 \emph{at least one} leaf in its subtree has been removed.
 By induction this is equivalent to the OR-propagation
 $\calF(v) = \calF(\ell) \vee \calF(r)$ of LESS-v2.
@@ -92,6 +90,7 @@ $\calF(v) = 0$ in the sense of~\eqref{eq:flag-char},
 i.e., \emph{every} leaf descendant of $v$ is in $\calR$ (no hidden leaf
 in $v$'s subtree).
 \end{claim}
+
 \begin{proof}
 $(\Rightarrow)$
 Suppose $v$ is retained.  By definition of the upward propagation, no
@@ -105,22 +104,26 @@ $v$'s subtree contains no hidden leaf, no removal is triggered in
 $v$'s subtree, so $v$ retains its label.
 \end{proof}
 
-\begin{remark}
-The claim corrects a previous version of this proof that stated ``a node
-retains its label iff its subtree contains at least one revealed leaf.''
-The correct condition is stronger: \emph{all} leaves must be revealed
-($\calF(v) = 0$), which is consistent with the LESS-v2 construction and
-with the actual \textsc{SeedTreeToPath} code.
-\end{remark}
+%\begin{remark}
+%The claim corrects a previous version of this proof that stated ``a node
+%retains its label iff its subtree contains at least one revealed leaf.''
+%The correct condition is stronger: \emph{all} leaves must be revealed
+%($\calF(v) = 0$), which is consistent with the LESS-v2 construction and
+%with the actual \textsc{SeedTreeToPath} code.
+%\end{remark}
 
-The published path $\tpath$ consists of the highest surviving nodes in the tree,
-serialised in depth-first order; equivalently,
-$\tpath = \{v : v \text{ retains its label},\; \mathrm{parent}(v) \text{ was erased}\}$.
+The published path $\tpath$ consists of the highest surviving nodes in
+the tree, serialised in depth-first order. Equivalently,
+\[
+\tpath
+ = \{\, v : v \text{ retains its label and }
+\mathrm{parent}(v) \text{ was erased} \,\}.
+\]
 By the claim, this is $\{v : \calF(v) = 0,\; \calF(\mathrm{parent}(v)) = 1\}$,
 which is identical to the LESS-v2 definition.
 
 Invariants~\ref{inv:correctness} and~\ref{inv:hiding} follow by the same
-argument as in Appendix~A.1.
+argument as in Appendix~\ref{app:proof-less}.
 
 % ------------------------------------------------------------
 \subsection{Proof of Proposition~\ref{prop:cross-gzkst}
