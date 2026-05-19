@@ -259,12 +259,12 @@ by correctness of $\Extract$.
 
 \paragraph{Setup.}
 We work in the root-fault setting of Proposition~\ref{prop:query-count}:
-$v^* = \mathrm{root}$, so $\ell = t$ and $L = w$ exactly (deterministic).
-By the Fiat--Shamir uniformity assumption, the challenge index $c_i$ is
-uniform in $\{1,\ldots,s-1\}$ independently for each $i \in \calH$.
+\(v^* = \mathrm{root}\), so \(\ell = t\) and \(L = w\) exactly (deterministic).
+By the Fiat--Shamir uniformity assumption, the challenge index \(c_i\) is
+uniform in \(\{1,\ldots,s-1\}\) independently for each \(i \in \calH\).
 
 \paragraph{Distinct secrets per query.}
-Conditioning on $L = w$, the number of \emph{distinct} secret indices
+Conditioning on \(L = w\), the number of \emph{distinct} secret indices
 revealed in one effective query has expectation
 \begin{align}
   \mathbb{E}[\text{\#distinct} \mid L = w]
@@ -274,35 +274,36 @@ revealed in one effective query has expectation
 \end{align}
 by linearity of expectation and symmetry of the uniform distribution.
 
-\paragraph{Jensen remark for general fault location.}
-When $v^* \neq \mathrm{root}$ and $L$ is a hypergeometric random variable
-with mean $\bar{w} = w\ell/t$, taking expectation over $L$ gives
+\begin{remark}[General fault location]
+When \(v^* \neq \mathrm{root}\) and \(L\) is a hypergeometric random variable
+with mean \(\bar{w} = w\ell/t\), taking expectation over \(L\) gives
 \[
   \mathbb{E}[\text{\#distinct}]
   = (s-1)\!\left(1 - \mathbb{E}\!\left[\left(1-\tfrac{1}{s-1}\right)^{\!L}\right]\right).
 \]
-Since $f(x) = \alpha^x$ with $\alpha = 1 - 1/(s-1) \in (0,1)$ is convex,
-Jensen's inequality gives $\mathbb{E}[f(L)] \geq f(\bar{w}) = \alpha^{\bar{w}}$,
+Since \(f(x) = \alpha^x\) with \(\alpha = 1 - 1/(s-1) \in (0,1)\) is convex,
+Jensen's inequality yields \(\mathbb{E}[f(L)] \geq f(\bar{w}) = \alpha^{\bar{w}}\);
 hence
 \begin{equation}
   \mathbb{E}[\text{\#distinct}]
   \;\leq\; (s-1)\!\left(1 - \left(1-\frac{1}{s-1}\right)^{\!\bar{w}}\right)
   \;=:\; E_{\mathrm{dist}}^{\bar{w}}.
-  \label{eq:edist}
+  \label{eq:edist-jensen}
 \end{equation}
-$E_{\mathrm{dist}}^{\bar{w}}$ is an \emph{upper} bound on expected per-query
-gain, which implies a \emph{lower} bound on $\mathbb{E}[Q]$.  It cannot be
-used to derive an upper bound on $\mathbb{E}[Q]$; the upper bound in
+\(E_{\mathrm{dist}}^{\bar{w}}\) is an \emph{upper} bound on the expected per-query
+gain, which implies a \emph{lower} bound on \(\mathbb{E}[Q]\).  It cannot be
+used to derive an upper bound on \(\mathbb{E}[Q]\); the upper bound in
 Proposition~\ref{prop:query-count} follows solely from the direct inequality
-$p_r \geq p_{\min}$ established in the root-fault setting.
+\(p_r \geq p_{\min}\) established in the root-fault setting.
+\end{remark}
 
 \paragraph{Total queries (root fault).}
-From equation~\eqref{eq:pr-exact} in Appendix~A.5,
-$p_r = 1 - \bigl(1 - r/(s-1)\bigr)^{w}$ (with $L = w$ deterministic),
-and since $p_r \geq p_{\min}$ for all $r \geq 1$,
+From equation~\eqref{eq:pr-exact} (see page~\pageref{eq:pr-exact}),
+\(p_r = 1 - \bigl(1 - r/(s-1)\bigr)^{w}\) (with \(L = w\) deterministic),
+and since \(p_r \geq p_{\min}\) for all \(r \geq 1\),
 \[
   \mathbb{E}[Q] = \sum_{r=1}^{m} \frac{1}{p_r} \leq \frac{m}{p_{\min}}
   = \frac{s-1}{p_{\min}},
 \]
-which for $p_{\min} \approx 1$ (all MEDS parameter sets, cf.\ Table~\ref{tab:meds-eq})
-gives $\mathbb{E}[Q] \lesssim s-1$.
+which for \(p_{\min} \approx 1\) (all MEDS parameter sets, cf.\ Table~\ref{tab:meds-eq})
+gives \(\mathbb{E}[Q] \lesssim s-1\).
