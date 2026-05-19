@@ -146,8 +146,10 @@ therefore orthogonal to both invariants.
 \label{app:proof-recovery}
 % ------------------------------------------------------------
 
-Let $m = |\calS| = s - 1$.  We model collection of secret components as a
-\emph{generalised coupon-collector} problem~\cite{coupon1,AnceaumeBSS16} with $m$ distinct coupons.
+Let $m = |\calS| = s - 1$. The process of recovering the secret
+components is modeled as a \emph{generalized coupon-collector problem}
+with group drawings~\cite{coupon1,AnceaumeBSS16}, where each query
+draws a batch of $w$ coupons out of $m$ distinct types.
 
 \paragraph{Correctness of Extract.}
 For each scheme, Definition~\ref{def:extract} specifies $\Extract$ as a closed-form
@@ -158,7 +160,6 @@ $(\eseed_i, \resp_i)$: the algebraic relationship between the response and the
 hidden seed is an identity (not an approximation), so $\Extract$ returns exactly
 $\sk' = $ the secret component indexed by $j = c_i$.
 
-\paragraph{Termination.}
 We work under the assumption of Proposition~\ref{prop:alg-correctness}:
 $v^* = \mathrm{root}$, so the subtree of $v^*$ is the entire tree and
 $L = |\calH \cap \mathrm{leaves}(\mathrm{root})| = |\calH| = w$
@@ -194,8 +195,6 @@ surely.  Hence $Q = \sum_{j=1}^{m} T_j$ is finite almost surely, and
 Algorithm~\ref{alg:key-recovery} terminates with probability~$1$.
 
 
-\todo{ADD that this is an upperbound.}
-
 \paragraph{Expected query count and tail bound.}
 Let $R_k$ be the number of uncollected secret indices after $k$ effective
 queries, and let $r = R_{k-1} > 0$.  Each of the $w$ hidden leaves
@@ -220,6 +219,16 @@ The expected total number of effective queries is
 \end{equation}
 where the inequality uses $p_r \geq p_{\min}$ for all $r \geq 1$.
 
+\begin{remark}
+The bound in~\eqref{eq:exp-Q} should be seen as an upper-bound, 
+as it treats the recovery process as just learning one secret 
+per time. In practice, a query may reveal multiple unseen indices 
+simultaneously, especially during the early stages of the 
+algorithm when $r$ is large. As a consequence the actual expected 
+number of queries can be smaller than $(s-1)/p_{\min}$.
+\end{remark}
+
+
 For the tail bound, each $T_j \leq k_0$ with probability at least
 $1 - (1 - p_{\min})^{k_0}$ (geometric tail), so by a union bound over
 $m = s-1$ stages,
@@ -230,6 +239,7 @@ Setting $(s-1)(1-p_{\min})^{\lfloor k/(s-1)\rfloor} \leq \delta$ and
 solving gives $k \leq \bigl\lceil \tfrac{s-1}{p_{\min}} \cdot
 \ln\tfrac{s-1}{\delta} \bigr\rceil$, establishing the bound in
 Proposition~\ref{prop:alg-correctness}.
+
 
 \paragraph{Output correctness.}
 When the loop terminates, $|\mathsf{Collected}| = m$, and for each
