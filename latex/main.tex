@@ -2,6 +2,10 @@
 
 \input{setup.tex}
 \input{macros.tex}
+\usepackage{lineno}
+\setcounter{tocdepth}{1} % Table of contents for llncs
+\renewcommand{\linenumberfont}{\normalfont\small\color{red}}
+\linenumbers
 
 \begin{document}
 
@@ -40,13 +44,17 @@ Post-quantum cryptography \and Seed compression}
 \label{sec:abstract}
 \input{content/abstract.tex}
 
-\section{Fault Model Taxonomy}
-\label{sec:theoretical}
-\input{content/theoretical_leakage.tex}
+%\section{Fault Model Taxonomy}
+%\label{sec:theoretical}
+%\input{content/theoretical_leakage.tex}
 
 \section{Fault Injection attacks on MEDS GGM tree procedures}
 \label{sec:app}
 \input{content/applications.tex}
+
+\section{Countermeasures}
+\label{sec:counter}
+\input{content/counter.tex}
 
 \bibliographystyle{plain}
 \bibliography{references}
