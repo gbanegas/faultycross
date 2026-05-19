@@ -3,7 +3,7 @@ This subsection details a fault injection (FI) attack conducted on the C referen
 \subsection{Target Analysis}
 The primary target of our analysis is the $\SeedTreePath$ function, specifically targeting the logic represented in the signing phase of the MEDS algorithm (instruction 16 of algorithm~\ref{alg:sign_meds}). In the reference implementation, both $\SeedTreePath$ (path generation) and $\SeedTree$ (tree reconstruction) are handled by a unified function, \texttt{stree\_to\_path\_to\_stree}, which operates in two modes defined by a \texttt{mode} parameter.
 
-\begin{lstlisting}[style=cstyle,caption={\texttt{stree\_to\_path\_to\_stree} implementation}]
+\begin{lstlisting}[style=cstyle,caption={\texttt{stree\_to\_path\_to\_stree} implementation}., label=lst:path]
 void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, uint8_t *salt, int mode) {
     int h = 0, i = 0;
     unsigned int id = 0, idx = 0;
@@ -46,7 +46,7 @@ void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, ui
         if ((i << (MEDS_seed_tree_height - h)) >= MEDS_t) return;
     }
 }
-\end{lstlisting}\label{lst:path}
+\end{lstlisting}
 
 The algorithm identifies secret leaves (where $h[i] > 0$) and performs a Depth-First Search (DFS). The exploration halts as soon as it reaches a node that is no longer an ancestor of the hidden leaf. This node is then appended to the signature path. If the exploration reaches a target hidden leaf, the \texttt{index\_leaf} flag is set to ensure the leaf seed remains unpublished and we move on to the next hidden leaf.
 
@@ -124,7 +124,7 @@ All three fault models were successfully reproduced.
 
 \paragraph{Trigger position.} We have found the most efficient way to make the while condition fail from the first iteration is to fault the initialization of the involved variables (corresponding to lines 2 and 3 of \ref{lst:path}). The compiled result is in \ref{lst:f1asm}.
 
-\begin{lstlisting}[style=asmstyle]
+\begin{lstlisting}[style=asmstyle, label=lst:f1asm]
 0800062c <stree_to_path_to_stree_glitch>:
 ...
  8000704:	f001 fa18 	bl	8001b38 <trigger_high> // trigger_high();
@@ -132,7 +132,7 @@ All three fault models were successfully reproduced.
  800070c:	4645      	mov	r5, r8                 // int i = 0;
  800070e:	4647      	mov	r7, r8                 // int h = 0;
 ...
-\end{lstlisting}\label{lst:f1asm}
+\end{lstlisting}
 
 \paragraph{Parameters. } We fault for 4 clock cycles. A glitch is successful if the returned path contains the root node. Figure~\ref{fig:fault1_results} shows that the attack was successful for :
 \begin{itemize}
@@ -157,7 +157,7 @@ All three fault models were successfully reproduced.
 \paragraph{Trigger position.} We set the trigger to frame lines $19$ of \ref{lst:path}. The compiled result is in \ref{lst:f2asm}.
 
 
-\begin{lstlisting}[style=asmstyle]
+\begin{lstlisting}[style=asmstyle, label=lst:f2asm, caption=Add Caption.]
 080006d2 <stree_to_path_to_stree_glitch>:
 ...
  8000726:	f001 fa09 	bl	8001b3c <trigger_high> // trigger_high();
@@ -167,7 +167,7 @@ All three fault models were successfully reproduced.
  8000732:	4644      	movhi	r4, r8             // id++ ;
  8000734:	f001 fa09 	bl	8001b4a <trigger_low>  // trigger_low();
 ...
-\end{lstlisting}\label{lst:f2asm}
+\end{lstlisting}
 
 
 \paragraph{Parameters.} The evaluation of the condition and the incrementation of \texttt{id} require 3 clock cycles. We therefore set \texttt{repeat} to $3$. We consider the attack successful if we obtain the faulted path pattern described by figure~\ref{fig:faulted_path}.
