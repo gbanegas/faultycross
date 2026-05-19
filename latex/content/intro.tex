@@ -66,48 +66,68 @@ This paper provides the following:
 
 \subsection{Related Work}
 \label{sec:relwork}
-
-In the context of fault attacks against post-quantum signature schemes, several 
-works have been proposed in recent years, particularly targeting schemes that rely on 
-\GGM{}-tree-like constructions or related seed-tree compression techniques, such as 
-LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, and MPC-in-the-Head-based 
+Several recent works have studied fault attacks against post-quantum 
+signature schemes relying on \GGM{}-tree or seed-tree compression 
+techniques, including LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, 
+MEDS~\cite{ChouNPRRST23}, and MPC-in-the-Head-based 
 schemes~\cite{ryde2025,FAESTv22025}.
 
-In~\cite{ZKFault}, the authors present a fault attack that exploits the tree-based 
-compression mechanism used in zero-knowledge-based code-based signature schemes. 
-Their primary target is the first version of LESS~\cite{LESS-spec}, for which they 
-provide a detailed analysis showing how fault injections in the seed-tree construction 
-can lead to the recovery of secret information and ultimately the signing key. The 
-work further extends the attack analysis to CROSS and briefly 
-discusses how similar ideas could be adapted to MEDS~\cite{ChouNPRRST23}, since 
-these schemes rely on related seed-tree compression techniques.
+In~\cite{ZKFault}, the authors introduce fault attacks against 
+the seed-tree compression mechanism used in zero-knowledge-based 
+code-based signatures, primarily targeting LESS-v1 and extending the 
+analysis to CROSS and MEDS. By faulting the seed-publication process, 
+the attacks disclose hidden ephemeral seeds and enable recovery of 
+secret information.
 
-More recently,~\cite{FaultToForge2025} revisits these attacks in the context of the second 
-version of LESS (LESS-v2). Since LESS-v2 replaces the complete \GGM{}-tree structure of 
-LESS-v1 with an incomplete tree construction, the original attack from~\cite{ZKFault} no 
-longer applies directly. The authors therefore introduce new fault-assisted forgery 
-attacks targeting the incomplete binary decision-tree generation and seed-publication 
-process. In particular, they identify several fault-injection surfaces within the 
-incomplete tree-generation logic and propose practical instruction-skip-based fault 
-models capable of disclosing hidden ephemeral seeds. A key contribution of the work 
-is the observation that recovering the full signing key is unnecessary for universal 
-forgery; instead, recovering secret-equivalent information, namely the permutations 
-associated with the secret monomial matrices, is sufficient to forge valid signatures.
+The work of~\cite{FaultToForge2025} revisits these attacks for LESS-v2,
+whose incomplete \GGM{}-tree invalidates the original attack strategy. 
+The authors identify new fault-injection points in the incomplete 
+tree-generation and seed-publication procedures, showing that 
+recovering secret-equivalent information is sufficient for universal 
+forgery.
 
-Still attacking LESS-v2,~\cite{HuangHHYSTY26} presents an alternative attack strategy 
-against LESS-v2 that completely avoids targeting the complex tree structure itself. 
-Instead, the attack focuses on the simple \texttt{for-loop} responsible for 
-transforming the digest vector $b$ into the binary vector $f$ before the incomplete 
-\GGM{}-tree is generated. Using \emph{iteration-skip} and \emph{loop-abort} fault models, 
-the authors exploit the linear and deterministic nature of this preprocessing stage to recover 
-secret information with high probability. Unlike~\cite{FaultToForge2025}, whose main goal is 
-universal forgery through recovery of secret-equivalent permutations, the attack in~\cite{HuangHHYSTY26} aims 
-at full key recovery while also eliminating the need to heuristically target fault locations 
-within the incomplete tree-generation procedure.
+More recently,~\cite{HuangHHYSTY26} proposes an alternative attack on 
+LESS-v2 that avoids targeting the tree structure itself. Instead, 
+the attack exploits iteration-skip and loop-abort faults in the 
+preprocessing step that transforms the digest vector before tree 
+generation, enabling high-probability full key recovery.
 
-Our work unifies these scattered analyses under a single Generic ZK Seed Tree (GZKST) mode, 
-formally proving the correctness and ZK-hiding invariants that all prior attacks implicitly rely on, 
-and extending practical fault attacks to MEDS -- a scheme not deep previously studied in this context.
+Our work unifies these attacks under a single Generic ZK Seed Tree 
+(GZKST) abstraction, formalizing the correctness and seed-hiding 
+invariants implicitly exploited by prior works, while additionally 
+providing practical fault attacks against MEDS.
+
+\paragraph{Our Contributions.}
+This work provides a unified analysis of fault attacks against 
+post-quantum signature schemes relying on seed-tree compression 
+mechanisms. Our main contributions are as follows:
+
+\todo{Still need to check this contributions}
+\begin{itemize}
+    \item \textbf{Generic Seed-Tree Abstraction.}
+    We introduce the \emph{Generic ZK Seed Tree} (GZKST) model, a unified
+    abstraction capturing the seed-tree generation used in schemes 
+    such as LESS-v2, MEDS, and CROSS.
+
+    \item \textbf{Unified Analysis of Existing Attacks.}
+    We show that previous fault attacks against LESS-v1 and LESS-v2 can be
+    interpreted as concrete violations of the same seed-hiding invariant,
+    despite targeting different implementation layers and tree constructions.
+        
+    \item \textbf{Query Complexity Analysis.}
+    We provide bounds on the number of effective faulted signatures required
+    for complete secret recovery and show that, for all MEDS parameter sets,
+    only a small number of successful queries is sufficient in practice.
+
+    \item \textbf{Practical Fault Injection Attacks on MEDS.}
+    We present practical clock-glitch fault injection attacks against the MEDS
+    reference implementation on an ARM Cortex-M4 microcontroller using a
+    ChipWhisperer-Lite platform. We identify multiple exploitable fault surfaces
+    in the tree traversal logic, including root leakage, hidden-leaf disclosure,
+    and subtree desynchronization attacks.
+
+
+\end{itemize}
 
 \begin{comment}
 Table~\ref{tab:relwork} summarises the prior art on fault attacks against
