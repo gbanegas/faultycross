@@ -136,9 +136,10 @@ Both invariants therefore hold for any tree shape produced by the LESS-v2 expans
   \draw[treeedge](s2)--(s5);\draw[treeedge](s2)--(s6);
   \draw[treeedge](s3)--(s7);\draw[treeedge](s3)--(s8);
   \draw[treeedge](s4)--(s9);\draw[treeedge](s4)--(s10);
+  
 \end{tikzpicture}
 \vspace{2pt}
-{\small (a) Expanded \GGM\ seed tree.}
+{\small (a) Expanded reference \GGM\ seed tree.}
 \end{minipage}%
 \hfill%
 \begin{minipage}[b]{0.55\linewidth}
@@ -171,6 +172,7 @@ Both invariants therefore hold for any tree shape produced by the LESS-v2 expans
   \draw[treeedge](s2)--(s5);\draw[treeedge](s2)--(s6);
   \draw[treeedge](s3)--(s7);\draw[treeedge](s3)--(s8);
   \draw[treeedge](s4)--(s9);\draw[treeedge](s4)--(s10);
+  
 \end{tikzpicture}
 \vspace{2pt}
 {\small (b) After \Chal, \Decide, \Publish; $\mathbf{b}\!=\!\{0,1,0,0,1,0\}$, $\tpath\!=\!\{s_4,s_6,s_7\}$.}
@@ -258,6 +260,14 @@ $\calF(\mathrm{parent}(v)) = 1$—are serialised in depth-first order.
 $\PathToSeedTree_t$ places path nodes on an empty tree and re-expands
 downward via $\PRG$; positions $i \in \calH$ remain empty.
 \end{itemize}
+
+\begin{remark}
+  In this instantiation of the $\Publish$ algorithm, 
+  we rely on the path construction as described 
+  in the MEDS submission document~\cite{MEDS}. However, 
+  the reference implementation uses a different algorithm, 
+  that is further explained in section~\ref{sec:app}.
+\end{remark}
 
 \subsubsection{CROSS}
 
@@ -552,8 +562,6 @@ For all MEDS parameter sets (Table~\ref{tab:scheme-params}), faulting
 the root ($v^* = \mathrm{root}$, $\ell = t$) gives $\bar{w} = w$; for
 those parameters $w \gg 1$, so $p_{\min} \approx 1$ and
 $\mathbb{E}[Q] \lesssim s - 1$, which is at most~$5$ across all sets.
-In practice a single effective query suffices with high probability,
-as confirmed by the simulation in \S\ref{sec:app}.
 
 \begin{remark}[Concrete query counts for MEDS]
 \label{rem:meds-query}

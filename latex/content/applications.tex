@@ -60,17 +60,12 @@ Our experimental platform consists of a \textbf{CW303-STM32F3} target board, fea
 We propose three fault models targeting different stages of the tree traversal.
 
 \subsubsection{Model 1: Full Tree Recovery (Root Leakage)}
-This attack aims to reveal the root seed, which effectively compromises the entire tree. By injecting a fault that causes the skip of the first iteration of \texttt{while} loop at line 13 of listing~\ref{lst:path}, the DFS halts immediately at the root ($h=0, i=0$). The root is incorrectly identified as a node ready for publication.
+This attack aims to reveal the root seed, which effectively compromises the entire tree. By injecting a fault that causes the skip of the first iteration of \highlight{yhl}{\texttt{while} loop} at line 13 of listing~\ref{lst:path}, the DFS halts immediately at the root ($h=0, i=0$). The root is incorrectly identified as a node ready for publication.
 
 \paragraph{Detection and recovery.} The signature path contains only a single non-zero element. Verification is performed by expanding this single seed into a full tree and checking if the resulting signature is accepted.
 
-\subsubsection{Model 2: Hidden Leaf Recovery}
-This model targets the specific instruction \texttt{index\_leaf = 1;} at line 20 of listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
-
-\paragraph{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iterations of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
-
-\subsubsection{Model 3: Subtree Recovery (Index Corruption)}
-By glitching the loop \texttt{if (id + 1 < MEDS\_w)} at line 19 of listing~\ref{lst:path}, the algorithm fails to update the target index \texttt{id}. The traversal logic becomes desynchronized, resulting in the algorithm treating subsequent branches as public. All leaves to the right of the faulted \texttt{id} become computable.
+\subsubsection{Model 2: Subtree Recovery (Index Corruption)}
+By glitching the loop \highlight{rhl}{\texttt{if (id + 1 < MEDS\_w) id++;}} at line 19 of listing~\ref{lst:path}, the algorithm fails to update the target index \texttt{id}. The traversal logic becomes desynchronized, resulting in the algorithm treating subsequent branches as public. All leaves to the right of the faulted \texttt{id} become computable.
 \paragraph{Detection and recovery. } This fault is hard to detect without a reference signature. However, one can simulate tree reconstructions for all possible faulted \texttt{id} values to verify which leads to a valid signature. (up to $w$ verifications)
 
 \begin{figure}[H]
@@ -106,9 +101,14 @@ By glitching the loop \texttt{if (id + 1 < MEDS\_w)} at line 19 of listing~\ref{
   \draw[treeedge](s3)--(s7);\draw[treeedge](s3)--(s8);
   \draw[treeedge](s4)--(s9);\draw[treeedge](s4)--(s10);
 \end{tikzpicture}
-\caption{Effect of fault model 3 on the example at~\ref{fig:less-trees}, if the glitch occured while \texttt{id==1}. The returned path is $\{s_7,s_9,s_4,s_2\}$ and all leaves are computable except $x_1$.}
+\caption{Effect of fault model 2 on the example presented in figure~\ref{fig:less-trees}, if the glitch occured while \texttt{id==1}. The returned path is $\{s_7,s_9,s_4,s_2\}$ and all leaves are computable except $x_1$.}
 \label{fig:faulted_path}
 \end{figure}
+
+\subsubsection{Model 3: Hidden Leaf Recovery}
+This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf = 1;}} at line 20 of listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
+
+\paragraph{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iterations of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
 
 
 
@@ -124,7 +124,7 @@ All three fault models were successfully reproduced.
 
 \paragraph{Trigger position.} We have found the most efficient way to make the while condition fail from the first iteration is to fault the initialization of the involved variables (corresponding to lines 2 and 3 of \ref{lst:path}). The compiled result is in \ref{lst:f1asm}.
 
-\begin{lstlisting}[style=asmstyle, label=lst:f1asm]
+\begin{lstlisting}[style=asmstyle, label=lst:f1asm, caption=Compiled trigger points for fault model 1.]
 0800062c <stree_to_path_to_stree_glitch>:
 ...
  8000704:	f001 fa18 	bl	8001b38 <trigger_high> // trigger_high();
@@ -157,7 +157,7 @@ All three fault models were successfully reproduced.
 \paragraph{Trigger position.} We set the trigger to frame lines $19$ of \ref{lst:path}. The compiled result is in \ref{lst:f2asm}.
 
 
-\begin{lstlisting}[style=asmstyle, label=lst:f2asm, caption=Add Caption.]
+\begin{lstlisting}[style=asmstyle, label=lst:f2asm, caption=Compiled trigger points for fault model 2.]
 080006d2 <stree_to_path_to_stree_glitch>:
 ...
  8000726:	f001 fa09 	bl	8001b3c <trigger_high> // trigger_high();
@@ -186,7 +186,7 @@ All three fault models were successfully reproduced.
 \paragraph{Compilation.} Higher compiler optimization levels made it difficult to precisely target the flags. Specifically, the \texttt{-O1}, \texttt{-O2}, \texttt{-O3}, and \texttt{-Os} optimization flags resulted in compiled assembly code that omitted the explicit assignment instruction entirely, relying instead on complex control-flow manipulations to achieve the same logical outcome. To resolve this issue, we enforced the \texttt{-O0} optimization level strictly on the targeted function. Applying \texttt{-O0} to the entire project was unfeasible, as it increased the binary size beyond the storage capacity of the target board.
 
 \paragraph{Trigger position.} For the unoptimized version, we position the glitch high trigger right before the \texttt{index\_leaf} assignment and the low trigger right after. This results in the compiled code in listing~\ref{lst:f3asm}. 
-\begin{lstlisting}[style=asmstyle]
+\begin{lstlisting}[style=asmstyle, label=lst:f3asm, caption=Compiled trigger points for fault model 3.]
 0800062c <stree_to_path_to_stree_glitch>:
 ...
  80006be:	f001 fd3f 	bl	8002140 <trigger_high> // trigger_high();
@@ -194,7 +194,7 @@ All three fault models were successfully reproduced.
  80006c4:	62bb      	str	r3, [r7, #40]	@ 0x28
  80006c6:	f001 fd43 	bl	8002150 <trigger_low>  // trigger_low();
 ...
-\end{lstlisting}\label{lst:f3asm}
+\end{lstlisting}
 
 \paragraph{Parameters.} The disassembled code shows that the assignement is done in two instructions, first The CPU loads the immediate integer value 1 directly into the register \texttt{r3}, then it takes that value 1 from \texttt{r3} and writes it out to memory. According to ARM documentation, each of these instruction is 1 clock cycle long. We test the attack by setting the \texttt{repeat} parameter of the glitch controller to 2 and 3. 
 
@@ -219,3 +219,5 @@ In both cases, we notice a higher probability of success with an offset of $1$ a
     \caption{Glitch success frequency by glitch width and offset for fault model 3, with 10 tries per parameter pair.}
     \label{fig:fault3_results}
 \end{figure}
+
+\subsubsection{Discussion \slash conclusion} todo.

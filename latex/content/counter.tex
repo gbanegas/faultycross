@@ -1,1 +1,66 @@
-TODO
+In this section we suggest a set of countermeasures that would make the signature scheme more secure against the exposed fault models.
+
+We split the countermeasures into different categories :
+
+\begin{itemize}
+    \item Post-publication code path check : same signature size, no modification of the tree construction.
+    \item Path construction algorithm change : same signature size.
+    \item GGM tree-less signature : larger signature.
+\end{itemize}
+
+\subsection{Post-publication path check}
+
+This countermeasure consists is running checks on the output of \SeedTreeToPath.
+
+A simple size check on the path is enough to be secure against fault models 1 and 3, 
+since they result in path lengths of $1$ and $\text{golden path size}+1$ respectively.
+The expected path size can be computed in linear time from $\calH$. (Todo : algorithm ?).
+
+A more thorough and correct check would be to rebuild the tree using $\PathToSeedTree$ 
+on the obtained path and to compare the obtained leaves to $\calH$ and the reference tree.
+This can also be done in linear time.
+
+\begin{remark}
+    In order to pass this check, it would be sufficient to induce 
+    the same fault as in the $\SeedTreeToPath$ on $\PathToSeedTree$, seeing as they both 
+    call the same function in the reference implementation.
+\end{remark}
+
+\subsubsection{Impact on performances}
+
+We implement both of these checks and compare execution times of the signature step with 
+or without countermeasure. The results are summarized in table~\ref{tab:counter_1_cmp}. We refer to the path size check countermeasure by $\textbf{C}_{size}$ and 
+the full tree check by $\textbf{C}_{tree}$.
+
+\begin{table}[H]
+\centering
+\caption{Countermeasures execution time comparison}
+\label{tab:counter_1_cmp}
+\setlength{\tabcolsep}{10pt}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Version} & \textbf{Time (min)} & \textbf{cycles} \\
+ Base   &  0.001230 & 4798061  \\
+$C_{size}$   &  0.001070 & 4171382  \\
+$C_{tree}$   &  0.001303 & 5080762  \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Path construction algorithm modification}
+
+Though the current implementation of $\SeedTreeToPath\slash\PathToSeedTree$ is very efficient,
+it allows for attack namely because it merges the flag tree construction and the path construction
+steps. 
+
+Splitting the two steps and introducting a check after both stages could limit the 
+attack surface by introducing redundancy.
+
+Todo : detail + implementation + time analysis.
+
+\subsection{GGM-tree-less signature}
+
+We could also consider not using GGM trees and publishing all $t-w$ seeds. 
+Todo : size of the signature.
