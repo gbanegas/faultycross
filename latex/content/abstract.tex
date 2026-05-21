@@ -1,6 +1,6 @@
 
 We now define a unified abstraction that captures the common structure
-of the \GGM-tree mechanism across all schemes discussed in
+of the \GGM-tree mechanism across the schemes discussed in
 Section~\ref{sec:background}.
 
 \begin{definition}[\GZKST]
@@ -82,9 +82,6 @@ introduced in Section~\ref{sec:background} is a valid \GZKST\ instance in the
 sense of Definition~\ref{def:gzkst}.  For each scheme, we exhibit the concrete
 instantiation of the six algorithms and verify that
 Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by construction.
-
-
-\subsubsection{LESS-V2}
 
 \begin{proposition}[LESS-v2 is a \GZKST\ instance]
 \label{prop:less-gzkst}
@@ -217,7 +214,6 @@ Positions $i \in \calH$ remain empty; positions $i \in \calR$ yield the
 recovered seeds from which monomial matrices and commitments are re-derived.
 \end{itemize}
 
-\subsubsection{MEDS}
 
 \begin{proposition}[MEDS is a \GZKST\ instance]
 \label{prop:meds-gzkst}
@@ -264,12 +260,11 @@ downward via $\PRG$; positions $i \in \calH$ remain empty.
 \begin{remark}
   In this instantiation of the $\Publish$ algorithm, 
   we rely on the path construction as described 
-  in the MEDS submission document~\cite{MEDS}. However, 
+  in the MEDS submission~\cite{MEDS_PQC}. However, 
   the reference implementation uses a different algorithm, 
-  that is further explained in section~\ref{sec:app}.
+  that is further explained in Section~\ref{sec:app}.
 \end{remark}
 
-\subsubsection{CROSS}
 
 \begin{proposition}[CROSS is a \GZKST\ instance]
 \label{prop:cross-gzkst}
