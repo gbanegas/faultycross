@@ -12,29 +12,30 @@ scheme may have severe consequences, including malicious software
 updates, device impersonation, and unauthorized access to sensitive 
 communications.
 
-The security of widely used classical signature schemes, such as 
-RSA-based constructions and elliptic-curve-based signatures 
-relying on the Elliptic Curve Discrete Logarithm Problem, would 
-be compromised by sufficiently large quantum computers through 
-algorithms such as Shor's algorithm. This threat has motivated 
-the development of post-quantum cryptography, whose goal is to 
-design cryptographic schemes resistant to both classical and 
-quantum adversaries. Among the most promising candidates are 
-zero-knowledge-based signature schemes relying on Fiat--Shamir 
-transformations of interactive identification protocols. Several 
-recent constructions, including LESS~\cite{LESS-spec}, 
-CROSS~\cite{CROSSspec}, and MEDS~\cite{ChouNPRRST23}, use 
-\GGM-tree-like seed compression techniques to reduce signature size 
-by compactly representing large collections of ephemeral randomness. 
-During signing, these schemes selectively reveal only the seeds 
-associated with public rounds while keeping challenge-dependent 
-seeds hidden. Although this mechanism is essential for efficiency, 
-recent works have shown that it also introduces an important 
-fault-attack surface: faults affecting the seed-publication logic 
-may leak hidden seeds together with their corresponding 
-zero-knowledge responses, enabling the recovery of secret 
-information and, ultimately, full key recovery or forgery 
-attacks~\cite{FaultToForge2025,ZKFault}.
+The security of classical signature schemes, such as RSA-based signatures and 
+elliptic-curve-based signatures relying on the Elliptic Curve Discrete 
+Logarithm Problem (ECDLP), would be compromised by a large quantum 
+computer through the use of Shor's algorithm. This threat has motivated the 
+development of post-quantum cryptography, whose objective is to design 
+cryptographic schemes resistant to both classical and quantum adversaries. 
+Among the most promising candidates are zero-knowledge-based signature schemes 
+obtained via the Fiat--Shamir transformation~\cite{DagdelenFG13,FiatS86} of 
+interactive identification protocols.
+Several recent constructions, including 
+LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, and MEDS~\cite{ChouNPRRST23}, 
+rely on the Fiat--Shamir transform to construct digital signatures. However, 
+these schemes typically suffer from large signature sizes. To reduce this 
+issue, they employ \GGM-tree-like seed-compression techniques, which reduce the 
+signature size by compacting it to large collections of ephemeral randomness.
+
+During signing, these schemes reveal only the seeds associated with public rounds 
+while keeping challenge-dependent seeds hidden. Although this mechanism is essential 
+for efficiency, recent works have shown that it also introduces a significant 
+fault-attack surface: faults affecting the seed-publication logic may leak 
+hidden seeds together with their corresponding zero-knowledge responses, 
+enabling recovery of secret information and, in the end, full key recovery or 
+forgery attacks~\cite{FaultToForge2025,ZKFault}.
+
 
 %In 2022, the National Institute 
 %of Standards and Technology selected the first set of post-quantum 
