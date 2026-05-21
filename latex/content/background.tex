@@ -165,11 +165,9 @@ new fault surfaces.
 
 This section provides an overview of the signature schemes, to which we apply our generalized
 model and against which we carry out our attacks. 
-% ============================================================
-\subsubsection{LESS-v2}
-\label{sec:less}
-% ============================================================
 
+\textbf{LESS-v2.}
+\label{sec:less}
 LESS (Linear Equivalence Signature Scheme)~\cite{LESS-spec} uses a Fiat--Shamir
 transformation over a 3-pass Sigma protocol whose security rests on the Canonical
 Form Linear Equivalence Problem (CF-LEP).  During signing, the signer must
@@ -207,11 +205,8 @@ Table~\ref{tab:scheme-params} lists the LESS-v2 parameter sets.
 
 
 % ============================================================
-\subsubsection{CROSS}
+\textbf{CROSS.}
 \label{sec:cross}
-% ============================================================
-
-\paragraph{Context.}
 CROSS (Codes and Restricted Objects Signature Scheme)~\cite{CROSSspec} is based on
 the Restricted Syndrome Decoding Problem (R-SDP)~\cite{BaldiBPSWW24} and applies the
 Fiat--Shamir transform to a 5-pass ($q_2$-identification) protocol.
@@ -268,10 +263,8 @@ which demonstrated full key recovery from a single fault for all CROSS
 parameter sets (see Table~\ref{tab:scheme-params}).
 
 % ============================================================
-\subsubsection{MEDS}
+\textbf{MEDS.}
 \label{sec:meds}
-% ============================================================
-
 MEDS (Matrix Equivalence Digital Signature)~\cite{ChouNPRRST23} is a code-based
 signature scheme whose security rests on the Matrix Code Equivalence Problem
 (MCEP).  Like LESS, it applies the Fiat--Shamir transform to a 3-pass Sigma
