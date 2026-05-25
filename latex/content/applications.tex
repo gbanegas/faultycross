@@ -116,37 +116,64 @@ This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf 
 \subsection{Results and Observations}
 
 We successfully executed the fault models on the Chipwhisperer board. This section detailed the compiler and glitcher configurations that were required to obtain the desired faults.
-All three fault models were successfully reproduced. 
 
+\subsubsection{Methodology}
+
+For each target fault model, we aim to identify the parameter configurations that yield the highest 
+attack success rate. First, we define a target output state that signifies a successful fault 
+injection. 
+
+Next, we establish a precise faulting window encompassing one or more target assembly instructions. 
+To synchronize the injection hardware, we instrument the firmware by inserting a \texttt{trigger\_high()} 
+instruction immediately before the target instruction block to signal the ChipWhisperer to begin 
+counting clock cycles, followed by a \texttt{trigger\_low()} instruction to terminate the window. 
+We then verify the disassembled binary to ensure that compiler optimizations have not rearranged, 
+omitted, or reordered these trigger placements.
+
+To configure the temporal bounds of the injection, we define the \texttt{repeat} parameter, 
+which specifies the continuous duration (in clock cycles) of the clock glitch. We calibrate this 
+maximum value based on the nominal cycle execution counts provided in the ARM documentation for 
+the target instruction sequence. 
+
+Finally, we iteratively sweep the following spatial and temporal parameters to map the physical 
+fault space and isolate high-yield vulnerability regions:
+
+\begin{itemize}
+    \item \texttt{width}: The width of the glitch pulse, achieved by XORing the system clock (expressed as a percentage of the clock period, spanning from 0\% to 50\%).
+    \item \texttt{offset}: The phase shift or delay introduced before the rising edge of the glitch pulse relative to the clock cycle (expressed as a percentage of the clock period, spanning from -50\% to 50\%).
+    \item \texttt{ext\_offset}: The absolute number of clock cycles elapsed after the trigger signal before the glitch injection begins.
+\end{itemize}
 \subsubsection{Full tree recovery}
+
+This attack is successful if the returned path contains a single node which is the root node.
 
 \paragraph{Compilation.} This attack is carried out on a code compiled with the default \texttt{-Os} optimization.
 
-\paragraph{Trigger position.} We have found the most efficient way to make the while condition fail from the first iteration is to fault the initialization of the involved variables (corresponding to lines 2 and 3 of \ref{lst:path}). The compiled result is in \ref{lst:f1asm}.
+\paragraph{Trigger position.} We directly target the evaluation of the conditional and the branching instruction corresponding to line 19 of \ref{lst:path}). The compiled result is in \ref{lst:f1asm}. We fault for 3 clock cycles.
 
 \begin{lstlisting}[style=asmstyle, label=lst:f1asm, caption=Compiled trigger points for fault model 1.]
 0800062c <stree_to_path_to_stree_glitch>:
 ...
- 8000704:	f001 fa18 	bl	8001b38 <trigger_high> // trigger_high();
- 8000708:	f04f 0800 	mov.w	r8, #0             // unsigned int id = 0;
- 800070c:	4645      	mov	r5, r8                 // int i = 0;
- 800070e:	4647      	mov	r7, r8                 // int h = 0;
+    // trigger_high();
+ 8000710:	f001 fa12 	bl	8001b38 <trigger_high>
+    // while ((indices[id] >> (MEDS_seed_tree_height - h)) == i)
+ 8000714:	ab06      	add	r3, sp, #24
+ 8000716:	eb03 0488 	add.w	r4, r3, r8, lsl #2
+ 800071a:	e00d      	b.n	8000738 <stree_to_path_to_stree_glitch+0x66>
+    // trigger_low();
+ 800071c:	f001 fa13 	bl	8001b46 <trigger_low>
 ...
 \end{lstlisting}
 
-\paragraph{Parameters. } We fault for 4 clock cycles. A glitch is successful if the returned path contains the root node. Figure~\ref{fig:fault1_results} shows that the attack was successful for :
-\begin{itemize}
-    \item An offset neighboring $-13.5$ with a positive offset
-    \item A width neighboring $13.5$ with a negative offset
-    \item A sum of a width and offset of approximatively $13.5$
-\end{itemize}
-
-\paragraph{Todo.} Interpretation.
+\paragraph{Parameters. } Figure~\ref{fig:fault1_results} shows that the attack has
+ a high success rate and lower reset rates for an \texttt{ext\_offset} ranging 
+ from $1.5$ to $2.5$, a small \texttt{offset} of $-1$ to $1$ and rather wide 
+ glitches (\texttt{width} over $20$).
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{content/images/glitch_heatmap_1_repeat4.png} 
-    \caption{Glitch success frequency by glitch width and offset for fault model 1, with 10 tries per parameter pair.}
+    \includegraphics[width=\textwidth]{content/images/glitch_3d_results.png} 
+    \caption{Glitch success frequency by glitch width and offset for fault model 1, with 10 tries per parameter set. Valid glitches are runs that did not crash and output paths that were neither correct nor the target faulted path.}
     \label{fig:fault1_results}
 \end{figure}
 
