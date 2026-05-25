@@ -48,6 +48,12 @@ Lo{\"i}c Bidoux, Jes{\'u}s-Javier Chi-Dom{\'i}nguez, Thibauld Feneuil, Philippe
   problem with {MPC-in-the-Head} paradigm.
 \newblock {\em Designs, Codes and Cryptography}, 93(5):1451--1486, May 2025.
 
+\bibitem{MEDS_PQC}
+Tung Chou, Ruben Niederhagen, Edoardo Persichetti, Lars Ran, Tovohery~Hajatiana
+  Randrianarisoa, Krijn Reijnders, Simona Samardjiska, and Monika Trimoska.
+\newblock {MEDS} post-quantum cryptography.
+\newblock \url{https://www.meds-pqc.org/}, 2023.
+
 \bibitem{ChouNPRRST23}
 Tung Chou, Ruben Niederhagen, Edoardo Persichetti, Tovohery~Hajatiana
   Randrianarisoa, Krijn Reijnders, Simona Samardjiska, and Monika Trimoska.
@@ -56,6 +62,23 @@ Tung Chou, Ruben Niederhagen, Edoardo Persichetti, Tovohery~Hajatiana
   Progress in Cryptology - {AFRICACRYPT} 2023 - 14th International Conference
   on Cryptology in Africa, Sousse, Tunisia, July 19-21, 2023, Proceedings},
   Lecture Notes in Computer Science, pages 28--52. Springer, 2023.
+
+\bibitem{DagdelenFG13}
+{\"{O}}zg{\"{u}}r Dagdelen, Marc Fischlin, and Tommaso Gagliardoni.
+\newblock The fiat-shamir transformation in a quantum world.
+\newblock In Kazue Sako and Palash Sarkar, editors, {\em Advances in Cryptology
+  - {ASIACRYPT} 2013 - 19th International Conference on the Theory and
+  Application of Cryptology and Information Security, Bengaluru, India,
+  December 1-5, 2013, Proceedings, Part {II}}, Lecture Notes in Computer
+  Science, pages 62--81. Springer, 2013.
+
+\bibitem{FiatS86}
+Amos Fiat and Adi Shamir.
+\newblock How to prove yourself: Practical solutions to identification and
+  signature problems.
+\newblock In Andrew~M. Odlyzko, editor, {\em Advances in Cryptology - {CRYPTO}
+  '86, Santa Barbara, California, USA, 1986, Proceedings}, Lecture Notes in
+  Computer Science, pages 186--194. Springer, 1986.
 
 \bibitem{GGM86}
 O.~Goldreich, S.~Goldwasser, and S.~Micali.
