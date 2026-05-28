@@ -101,6 +101,74 @@ uint8_t check_path(uint8_t *stree, uint8_t *path, uint8_t *h_digest, uint8_t * s
   return 0;
 }
 
+void flag_tree(uint8_t *ftree, uint8_t *h_digest){
+
+  for (int i = 0; i<MEDS_t; i++){
+    ftree[SEED_TREE_size-MEDS_t+i] = (h_digest[i]>0);
+  }
+  int l = 1 << MEDS_seed_tree_height;
+  int offset = MEDS_t - 1 - l;
+  for (int j = MEDS_seed_tree_height-1; j >= 0; j--){
+    l = l << 1;
+    for (int k = 0; k < l; k++){
+      ftree[l+k] = (ftree[2*(l+k)]|ftree[2*(l+k)+1]);
+    }
+    offset -= l;
+  }
+
+
+}
+
+uint8_t check_flag_tree(uint8_t *ftree, uint8_t *h_digest){
+
+  for (int i = 0; i<MEDS_t; i++){
+    if (h_digest[i] > 0) {
+      int k = SEED_TREE_size-MEDS_t+i;
+      while (k >= 0) {
+        if (ftree[k] == 0) {
+          return 1;
+        }
+        k = (k - 1) / 2;
+      }
+    }
+  }
+  return 0;
+
+}
+
+uint8_t ftree_to_path(uint8_t * path, uint8_t * ftree, uint8_t * stree){
+
+  int k = 0;
+  for (int i = 0; i<SEED_TREE_size; i++){
+    if (ftree[i] > 0) {
+      memcpy(path+(k*MEDS_st_seed_bytes),stree+(MEDS_st_seed_bytes*i), MEDS_st_seed_bytes);
+      k += 1;
+    }
+  }
+
+  uint8_t null_array[MEDS_st_seed_bytes] = {0};
+
+  int path_idx = 0;
+
+  for (int i = 0; i < SEED_TREE_size; i++) {
+    if (path_idx >= k) {
+        break;
+    }
+
+    if (stree[i] == path[path_idx]) {
+        if (ftree[i] == 1) {
+            return 1; 
+        }
+        
+        path_idx++;
+    }
+  }
+
+  return 0;
+  
+}
+
+
 void print_array(uint8_t *stree, int size)
 {
   printf("[ ");

@@ -14,11 +14,9 @@ This countermeasure consists is running checks on the output of \SeedTreeToPath.
 
 A simple size check on the path is enough to be secure against fault models 1 and 3, 
 since they result in path lengths of $1$ and $\text{golden path size}+1$ respectively.
-The expected path size can be computed in linear time from $\calH$. (Todo : algorithm ?).
-
-A more thorough and correct check would be to rebuild the tree using $\PathToSeedTree$ 
+The expected path size can be computed in linear time from $\calH$. 
+A more thorough check would be to rebuild the tree using $\PathToSeedTree$ 
 on the obtained path and to compare the obtained leaves to $\calH$ and the reference tree.
-This can also be done in linear time.
 
 \begin{remark}
     In order to pass this check, it would be sufficient to induce 
@@ -26,7 +24,31 @@ This can also be done in linear time.
     call the same function in the reference implementation.
 \end{remark}
 
+
+
+\subsection{Path construction algorithm modification}
+
+Although the unified implementation of $\SeedTreeToPath$ and $\PathToSeedTree$ is highly efficient, 
+its structural coupling of the flag tree construction and path extraction phases creates a vulnerability.
+Decoupling these operations into independent processing stages, and introducing validation checks after each phase, 
+reduces the attack surface. This structural redundancy ensures that any fault injected during the initial flag tree 
+generation will cause a detectable mismatch during the subsequent path construction phase.
+
+We implement this countermeasure using the following multi-stage verification procedure:
+
+\begin{enumerate}
+\item Construct a binary flag tree $\calF$ derived from $\calH$.
+\item Verify that for every leaf position $i$ where $\calF[i] = 1$, no ancestral node in its path to the root is flagged as $0$.
+\item Reconstruct the node path using the validated flag tree $\calF$ and the reference seed tree.
+\item Assert that no leaf node explicitly flagged as $1$ is included in the final extracted path.
+\end{enumerate}
+
+\paragraph{Complexity. }  All four verification steps scale linearly with the size of the tree, maintaining a time complexity of $\mathcal{O}(t)$.
+
+
 \subsubsection{Impact on performances}
+
+\paragraph{TODO } add third countermeasure + on other architectures.
 
 We implement both of these checks and compare execution times of the signature step with 
 or without countermeasure. The results are summarized in table~\ref{tab:counter_1_cmp}. We refer to the path size check countermeasure by $\textbf{C}_{size}$ and 
@@ -49,18 +71,23 @@ $C_{tree}$   &  0.001303 & 5080762  \\
 \end{table}
 
 
-\subsection{Path construction algorithm modification}
-
-Though the current implementation of $\SeedTreeToPath\slash\PathToSeedTree$ is very efficient,
-it allows for attack namely because it merges the flag tree construction and the path construction
-steps. 
-
-Splitting the two steps and introducting a check after both stages could limit the 
-attack surface by introducing redundancy.
-
-Todo : detail + implementation + time analysis.
-
 \subsection{GGM-tree-less signature}
 
-We could also consider not using GGM trees and publishing all $t-w$ seeds. 
-Todo : size of the signature.
+Alternative architectural designs could consider abandoning GGM tree structures entirely. 
+A potential solution, adapting the fault attack countermeasure for LESS proposed by \cite{ZKFault} 
+would require the response vector $v$ to explicitly contain the precomputed matrices 
+$\tilde{A}_i$ and $\tilde{B}_i$ that are sampled from the published leaves $\sigma_i$.
+
+\begin{equation}
+v[i] = 
+\begin{cases}
+    (\tilde{A}_i . A_{h_i}^{-1},\tilde{B}_i . B_{h_i}^{-1}), & \text{if } h_i > 0 \\
+    (\tilde{A}_i$, $\tilde{B}_i), & \text{if } h_i = 0
+\end{cases}
+\end{equation}
+
+While this design ensures that the secret matrices $(\tilde{A}_i, \tilde{B}_i)$ remain computationally 
+infeasible to derive for any index $i$, it introduces a disadvantage by significantly inflating 
+the overall signature size.
+
+\paragraph{TODO. } Signature size comparison by parameter.

@@ -201,16 +201,27 @@ This attack is successful if the returned path contains a single node which is t
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{content/images/glitch_heatmap_2_repeat3.png}
+    \includegraphics[width=\textwidth]{content/images/glitch_2d_results_ext2.png}
     \caption{Glitch success frequency by glitch width and offset for fault model 2, with 10 tries per parameter pair.}
     \label{fig:fault2_results}
 \end{figure}
 
-
+We observe a distinct, bounded region of system resets delimited by successful attacks and other valid glitches. 
+Crucially, the paths of many of these valid glitches contain a large set of intermediate nodes which provide sufficient 
+coverage to compute all of the leaf values.
 
 \subsubsection{Single hidden leaf recovery}
 
-\paragraph{Compilation.} Higher compiler optimization levels made it difficult to precisely target the flags. Specifically, the \texttt{-O1}, \texttt{-O2}, \texttt{-O3}, and \texttt{-Os} optimization flags resulted in compiled assembly code that omitted the explicit assignment instruction entirely, relying instead on complex control-flow manipulations to achieve the same logical outcome. To resolve this issue, we enforced the \texttt{-O0} optimization level strictly on the targeted function. Applying \texttt{-O0} to the entire project was unfeasible, as it increased the binary size beyond the storage capacity of the target board.
+\paragraph{Compilation.} Higher compiler optimization levels made it difficult to precisely target the flags. 
+Specifically, the \texttt{-O1}, \texttt{-O2}, \texttt{-O3}, and \texttt{-Os} optimization flags resulted in compiled 
+assembly code that omitted the explicit assignment instruction entirely, relying instead on complex control-flow 
+manipulations to achieve the same logical outcome. To resolve this issue, we enforced the \texttt{-O0} optimization 
+level strictly on the targeted function. Applying \texttt{-O0} to the entire project was unfeasible, as it increased 
+the binary size beyond the storage capacity of the target board. 
+
+The disassembled code shows that the assignement is done in two instructions, first The CPU loads the immediate integer value 1 directly into 
+the register \texttt{r3}, then it takes that value 1 from \texttt{r3} and writes it out to memory. 
+
 
 \paragraph{Trigger position.} For the unoptimized version, we position the glitch high trigger right before the \texttt{index\_leaf} assignment and the low trigger right after. This results in the compiled code in listing~\ref{lst:f3asm}. 
 \begin{lstlisting}[style=asmstyle, label=lst:f3asm, caption=Compiled trigger points for fault model 3.]
@@ -223,28 +234,25 @@ This attack is successful if the returned path contains a single node which is t
 ...
 \end{lstlisting}
 
-\paragraph{Parameters.} The disassembled code shows that the assignement is done in two instructions, first The CPU loads the immediate integer value 1 directly into the register \texttt{r3}, then it takes that value 1 from \texttt{r3} and writes it out to memory. According to ARM documentation, each of these instruction is 1 clock cycle long. We test the attack by setting the \texttt{repeat} parameter of the glitch controller to 2 and 3. 
-
-In both cases, we notice a higher probability of success with an offset of $1$ and a positive width, or a width of $-1$ and a positive offset.
+\paragraph{Parameters.} 
+According to ARM documentation, each of these instruction is 1 clock cycle long. 
+We set the \texttt{repeat} parameter of the glitch controller to 2. 
 
 \begin{figure}[htbp]
     \centering
-
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{content/images/glitch_heatmap_3_repeat2.png} 
-        \caption{\texttt{repeat=2}}
-    \end{subfigure}
-    \hfill 
-
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{content/images/glitch_heatmap_3_repeat3.png} % Replace with your image filename
-        \caption{\texttt{repeat=3}}
-    \end{subfigure}
-    
+        \includegraphics[width=\textwidth]{content/images/glitch_2d_results_ext3.png} 
     \caption{Glitch success frequency by glitch width and offset for fault model 3, with 10 tries per parameter pair.}
     \label{fig:fault3_results}
 \end{figure}
 
-\subsubsection{Discussion \slash conclusion} todo.
+\paragraph{Results.} The experiments confirm that the attack is reproducible. 
+Across all parameter sweeps, attempts strictly resulted in either normal execution, a device reset, or the expected exploit. 
+We observed a complete absence of other valid glitches. This is due to our single-instruction targeting. Unlike  
+fault models that disrupt larger execution windows and introduce non-deterministic errors, this injection is less likely
+to bleed into surrounding cycles or to trigger a control-flow collapse.
+
+These experiments demonstrate that the root reveal fault model, which is the most efficient approach requiring 
+the fewest queries for full secret key recovery, is highly reproducible. Furthermore, our results confirm the viability of two alternative fault models,
+although they prove more challenging to replicate under experimental conditions. Despite their lower reproducibility rates, 
+fault models 2 and 3 remain relevant for threat modeling; as detailed in Section~\ref{sec:counter}, they incur a higher computational or architectural 
+cost to detect during signature generation.

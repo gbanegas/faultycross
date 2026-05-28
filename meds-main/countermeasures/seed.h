@@ -18,6 +18,9 @@ void stree_to_path_to_stree_faulted(uint8_t *stree, uint8_t *h, uint8_t *path, u
 uint16_t expected_path_length(uint8_t *h_digest);
 uint16_t path_length(uint8_t *path);
 uint8_t check_path(uint8_t *stree, uint8_t *path, uint8_t *h_digest, uint8_t * salt);
+void flag_tree(uint8_t *ftree, uint8_t *h_digest);
+uint8_t check_flag_tree(uint8_t *ftree, uint8_t *h_digest);
+uint8_t ftree_to_path(uint8_t * path, uint8_t * ftree, uint8_t * stree);
 
 #define stree_to_path(stree, h, path, salt) stree_to_path_to_stree(stree, h, path, salt, STREE_TO_PATH)
 #define path_to_stree(stree, h, path, salt) stree_to_path_to_stree(stree, h, path, salt, PATH_TO_STREE)

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-
+#include <string.h>
 #include "randombytes.h"
 
 #include "params.h"
@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
   long long sign_time = 0xfffffffffffffff;
   long long sign_time_c1 = 0xfffffffffffffff;
   long long sign_time_c2 = 0xfffffffffffffff;
+  long long sign_time_c3 = 0xfffffffffffffff;
   long long verify_time = 0xfffffffffffffff;
 
   int rounds = 1;
@@ -75,6 +76,8 @@ int main(int argc, char *argv[])
 
     if (time < sign_time_c1) sign_time_c1 = time;
 
+    if (memcmp(sig_c1, sig, CRYPTO_BYTES) != 0 ) printf("C1 sig failed \n");
+
     uint8_t sig_c2[CRYPTO_BYTES + sizeof(msg)] = {0};
     unsigned long long sig_c2_len = sizeof(sig_c2);
 
@@ -84,6 +87,18 @@ int main(int argc, char *argv[])
 
     if (time < sign_time_c2) sign_time_c2 = time;
 
+    if (memcmp(sig_c2, sig, CRYPTO_BYTES) != 0 ) printf("C2 sig failed \n");
+
+    uint8_t sig_c3[CRYPTO_BYTES + sizeof(msg)] = {0};
+    unsigned long long sig_c3_len = sizeof(sig_c3);
+
+    time = -cpucycles();
+    crypto_sign(sig_c3, &sig_c3_len, (const unsigned char *)msg, sizeof(msg), sk);
+    time += cpucycles();
+
+    if (time < sign_time_c3) sign_time_c3 = time;
+
+    if (memcmp(sig_c3, sig, CRYPTO_BYTES) != 0 ) printf("C3 sig failed \n");
 
     unsigned char msg_out[4];
     unsigned long long msg_out_len = sizeof(msg_out);
@@ -108,6 +123,7 @@ int main(int argc, char *argv[])
   printf("sign:   %f   (%llu cycles)\n", sign_time / freq, sign_time);
   printf("sign_c1:   %f   (%llu cycles)\n", sign_time_c1 / freq, sign_time_c1);
   printf("sign_c2:   %f   (%llu cycles)\n", sign_time_c2 / freq, sign_time_c2);
+  printf("sign_c3:   %f   (%llu cycles)\n", sign_time_c3 / freq, sign_time_c3);
   printf("verify: %f   (%llu cycles)\n", verify_time / freq, verify_time);
 
   return 0;

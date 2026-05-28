@@ -991,6 +991,265 @@ int crypto_sign_c2(
 }
 
 
+
+int crypto_sign_c3(
+    unsigned char *sm, unsigned long long *smlen,
+    const unsigned char *m, unsigned long long mlen,
+    const unsigned char *sk
+  )
+{
+
+  // skip secret seed
+  sk += MEDS_sec_seed_bytes;
+
+  // expand G_0 from sigma_G_0 
+  pmod_mat_t G_0[MEDS_k * MEDS_m * MEDS_n];
+  rnd_sys_mat(G_0, MEDS_k, MEDS_m*MEDS_n, sk, MEDS_pub_seed_bytes);
+
+  sk += MEDS_pub_seed_bytes;
+
+
+  // Load A_inv and B_inv from sk
+  pmod_mat_t A_inv_data[MEDS_s * MEDS_m * MEDS_m];
+  pmod_mat_t B_inv_data[MEDS_s * MEDS_n * MEDS_n];
+
+  pmod_mat_t *A_inv[MEDS_s];
+  pmod_mat_t *B_inv[MEDS_s];
+
+  for (int i = 0; i < MEDS_s; i++)
+  {
+    A_inv[i] = &A_inv_data[i * MEDS_m * MEDS_m];
+    B_inv[i] = &B_inv_data[i * MEDS_n * MEDS_n];
+  }
+ 
+  // Load secret key matrices.
+  {
+    bitstream_t bs;
+
+    bs_init(&bs, (uint8_t*)sk, MEDS_SK_BYTES - MEDS_sec_seed_bytes - MEDS_pub_seed_bytes);
+
+    for (int si = 1; si < MEDS_s; si++)
+    {
+      for (int j = 0; j < MEDS_m*MEDS_m; j++)
+        A_inv[si][j] = bs_read(&bs, GFq_bits);
+
+      bs_finalize(&bs);
+    }
+
+    for (int si = 1; si < MEDS_s; si++)
+    {
+      for (int j = 0; j < MEDS_n*MEDS_n; j++)
+        B_inv[si][j] = bs_read(&bs, GFq_bits);
+
+      bs_finalize(&bs);
+    }
+
+    bs_finalize(&bs);
+  }
+
+
+  for (int i = 1; i < MEDS_s; i++)
+    LOG_MAT(A_inv[i], MEDS_m, MEDS_m);
+
+  for (int i = 1; i < MEDS_s; i++)
+    LOG_MAT(B_inv[i], MEDS_n, MEDS_n);
+
+  LOG_MAT(G_0, MEDS_k, MEDS_m*MEDS_m);
+
+  // --- end load A-inv and B_inv ------
+  LOG_VEC(delta, MEDS_sec_seed_bytes);
+
+
+  uint8_t stree[MEDS_st_seed_bytes * SEED_TREE_size] = {0};
+  uint8_t alpha[MEDS_st_salt_bytes];
+
+  uint8_t *rho = &stree[MEDS_st_seed_bytes * SEED_TREE_ADDR(0,0)];
+
+  // Generate tree root rho and salt alpha from an XOF on delta
+  XOF((uint8_t*[]){rho, alpha},
+      (size_t[]){MEDS_st_seed_bytes, MEDS_st_salt_bytes},
+      delta, MEDS_sec_seed_bytes,
+      2);
+
+  // Expand step : feel stree with rho-root GGM tree 
+  t_hash(stree, alpha, 0, 0);
+
+  // Sigma points to the leaves
+  uint8_t *sigma = &stree[MEDS_st_seed_bytes * SEED_TREE_ADDR(MEDS_seed_tree_height, 0)];
+
+  for (int i = 0; i < MEDS_t; i++)
+  {
+     LOG_HEX_FMT((&sigma[i*MEDS_st_seed_bytes]), MEDS_st_seed_bytes, "sigma[%i]", i);
+  }
+
+  // Sample the A_tilde and B_tilde from the leaves
+
+  pmod_mat_t A_tilde_data[MEDS_t * MEDS_m * MEDS_m];
+  pmod_mat_t B_tilde_data[MEDS_t * MEDS_m * MEDS_m];
+
+  pmod_mat_t *A_tilde[MEDS_t];
+  pmod_mat_t *B_tilde[MEDS_t];
+
+  for (int i = 0; i < MEDS_t; i++)
+  {
+    A_tilde[i] = &A_tilde_data[i * MEDS_m * MEDS_m];
+    B_tilde[i] = &B_tilde_data[i * MEDS_n * MEDS_n];
+  }
+
+
+  uint8_t seed_buf[MEDS_st_salt_bytes + MEDS_st_seed_bytes + sizeof(uint32_t)] = {0};
+  memcpy(seed_buf, alpha, MEDS_st_salt_bytes);
+
+  uint8_t *addr_pos = seed_buf + MEDS_st_salt_bytes + MEDS_st_seed_bytes;
+
+
+  keccak_state h_shake;
+  shake256_init(&h_shake);
+
+  for (int i = 0; i < MEDS_t; i++)
+  {
+    pmod_mat_t G_tilde_ti[MEDS_k * MEDS_m * MEDS_m];
+
+    while (1 == 1)
+    {
+      uint8_t sigma_A_tilde_i[MEDS_pub_seed_bytes];
+      uint8_t sigma_B_tilde_i[MEDS_pub_seed_bytes];
+
+      for (int j = 0; j < 4; j++)
+        addr_pos[j] = (i >> (j*8)) & 0xff;
+
+      memcpy(seed_buf + MEDS_st_salt_bytes, &sigma[i*MEDS_st_seed_bytes], MEDS_st_seed_bytes);
+
+      LOG_HEX_FMT(seed_buf, MEDS_st_salt_bytes + MEDS_st_seed_bytes + 4, "sigma_prime[%i]", i);
+
+      XOF((uint8_t*[]){sigma_A_tilde_i, sigma_B_tilde_i, &sigma[i*MEDS_st_seed_bytes]},
+           (size_t[]){MEDS_pub_seed_bytes, MEDS_pub_seed_bytes, MEDS_st_seed_bytes},
+           seed_buf, MEDS_st_salt_bytes + MEDS_st_seed_bytes + 4,
+           3);
+
+      LOG_HEX_FMT(sigma_A_tilde_i, MEDS_pub_seed_bytes, "sigma_A_tilde[%i]", i);
+      rnd_inv_matrix(A_tilde[i], MEDS_m, MEDS_m, sigma_A_tilde_i, MEDS_pub_seed_bytes);
+
+      LOG_HEX_FMT(sigma_B_tilde_i, MEDS_pub_seed_bytes, "sigma_B_tilde[%i]", i);
+      rnd_inv_matrix(B_tilde[i], MEDS_n, MEDS_n, sigma_B_tilde_i, MEDS_pub_seed_bytes);
+
+      LOG_MAT_FMT(A_tilde[i], MEDS_m, MEDS_m, "A_tilde[%i]", i);
+      LOG_MAT_FMT(B_tilde[i], MEDS_n, MEDS_n, "B_tilde[%i]", i);
+
+
+      // compute G_tilde
+      pi(G_tilde_ti, A_tilde[i], B_tilde[i], G_0);
+
+
+      LOG_MAT_FMT(G_tilde_ti, MEDS_k, MEDS_m*MEDS_n, "G_tilde[%i]", i);
+
+      if (pmod_mat_syst_ct(G_tilde_ti, MEDS_k, MEDS_m*MEDS_n) == 0)
+        break;
+    }
+
+    LOG_MAT_FMT(G_tilde_ti, MEDS_k, MEDS_m*MEDS_n, "G_tilde[%i]", i);
+
+    bitstream_t bs;
+    uint8_t bs_buf[CEILING((MEDS_k * (MEDS_m*MEDS_n - MEDS_k)) * GFq_bits, 8)];
+    
+    bs_init(&bs, bs_buf, CEILING((MEDS_k * (MEDS_m*MEDS_n - MEDS_k)) * GFq_bits, 8));
+
+    for (int r = 0; r < MEDS_k; r++)
+      for (int j = MEDS_k; j < MEDS_m*MEDS_n; j++)
+        bs_write(&bs, G_tilde_ti[r * MEDS_m*MEDS_n + j], GFq_bits);
+
+    shake256_absorb(&h_shake, bs_buf, CEILING((MEDS_k * (MEDS_m*MEDS_n - MEDS_k)) * GFq_bits, 8));
+  }
+
+  // Generate digest
+  shake256_absorb(&h_shake, (uint8_t*)m, mlen);
+
+  shake256_finalize(&h_shake);
+
+  uint8_t digest[MEDS_digest_bytes];
+
+  shake256_squeeze(digest, MEDS_digest_bytes, &h_shake);
+
+  LOG_VEC(digest, MEDS_digest_bytes);
+
+
+  uint8_t h[MEDS_t];
+
+  parse_hash(digest, MEDS_digest_bytes, h, MEDS_t);
+
+  LOG_VEC(h, MEDS_t);
+
+
+  bitstream_t bs;
+
+  bs_init(&bs, sm, MEDS_w * (CEILING(MEDS_m*MEDS_m * GFq_bits, 8) + CEILING(MEDS_n*MEDS_n * GFq_bits, 8)));
+
+  uint8_t *path = sm + MEDS_w * (CEILING(MEDS_m*MEDS_m * GFq_bits, 8) + CEILING(MEDS_n*MEDS_n * GFq_bits, 8));
+
+  // Rebuild tree from alpha
+  t_hash(stree, alpha, 0, 0);
+
+  // Create path from tree and challenge h
+  //stree_to_path(stree, h, path, alpha);
+
+  uint8_t ftree[SEED_TREE_size] = {0};
+
+  flag_tree(ftree, h);
+
+  if (check_flag_tree(ftree, h)) {
+    fprintf(stderr, "Signature failed, incorrect flag tree!\n");
+    return -1;
+  }
+
+  if (ftree_to_path(path, ftree, stree)) {
+    fprintf(stderr, "Signature failed, incorrect path!\n");
+    return -1;
+
+  }
+
+  for (int i = 0; i < MEDS_t; i++)
+  {
+    if (h[i] > 0)
+    {
+      {
+        pmod_mat_t mu[MEDS_m*MEDS_m];
+
+        pmod_mat_mul(mu, MEDS_m, MEDS_m, A_tilde[i], MEDS_m, MEDS_m, A_inv[h[i]], MEDS_m, MEDS_m);
+
+        LOG_MAT(mu, MEDS_m, MEDS_m);
+
+        for (int j = 0; j < MEDS_m*MEDS_m; j++)
+          bs_write(&bs, mu[j], GFq_bits);
+      }
+
+      bs_finalize(&bs);
+
+      {
+        pmod_mat_t nu[MEDS_n*MEDS_n];
+
+        pmod_mat_mul(nu, MEDS_n, MEDS_n, B_inv[h[i]], MEDS_n, MEDS_n, B_tilde[i], MEDS_n, MEDS_n);
+
+        LOG_MAT(nu, MEDS_n, MEDS_n);
+
+        for (int j = 0; j < MEDS_n*MEDS_n; j++)
+          bs_write(&bs, nu[j], GFq_bits);
+      }
+
+      bs_finalize(&bs);
+    }
+  }
+
+  memcpy(sm + MEDS_SIG_BYTES - MEDS_digest_bytes - MEDS_st_salt_bytes, digest, MEDS_digest_bytes);
+  memcpy(sm + MEDS_SIG_BYTES - MEDS_st_salt_bytes, alpha, MEDS_st_salt_bytes);
+  memcpy(sm + MEDS_SIG_BYTES, m, mlen);
+
+  *smlen = MEDS_SIG_BYTES + mlen;
+
+  LOG_HEX(sm, MEDS_SIG_BYTES + mlen);
+
+  return 0;
+}
+
 int crypto_sign_open(
     unsigned char *m, unsigned long long *mlen,
     const unsigned char *sm, unsigned long long smlen,
