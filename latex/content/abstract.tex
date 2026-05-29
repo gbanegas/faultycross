@@ -83,6 +83,65 @@ sense of Definition~\ref{def:gzkst}.  For each scheme, we exhibit the concrete
 instantiation of the six algorithms and verify that
 Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by construction.
 
+
+\begin{proposition}[MEDS is a \GZKST\ instance]
+\label{prop:meds-gzkst}
+MEDS instantiates Definition~\ref{def:gzkst} with secret type
+$\calS = \{(A_j^{-1}, B_j^{-1})\}_{j=1}^{s-1}$,
+$t$ parallel repetitions, and a \GGM\ tree of height
+$\lceil \log_2 t \rceil$ (complete when $t$ is a power of two,
+incomplete otherwise; only the first $t$ of the $2^{\lceil\log_2 t\rceil}$
+leaves are used).
+Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by the
+$\SeedTreeToPath$ construction regardless of whether the tree is
+complete or incomplete; see Appendix~\ref{app:proof-meds}.
+\end{proposition}
+
+\begin{itemize}
+    \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$:
+MEDS samples a fresh random scalar and derives the tree seed and salt via a single $\XOF$ call.
+    \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$:
+A binary tree of height $\lceil \log_2 t \rceil$ is built by
+hashing each parent with the salt and node index; the first $t$ leaves are
+returned.  When $t$ is not a power of two, the rightmost
+$2^{\lceil\log_2 t\rceil} - t$ potential leaves are unused, making the tree
+incomplete---the same structural situation as LESS-v2.
+    \item $\Chal(\cmt, \msg) \to \mathbf{c}$:
+Each leaf is expanded into sub-seeds via $\XOF$, ephemeral matrices are sampled, and
+the commitment is the hash of all compressed generator matrices together with $m$.
+Parsing the digest via $\ParseHash_{s,t,w}$ yields
+$\mathbf{h} \in \{0,\ldots,s-1\}^t$ of weight $w$; setting $c_i = h_i$,
+$c_i = 0$ (resp.\ $c_i \neq 0$) signals a revealed (resp.\ hidden) round.
+    \item $\Decide(\mathbf{c}) \to (\calH, \calR)$:
+$\calH = \{i : c_i \neq 0\}$, $\calR = \{i : c_i = 0\}$.
+    \item $\Publish(\calT, \calH) \to \tpath$:
+$\SeedTreeToPath_t$ removes the label of each leaf $i \in \calH$ and
+propagates each deletion upward, erasing every ancestor that has at least
+one hidden leaf in its subtree (i.e., the same bottom-up
+$\calF(v) = \calF(\ell) \vee \calF(r)$ rule as LESS-v2).
+Surviving boundary nodes—those with $\calF(v) = 0$ and
+$\calF(\mathrm{parent}(v)) = 1$—are serialised in depth-first order.
+    \item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_i : i \in \calR\}$:
+$\PathToSeedTree_t$ places path nodes on an empty tree and re-expands
+downward via $\PRG$; positions $i \in \calH$ remain empty.
+\end{itemize}
+
+\begin{remark}
+  In this instantiation of the $\Publish$ algorithm, 
+  we rely on the path construction as described 
+  in the MEDS submission~\cite{MEDS_PQC}. However, 
+  the reference implementation uses a different algorithm, 
+  that is further explained in Section~\ref{sec:app}.
+\end{remark}
+
+
+Using the same idea as in MEDS, we can apply 
+to LESS-v2, and CROSS. One can easily see 
+that the abstract model applies to LESS and CROSS. 
+Also, we can see that we can derive Proposition~\ref{prop:less-gzkst} and 
+Proposition~\ref{prop:cross-gzkst}. The proofs follow the same 
+idea as in MEDS (in Appendix~\ref{app:proof-meds}). 
+
 \begin{proposition}[LESS-v2 is a \GZKST\ instance]
 \label{prop:less-gzkst}
 LESS-v2 instantiates Definition~\ref{def:gzkst} with secret type
@@ -90,7 +149,7 @@ $\calS = \{\pi_1, \ldots, \pi_{s-1}\}$ (the $s-1$ secret monomial permutations),
 $t$ parallel repetitions, and an \emph{incomplete} \GGM\ tree of height
 $\lceil \log_2 t \rceil$.
 Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by construction
-of the three-phase flag tree; see Appendix~\ref{app:proof-less} for the full proof.
+of the three-phase flag tree.
 \end{proposition}
 
 \begin{remark}[Invariants under incomplete trees]
@@ -99,8 +158,7 @@ When the tree is incomplete, some leaves appear at depth
 $\lceil \log_2 t \rceil - 1$.  The index-tracking arrays
 $\mathsf{npl}$, $\mathsf{ll}$, $\mathsf{off}$, and $\mathsf{lsi}$ ensure that
 $\LabelLeaves$ and $\ComputeSeeds$ visit the correct nodes regardless of level.
-Both invariants therefore hold for any tree shape produced by the LESS-v2 expansion
-(see Appendix~\ref{app:proof-less}).
+Both invariants therefore hold for any tree shape produced by the LESS-v2 expansion.
 \end{remark}
 
 \begin{figure}[tb]
@@ -180,6 +238,7 @@ fully revealed subtree); blue-bordered nodes ($\calF{=}0$, in $\tpath$).}
 \label{fig:less-trees}
 \end{figure}
 
+\begin{comment}
 \begin{itemize}
     \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$: The root seed is derived from the secret key seed; the salt is sampled uniformly at random.
     \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$:
@@ -213,57 +272,8 @@ and re-expands downward via $\PRG$ until all $t$ leaves are filled.
 Positions $i \in \calH$ remain empty; positions $i \in \calR$ yield the
 recovered seeds from which monomial matrices and commitments are re-derived.
 \end{itemize}
+\end{comment}
 
-
-\begin{proposition}[MEDS is a \GZKST\ instance]
-\label{prop:meds-gzkst}
-MEDS instantiates Definition~\ref{def:gzkst} with secret type
-$\calS = \{(A_j^{-1}, B_j^{-1})\}_{j=1}^{s-1}$,
-$t$ parallel repetitions, and a \GGM\ tree of height
-$\lceil \log_2 t \rceil$ (complete when $t$ is a power of two,
-incomplete otherwise; only the first $t$ of the $2^{\lceil\log_2 t\rceil}$
-leaves are used).
-Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by the
-$\SeedTreeToPath$ construction regardless of whether the tree is
-complete or incomplete; see Appendix~\ref{app:proof-meds}.
-\end{proposition}
-
-\begin{itemize}
-    \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$:
-MEDS samples a fresh random scalar and derives the tree seed and salt via a single $\XOF$ call.
-    \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$:
-A binary tree of height $\lceil \log_2 t \rceil$ is built by
-hashing each parent with the salt and node index; the first $t$ leaves are
-returned.  When $t$ is not a power of two, the rightmost
-$2^{\lceil\log_2 t\rceil} - t$ potential leaves are unused, making the tree
-incomplete---the same structural situation as LESS-v2.
-    \item $\Chal(\cmt, \msg) \to \mathbf{c}$:
-Each leaf is expanded into sub-seeds via $\XOF$, ephemeral matrices are sampled, and
-the commitment is the hash of all compressed generator matrices together with $m$.
-Parsing the digest via $\ParseHash_{s,t,w}$ yields
-$\mathbf{h} \in \{0,\ldots,s-1\}^t$ of weight $w$; setting $c_i = h_i$,
-$c_i = 0$ (resp.\ $c_i \neq 0$) signals a revealed (resp.\ hidden) round.
-    \item $\Decide(\mathbf{c}) \to (\calH, \calR)$:
-$\calH = \{i : c_i \neq 0\}$, $\calR = \{i : c_i = 0\}$.
-    \item $\Publish(\calT, \calH) \to \tpath$:
-$\SeedTreeToPath_t$ removes the label of each leaf $i \in \calH$ and
-propagates each deletion upward, erasing every ancestor that has at least
-one hidden leaf in its subtree (i.e., the same bottom-up
-$\calF(v) = \calF(\ell) \vee \calF(r)$ rule as LESS-v2).
-Surviving boundary nodes—those with $\calF(v) = 0$ and
-$\calF(\mathrm{parent}(v)) = 1$—are serialised in depth-first order.
-    \item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_i : i \in \calR\}$:
-$\PathToSeedTree_t$ places path nodes on an empty tree and re-expands
-downward via $\PRG$; positions $i \in \calH$ remain empty.
-\end{itemize}
-
-\begin{remark}
-  In this instantiation of the $\Publish$ algorithm, 
-  we rely on the path construction as described 
-  in the MEDS submission~\cite{MEDS_PQC}. However, 
-  the reference implementation uses a different algorithm, 
-  that is further explained in Section~\ref{sec:app}.
-\end{remark}
 
 
 \begin{proposition}[CROSS is a \GZKST\ instance]
@@ -279,6 +289,9 @@ a CROSS-specific commitment-authenticity mechanism orthogonal to the
 \GZKST\ seed-hiding invariants.
 \end{proposition}
 
+
+ 
+\begin{comment}
 \begin{itemize}
     \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$: Root seed of size $\lam$ bits and salt of size $2\lam$ bits, both drawn uniformly at random.
     \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$:
@@ -306,6 +319,7 @@ Positions $i \in \calH$ remain empty; positions $i \in \calR$ yield seeds
 from which $({\bf e}'_i, {\bf u}'_i)$ are re-derived and $\mathsf{cmt}_1[i]$
 is recomputed for verification.
 \end{itemize}
+\end{comment}
 
 \begin{definition}[Faulted Signing Oracle]
 \label{def:fault-oracle}

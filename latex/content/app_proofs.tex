@@ -6,6 +6,8 @@ We use the convention $\calF(v) = 1$ to mean that $v$'s subtree contains at
 least one hidden leaf ($i \in \calH$), and $\calF(v) = 0$ to mean that all
 leaf descendants of $v$ are revealed ($i \in \calR$).
 
+
+\begin{comment}
 % ------------------------------------------------------------
 \subsection{Proof of Proposition~\ref{prop:less-gzkst}
   (LESS-v2 is a \GZKST\ instance)}
@@ -71,24 +73,41 @@ on the properties~\eqref{eq:leaf-flag}--\eqref{eq:flag-char}, which hold
 regardless of whether leaves appear at a uniform depth.  Hence both invariants
 hold for any incomplete tree shape produced by the LESS-v2 expansion.
 \end{proof}
+\end{comment}
 
+% ------------------------------------------------------------
 \subsection{Proof of Proposition~\ref{prop:meds-gzkst}
   (MEDS is a \GZKST\ instance)}
 \label{app:proof-meds}
+% ------------------------------------------------------------
 
-$\SeedTreeToPath$ implements the following erasure: for each $i \in \calH$
-the algorithm (i)~removes the label of $\mathrm{leaf}_i$, and
+Let $\calT$ be the MEDS seed tree with $\lceil \log_2 t \rceil$ levels.
+The $\SeedTreeToPath$ algorithm implements the following erasure: for each
+$i \in \calH$ the algorithm (i)~removes the label of $\mathrm{leaf}_i$, and
 (ii)~propagates the removal upward---a node $v$ loses its label as soon as
 \emph{at least one} leaf in its subtree has been removed.
-By induction this is equivalent to the OR-propagation
-$\calF(v) = \calF(\ell) \vee \calF(r)$ of LESS-v2.
+
+Define flag values on the nodes of $\calT$ by
+\begin{align}
+  \calF(\mathrm{leaf}_i) &= \mathbf{1}[i \in \calH],
+    \quad i \in \{0,\ldots,t-1\},
+  \label{eq:meds-leaf-flag}\\
+  \calF(v) &= \calF(\ell) \vee \calF(r),
+    \quad \text{for every internal node } v \text{ with children } \ell, r.
+  \label{eq:meds-or-prop}
+\end{align}
+Equations~\eqref{eq:meds-leaf-flag}--\eqref{eq:meds-or-prop} jointly imply:
+\begin{equation}
+  \calF(v) = 1 \iff \exists\,i \in \calH : \mathrm{leaf}_i
+  \text{ is a descendant of } v.
+  \label{eq:meds-flag-char}
+\end{equation}
 
 \begin{claim}
 \label{claim:meds-retain}
 After the erasure pass, a node $v$ retains its label if and only if
-$\calF(v) = 0$ in the sense of~\eqref{eq:flag-char},
-i.e., \emph{every} leaf descendant of $v$ is in $\calR$ (no hidden leaf
-in $v$'s subtree).
+$\calF(v) = 0$, i.e., \emph{every} leaf descendant of $v$ is in $\calR$
+(no hidden leaf in $v$'s subtree).
 \end{claim}
 
 \begin{proof}
@@ -104,27 +123,58 @@ $v$'s subtree contains no hidden leaf, no removal is triggered in
 $v$'s subtree, so $v$ retains its label.
 \end{proof}
 
-%\begin{remark}
-%The claim corrects a previous version of this proof that stated ``a node
-%retains its label iff its subtree contains at least one revealed leaf.''
-%The correct condition is stronger: \emph{all} leaves must be revealed
-%($\calF(v) = 0$), which is consistent with the LESS-v2 construction and
-%with the actual \textsc{SeedTreeToPath} code.
-%\end{remark}
-
-The published path $\tpath$ consists of the highest surviving nodes in
-the tree, serialised in depth-first order. Equivalently,
+The published path $\tpath$ consists of the highest surviving nodes in the
+tree, serialised in depth-first order.  Equivalently,
 \[
-\tpath
- = \{\, v : v \text{ retains its label and }
-\mathrm{parent}(v) \text{ was erased} \,\}.
+  \tpath = \{\,v : v \text{ retains its label and }
+  \mathrm{parent}(v) \text{ was erased}\,\}.
 \]
-By the claim, this is $\{v : \calF(v) = 0,\; \calF(\mathrm{parent}(v)) = 1\}$,
-which is identical to the LESS-v2 definition.
+By Claim~\ref{claim:meds-retain}, this equals
+$\{v : \calF(v) = 0,\;\calF(\mathrm{parent}(v)) = 1\}$
+(with the convention that $\calF(\mathrm{parent}(\mathrm{root})) = 1$).
 
-Invariants~\ref{inv:correctness} and~\ref{inv:hiding} follow by the same
-argument as in Appendix~\ref{app:proof-less}.
+\begin{proof}[Proof of Invariant~\ref{inv:correctness} (Correctness)]
+Let $i \in \calR$.  Consider the root-to-leaf path
+$\pi_i = (v_0 = \mathrm{root},\,v_1,\,\ldots,\,v_d = \mathrm{leaf}_i)$.
 
+Since $|\calH| \geq 1$ (the challenge weight satisfies $w \geq 1$), at least
+one leaf has flag~$1$.  By~\eqref{eq:meds-flag-char},
+$\calF(v_0) = \calF(\mathrm{root}) = 1$.
+
+Since $i \in \calR$, equation~\eqref{eq:meds-leaf-flag} gives
+$\calF(v_d) = 0$.
+
+Because $\calF(v_0) = 1$ and $\calF(v_d) = 0$, the path $\pi_i$ contains
+at least two nodes with different flags.  Define
+$k = \min\{j \in \{0,\ldots,d\} : \calF(v_j) = 0\}$.
+Then $k \geq 1$ (since $\calF(v_0) = 1$), $\calF(v_k) = 0$, and
+$\calF(v_{k-1}) = 1$.  Hence $v_k \in \tpath$, and $v_k$ lies on the
+root-to-leaf path $\pi_i$, establishing Invariant~\ref{inv:correctness}.
+\end{proof}
+
+\begin{proof}[Proof of Invariant~\ref{inv:hiding} (ZK hiding)]
+Let $i \in \calH$ and let $v$ be any proper ancestor of $\mathrm{leaf}_i$
+(including the root).  Since $\mathrm{leaf}_i$ is a descendant of $v$ and
+$i \in \calH$, equation~\eqref{eq:meds-flag-char} gives $\calF(v) = 1$.
+Hence no ancestor of $\mathrm{leaf}_i$ can satisfy $\calF(v) = 0$, so no
+ancestor of $\mathrm{leaf}_i$ lies in $\tpath$.
+Invariant~\ref{inv:hiding} holds.
+\end{proof}
+
+\begin{proof}[Extension to incomplete trees (Remark~\ref{rem:incomplete})]
+When $t$ is not a power of~$2$, the MEDS tree is incomplete: some leaves
+appear at depth $\lceil \log_2 t \rceil - 1$ rather than
+$\lceil \log_2 t \rceil$.  The index-tracking arrays ensure that
+$\SeedTreeToPath$ correctly identifies which nodes are leaves, assigns flags
+according to~\eqref{eq:meds-leaf-flag}, and performs the bottom-up OR
+pass~\eqref{eq:meds-or-prop} over the actual tree structure.
+
+The proofs of both invariants above are purely graph-theoretic and depend
+only on properties~\eqref{eq:meds-leaf-flag}--\eqref{eq:meds-flag-char},
+which hold regardless of whether leaves appear at a uniform depth.  Hence
+both invariants hold for any incomplete tree shape produced by MEDS.
+\end{proof}
+\begin{comment}
 % ------------------------------------------------------------
 \subsection{Proof of Proposition~\ref{prop:cross-gzkst}
   (CROSS is a \GZKST\ instance)}
@@ -142,6 +192,7 @@ recompute from the revealed seeds.  It neither publishes any seed in
 $\{\eseed_i : i \in \calH\}$ nor affects the seed-path computation, and is
 therefore orthogonal to both invariants.
 
+\end{comment}
 
 % ------------------------------------------------------------
 \subsection{Proof of Proposition~\ref{prop:alg-correctness}
