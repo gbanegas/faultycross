@@ -1,7 +1,17 @@
-This subsection details a fault injection (FI) attack conducted on the C reference implementation of the MEDS signature algorithm. We focus on exploiting the tree traversal logic used in the path construction to leak hidden seeds.
+This section details a fault injection (FI) attack against 
+the C reference implementation of MEDS. We focus on 
+exploiting the tree traversal logic used in the path construction to leak 
+hidden seeds.
 
 \subsection{Target Analysis}
-The primary target of our analysis is the $\SeedTreePath$ function, specifically targeting the logic represented in the signing phase of the MEDS algorithm (instruction 16 of algorithm~\ref{alg:sign_meds}). In the reference implementation, both $\SeedTreePath$ (path generation) and $\SeedTree$ (tree reconstruction) are handled by a unified function, \texttt{stree\_to\_path\_to\_stree}, which operates in two modes defined by a \texttt{mode} parameter.
+The primary target of our analysis is the $\SeedTreePath$ function, 
+specifically targeting the logic represented in the signing phase of 
+the MEDS algorithm (instruction 16 of algorithm~\ref{alg:sign_meds}). 
+In the reference implementation\footnote{Reference implementation 
+available in \url{https://github.com/MEDSpqc/meds}.}, both $\SeedTreePath$ 
+(path generation) and $\SeedTree$ (tree reconstruction) are handled by a unified function, 
+\texttt{stree\_to\_path\_to\_stree}, which operates in two modes defined 
+by a \texttt{mode} parameter.
 
 \begin{lstlisting}[style=cstyle,caption={\texttt{stree\_to\_path\_to\_stree} implementation}., label=lst:path]
 void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, uint8_t *salt, int mode) {
@@ -50,8 +60,11 @@ void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, ui
 
 The algorithm identifies secret leaves (where $h[i] > 0$) and performs a Depth-First Search (DFS). The exploration halts as soon as it reaches a node that is no longer an ancestor of the hidden leaf. This node is then appended to the signature path. If the exploration reaches a target hidden leaf, the \texttt{index\_leaf} flag is set to ensure the leaf seed remains unpublished and we move on to the next hidden leaf.
 
-\subsubsection{Objective}
-The adversary's goal is to manipulate the control flow via fault injection to leak unpublished seeds (internal nodes or leaves) into the public signature path, ultimately compromising the security of the signature scheme.
+\paragraph{Objective.}
+The main goal as an attacks is to manipulate the control flow 
+via fault injection to leak unpublished seeds (internal nodes or leaves) 
+into the public signature path, ultimately compromising the security 
+of the signature scheme.
 
 \subsection{Experimental Setup}
 Our experimental platform consists of a \textbf{CW303-STM32F3} target board, featuring an ARM Cortex-M4 STM32F303RCT7 processor. Clock glitching is performed using a \textbf{ChipWhisperer-Lite}. As a proof-of-concept, the target board is flashed exclusively with the \texttt{stree\_to\_path\_to\_stree} function, using fixed values for the reference tree, salt, and challenge.
@@ -117,18 +130,21 @@ This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf 
 
 We successfully executed the fault models on the Chipwhisperer board. This section detailed the compiler and glitcher configurations that were required to obtain the desired faults.
 
-\subsubsection{Methodology}
-
+%\subsubsection{Methodology}
+\paragraph{Step-by-Step attack.}
 For each target fault model, we aim to identify the parameter configurations that yield the highest 
 attack success rate. First, we define a target output state that signifies a successful fault 
 injection. 
 
-Next, we establish a precise faulting window encompassing one or more target assembly instructions. 
-To synchronize the injection hardware, we instrument the firmware by inserting a \texttt{trigger\_high()} 
-instruction immediately before the target instruction block to signal the ChipWhisperer to begin 
-counting clock cycles, followed by a \texttt{trigger\_low()} instruction to terminate the window. 
-We then verify the disassembled binary to ensure that compiler optimizations have not rearranged, 
-omitted, or reordered these trigger placements.
+Next, we establish a precise faulting window encompassing one or more target 
+assembly instructions. To synchronize the injection hardware, we instrument the 
+firmware by inserting a \texttt{trigger\_high()} 
+instruction immediately before the target instruction block to signal the 
+ChipWhisperer to begin 
+counting clock cycles, followed by a \texttt{trigger\_low()} instruction to 
+terminate the window. 
+We then verify the disassembled binary to ensure that compiler optimizations 
+have not rearranged, omitted, or reordered these trigger placements.
 
 To configure the temporal bounds of the injection, we define the \texttt{repeat} parameter, 
 which specifies the continuous duration (in clock cycles) of the clock glitch. We calibrate this 
@@ -181,7 +197,7 @@ This attack is successful if the returned path contains a single node which is t
 
 \paragraph{Compilation.} This is carried out on a code compiled with the default \texttt{-Os} optimization.
 
-\paragraph{Trigger position.} We set the trigger to frame lines $19$ of \ref{lst:path}. The compiled result is in \ref{lst:f2asm}.
+\paragraph{Trigger position.} We set the trigger to frame lines $19$ of Listing~\ref{lst:path}. The compiled result is in Listing~\ref{lst:f2asm}.
 
 
 \begin{lstlisting}[style=asmstyle, label=lst:f2asm, caption=Compiled trigger points for fault model 2.]
