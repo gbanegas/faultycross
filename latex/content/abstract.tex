@@ -42,10 +42,7 @@ The six algorithms are:
 \end{definition}
 
 % ------------------------------------------------------------
-\subsection{The Flag Structure}
-\label{sec:flag-structure}
-% ------------------------------------------------------------
-
+\paragraph{The Flag Structure.}
 The flag structure $\calF$ produced internally by $\Publish$ is the key
 intermediate object.  It is a labelling $\calF : V(\calT) \to \{0,1\}$ where:
 \begin{itemize}
@@ -53,8 +50,6 @@ intermediate object.  It is a labelling $\calF : V(\calT) \to \{0,1\}$ where:
         directly included in $\tpath$ or derivable from a published ancestor;
   \item $\calF(v) = 1$: node $v$ is \emph{hidden}---it must not appear in $\tpath$ and must not be derivable from published nodes.
 \end{itemize}
-
-\noindent
 The flag structure satisfies two invariants:
 
 \begin{invariant}[Correctness]
@@ -69,10 +64,13 @@ For every $i \in \calH$, no ancestor of leaf $\eseed_i$ satisfies $\calF(v) = 0$
 \end{invariant}
 
 The ZK property of the signature scheme is contingent on
-Invariant~\ref{inv:hiding} holding for \emph{all} $i \in \calH$.  A fault that
+Invariant~\ref{inv:hiding} holding for \emph{all} $i \in \calH$. A fault that
 changes $\calF(v)$ from $1$ to $0$ for any $v$ that is an ancestor of some
 $\eseed_i$ with $i \in \calH$ \emph{breaks Invariant~\ref{inv:hiding}} and
-may allow an attacker to reconstruct $\eseed_i$.
+may allow an attacker to reconstruct $\eseed_i$. We provide an example of
+the GGM tree, together with the concepts of the hidden tree and flag
+structure, in Figure~\ref{fig:less-trees}.
+
 
 \subsection{Mapping Schemes to the GZKST Model}
 \label{sec:mapping}
@@ -232,7 +230,7 @@ Both invariants therefore hold for any tree shape produced by the LESS-v2 expans
 \vspace{2pt}
 {\small (b) After \Chal, \Decide, \Publish; $\mathbf{b}\!=\!\{0,1,0,0,1,0\}$, $\tpath\!=\!\{s_4,s_6,s_7\}$.}
 \end{minipage}
-\caption{LESS-v2 GGM seed tree ($t=6$): structure~(a) and flag state~(b).
+\caption{GGM seed tree ($t=6$): structure~(a) and flag state~(b).
 In~(b): pink nodes ($\calF{=}1$, hidden subtree); green nodes ($\calF{=}0$,
 fully revealed subtree); blue-bordered nodes ($\calF{=}0$, in $\tpath$).}
 \label{fig:less-trees}
@@ -410,6 +408,7 @@ present in the signature).  This \emph{dual revelation} is the
 primitive from which all secret-extraction procedures in this work
 are built.
 
+\begin{comment}
 \begin{figure}[tb]
 \centering
 \begin{tikzpicture}[>=latex, x=1cm, y=1cm]
@@ -433,6 +432,7 @@ are built.
 and public key $\mathsf{pk}$, it outputs partial secret $\mathsf{sk}'$.}
 \label{fig:oracle}
 \end{figure}
+\end{comment}
 
 \paragraph{Secret extraction.}
 We extend the \GZKST\ tuple with a seventh, scheme-specific procedure:
