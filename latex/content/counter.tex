@@ -88,6 +88,30 @@ v[i] =
 
 While this design ensures that the secret matrices $(\tilde{A}_i, \tilde{B}_i)$ remain computationally 
 infeasible to derive for any index $i$, it introduces a disadvantage by significantly inflating 
-the overall signature size.
+the overall signature size by adding $t-w$ couples of matrices to the signature. 
 
-\paragraph{TODO. } Signature size comparison by parameter.
+The signature size with countermeasure \texttt{sig\_cm} is given by :
+
+$$\ell_{\text{digest}} + t(\ell_{\mathbb{F}_q^{m \times m}} + \ell_{\mathbb{F}_q^{n \times n}}) + \ell_{\text{salt}}$$
+
+The signature sizes by parameter set are presented in table~\ref{tab:medsoverhead}.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparison of Signature Sizes and Overhead across MEDS Parameter Sets}
+\label{tab:medsoverhead}
+\begin{tabularx}{\textwidth}{l c >{\raggedleft\arraybackslash}X >{\raggedleft\arraybackslash}X r}
+\toprule
+\textbf{Parameter Set} & NIST Level & \texttt{sig} (Bytes) & \texttt{sig\_cm} (Bytes) & \textbf{Size Overhead} \\
+\midrule
+MEDS-9923   & I   & 9,896   & 677,440 & 6745.59\% \\
+MEDS-13220  & I   & 12,976  & 112,960 & 770.53\%  \\
+MEDS-41711  & III & 41,080  & 882,880 & 2049.17\% \\
+MEDS-69497  & III & 54,736  & 232,384 & 324.55\%  \\
+MEDS-134180 & V   & 132,424 & 475,072 & 258.75\%  \\
+MEDS-167717 & V   & 165,332 & 277,152 & 67.63\%   \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
