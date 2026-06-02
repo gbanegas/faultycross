@@ -1,30 +1,26 @@
-Digital signatures form the backbone of several aspects of modern 
-digital life, ranging from firmware updates and secure boot mechanisms 
-to messaging applications and public-key infrastructures. Their 
-primary goal is to guarantee authenticity: in principle, only the 
-holder of the secret signing key should be able to produce a valid 
-signature for a given message. Additionally, digital signatures 
-provide integrity and non-repudiation, ensuring that a message has 
-not been modified and that the signer cannot later deny having 
-produced the signature. Because of their widespread deployment in 
-security-critical systems, the compromise of a digital signature 
-scheme may have severe consequences, including malicious software 
-updates, device impersonation, and unauthorized access to sensitive 
-communications.
+Digital signatures form the backbone of many aspects of modern digital life, 
+ranging from firmware updates and secure boot mechanisms to messaging applications 
+and public-key infrastructures. Their primary purpose is to guarantee authenticity, 
+integrity, and non-repudiation: only the holder of the secret signing 
+key should be able to produce a valid signature for a given message, thereby 
+ensuring that the message has not been modified. Due to their widespread 
+deployment in security-critical systems, the compromise of a digital 
+signature scheme may have severe consequences, including malicious 
+software updates, device impersonation, and unauthorized access to 
+sensitive information.
 
 The security of classical signature schemes, such as RSA-based signatures and 
-elliptic-curve-based signatures relying on the Elliptic Curve Discrete 
-Logarithm Problem (ECDLP), would be compromised by a large quantum 
-computer through the use of Shor's algorithm. This threat has motivated the 
-development of post-quantum cryptography, whose objective is to design 
-cryptographic schemes resistant to both classical and quantum adversaries. 
+elliptic-curve-based signatures rely on the prime integer factorization 
+and Elliptic Curve Discrete Logarithm Problem (ECDLP), would be compromised by a 
+large quantum computer through the use of Shor's algorithm. This threat has 
+motivated the development of post-quantum cryptography, whose objective is to 
+design cryptographic schemes resistant to both classical and quantum adversaries. 
 Among the most promising candidates are zero-knowledge-based signature schemes 
-obtained via the Fiat--Shamir transformation~\cite{DagdelenFG13,FiatS86} of 
-interactive identification protocols.
+obtained via the Fiat--Shamir transformation~\cite{DagdelenFG13,FiatS86}.
 Several recent constructions, including 
 LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, and MEDS~\cite{ChouNPRRST23,MEDS_PQC}, 
 rely on the Fiat--Shamir transform to construct digital signatures. However, 
-these schemes typically suffer from large signature sizes. To reduce this 
+these schemes suffer from large signature sizes. To reduce this 
 issue, they employ \GGM-tree-like seed-compression techniques, which reduce the 
 signature size by compacting it to large collections of ephemeral randomness.
 
