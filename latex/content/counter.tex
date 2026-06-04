@@ -48,28 +48,42 @@ We implement this countermeasure using the following multi-stage verification pr
 
 \subsubsection{Impact on performances}
 
-\paragraph{TODO } add third countermeasure + on other architectures.
+We implement all three countermeasures and compare the execution times of the signature. 
 
-We implement both of these checks and compare execution times of the signature step with 
-or without countermeasure. The results are summarized in table~\ref{tab:counter_1_cmp}. We refer to the path size check countermeasure by $\textbf{C}_{size}$ and 
-the full tree check by $\textbf{C}_{tree}$.
+The results are summarized in table~\ref{tab:counter_1_cmp}. We refer to the path size check countermeasure by $\textbf{C}_{size}$,  
+the full tree check by $\textbf{C}_{tree}$ and the flag tree implementation by $\textbf{C}_{flag tree}$.
 
-\begin{table}[H]
+\paragraph{Experimental Setup.} We evaluated the performance of the MEDS digital signature scheme under RIOT OS on 
+two platforms: a resource-constrained embedded profile and a high-performance host baseline. For the embedded target, 
+a Toy parameter set was executed on a bare-metal Nordic Semiconductor nRF52840 Development Kit, featuring a 32-bit ARM Cortex-M4 microarchitecture operating at 64 MHz with 256 KB of RAM and 1 MB of Flash memory. 
+For the host profile, all parameter sets (MEDS9923 through MEDS167717) were tested natively using x86\_64 virtualization on a 64-bit desktop workstation running an Intel Core i7 processor under Ubuntu 24.04 LTS. The code was compiled with \texttt{arm-none-eabi-gcc} on the Cortex-M4 and with \texttt{gcc} (Ubuntu 13.3.0-6ubuntu2 24.04.1) 13.3.0 in the host environment. 
+
+
+\begin{table}[htbp]
 \centering
-\caption{Countermeasures execution time comparison}
+\caption{MEDS signature time (microseconds) by parameter set. All values are the median value of 100 runs.}
 \label{tab:counter_1_cmp}
-\setlength{\tabcolsep}{10pt}
-\begin{tabular}{@{}lcc@{}}
+\smallskip
+\begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}cccc}
 \toprule
-\textbf{Version} & \textbf{Time (min)} & \textbf{cycles} \\
- Base   &  0.001230 & 4798061  \\
-$C_{size}$   &  0.001070 & 4171382  \\
-$C_{tree}$   &  0.001303 & 5080762  \\
-
+\textbf{Parameter set} & \textbf{base} & $C_{size}$ & $C_{tree}$ & $C_{flagtree}$ \\
+\midrule
+Toy                    & 6845    & 6793      & 6794      & 6835          \\
+MEDS9923               & 1609626	& 1582806	& 1590051.5	& 1585796 \\
+MEDS13220              & 299950	& 275909	& 283484	& 283477.5         \\
+MEDS41711              & 4847694.5	& 5200203	& 4962401.5	& 5360679.5 \\
+MEDS55604              & 1280193	& 1381107	& 1321436	& 1307889          \\
+MEDS134180             & 5009655.5	& 5074072.5	& 5140707.5	& 5735290 \\
+MEDS167717             & 2950702	& 2951835.5	& 3076849.5	& 3051602.5  \\
+\midrule
+Toy (Cortex M4)        & 753566	& 737162	& 738843	& 737739
+\\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
+The benchmarks reveal that for parameter sets corresponding to NIST Security Level I (such as \textit{MEDS13220} and \textit{MEDS55604}), the proposed countermeasures do not introduce overhead. Because these configurations utilize shallow tree structures, the overall execution time is heavily dominated by base matrix arithmetic, rendering the validation loops virtually cost-free. 
+However, in the larger parameter sets with deeper trees (such as \textit{MEDS41711} and \textit{MEDS134180}), we do observe a overhead in the overall signature time (up to $+8\%$ for $C_{size}$, $+5\%$ for $C_{tree}$, and $+14\%$ for $C_{flagtree}$).
 
 \subsection{GGM-tree-less signature}
 
