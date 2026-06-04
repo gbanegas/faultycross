@@ -51,30 +51,30 @@ the bottom may have fewer than two children or act as leaves themselves.  This
 reduces memory and computation, but the additional index-tracking logic introduces
 new fault surfaces.
 %as detailed in Section~\ref{sec:theoretical}.
-
 \begin{figure}[tb]
 \centering
-\begin{tikzpicture}[x=0.72cm, y=1.15cm]
+\begin{tikzpicture}[x=0.48cm, y=0.9cm] % Squeezed spacing from x=0.72, y=1.15
 
-  % ---- node styles (assumed defined in preamble) ----
-  \tikzstyle{compnode}  = [circle, draw=cyan!60, fill=white, text=white, minimum size=14pt, inner sep=1pt, font=\tiny]
-  \tikzstyle{pubnode}= [circle, draw=cyan!90, fill=cyan!40,  minimum size=14pt, inner sep=1pt, font=\tiny]
-  \tikzstyle{unknode} = [circle, draw=gray!60, fill=gray!20,    minimum size=14pt, inner sep=1pt, font=\tiny]
-  \tikzstyle{treeedge} = [gray!40, rounded corners=2pt,->, thin]
-  \tikzstyle{leaflbl}  = [font=\tiny, below]
+  % ---- node styles ----
+  % Slightly reduced minimum size from 14pt to 11pt, and text font to \tiny
+  \tikzstyle{compnode}  = [circle, draw=cyan!60, fill=white, text=white, minimum size=11pt, inner sep=0.5pt, font=\tiny]
+  \tikzstyle{pubnode}   = [circle, draw=cyan!90, fill=cyan!40,  minimum size=11pt, inner sep=0.5pt, font=\tiny]
+  \tikzstyle{unknode}   = [circle, draw=gray!60, fill=gray!20,    minimum size=11pt, inner sep=0.5pt, font=\tiny]
+  \tikzstyle{treeedge}  = [gray!40, rounded corners=2pt,->, thin]
+  \tikzstyle{leaflbl}   = [font=\tiny, below]
 
   % ---- Level 0 (root, hollow) ----
   \node[unknode] (r)   at (7.5, 0)    {};
 
   % ---- Level 1 ----
-  \node[unknode]  (n0)  at (3.5, -0.5)   {};
-  \node[pubnode]  (n1)  at (11.5,-0.5)   {};
+  \node[unknode]  (n0)  at (3.5, -0.6)   {};
+  \node[pubnode]  (n1)  at (11.5,-0.6)   {};
 
   % ---- Level 2 ----
-  \node[pubnode]  (n00) at (1.5, -1)   {};
-  \node[unknode]  (n01) at (5.5, -1)   {};
-  \node[compnode]  (n10) at (9.5, -1)   {};
-  \node[compnode]  (n11) at (13.5,-1)   {};
+  \node[pubnode]  (n00) at (1.5, -1.2)   {};
+  \node[unknode]  (n01) at (5.5, -1.2)   {};
+  \node[compnode]  (n10) at (9.5, -1.2)   {};
+  \node[compnode]  (n11) at (13.5,-1.2)   {};
 
   % ---- Level 3 ----
   \node[compnode]  (n000) at (0.5, -2)  {};
@@ -87,22 +87,22 @@ new fault surfaces.
   \node[compnode]  (n111) at (14.5,-2)  {};
 
   % ---- Level 4 (leaves) ----
-  \node[compnode]  (l0)  at (0,   -3)   {};
-  \node[compnode]  (l1)  at (1,   -3)   {};
-  \node[compnode]  (l2)  at (2,   -3)   {};
-  \node[compnode]  (l3)  at (3,   -3)   {};
-  \node[unknode](l4)  at (4,   -3)   {};   
-  \node[pubnode]  (l5)  at (5,   -3)   {};
-  \node[compnode](l6)  at (6,   -3)   {};   
-  \node[compnode]  (l7)  at (7,   -3)   {};
-  \node[compnode]  (l8)  at (8,   -3)   {};
-  \node[compnode]  (l9)  at (9,   -3)   {};
-  \node[compnode]  (l10) at (10,  -3)   {};
-  \node[compnode]  (l11) at (11,  -3)   {};
-  \node[compnode]  (l12) at (12,  -3)   {};
-  \node[compnode]  (l13) at (13,  -3)   {};
-  \node[compnode]  (l14) at (14,  -3)   {};
-  \node[compnode]  (l15) at (15,  -3)   {};
+  \node[compnode]  (l0)  at (0,   -2.8)   {};
+  \node[compnode]  (l1)  at (1,   -2.8)   {};
+  \node[compnode]  (l2)  at (2,   -2.8)   {};
+  \node[compnode]  (l3)  at (3,   -2.8)   {};
+  \node[unknode]   (l4)  at (4,   -2.8)   {};   
+  \node[pubnode]   (l5)  at (5,   -2.8)   {};
+  \node[compnode]  (l6)  at (6,   -2.8)   {};   
+  \node[compnode]  (l7)  at (7,   -2.8)   {};
+  \node[compnode]  (l8)  at (8,   -2.8)   {};
+  \node[compnode]  (l9)  at (9,   -2.8)   {};
+  \node[compnode]  (l10) at (10,  -2.8)   {};
+  \node[compnode]  (l11) at (11,  -2.8)   {};
+  \node[compnode]  (l12) at (12,  -2.8)   {};
+  \node[compnode]  (l13) at (13,  -2.8)   {};
+  \node[compnode]  (l14) at (14,  -2.8)   {};
+  \node[compnode]  (l15) at (15,  -2.8)   {};
 
   % ---- edges: root -> level 1 ----
   \draw[treeedge] (r)--(n0);
@@ -129,31 +129,31 @@ new fault surfaces.
   \draw[treeedge] (n111)--(l14); \draw[treeedge] (n111)--(l15);
 
   % ---- leaf labels ----
-  \node[leaflbl] at (0,  -3.45) {$\eseed_0$};
-  \node[leaflbl] at (1,  -3.45) {$\eseed_1$};
-  \node[leaflbl] at (2,  -3.45) {$\eseed_2$};
-  \node[leaflbl] at (3,  -3.45) {$\eseed_3$};
-  \node[leaflbl] at (4,  -3.45) {$\eseed_4$};
-  \node[leaflbl] at (5,  -3.45) {$\eseed_5$};
-  \node[leaflbl] at (6,  -3.45) {$\eseed_6$};
-  \node[leaflbl] at (7,  -3.45) {$\eseed_7$};
-  \node[leaflbl] at (8,  -3.45) {$\eseed_8$};
-  \node[leaflbl] at (9,  -3.45) {$\eseed_9$};
-  \node[leaflbl] at (10, -3.45) {$\eseed_{10}$};
-  \node[leaflbl] at (11, -3.45) {$\eseed_{11}$};
-  \node[leaflbl] at (12, -3.45) {$\eseed_{12}$};
-  \node[leaflbl] at (13, -3.45) {$\eseed_{13}$};
-  \node[leaflbl] at (14, -3.45) {$\eseed_{14}$};
-  \node[leaflbl] at (15, -3.45) {$\eseed_{15}$};
+  \node[leaflbl] at (0,  -3.2) {$\eseed_0$};
+  \node[leaflbl] at (1,  -3.2) {$\eseed_1$};
+  \node[leaflbl] at (2,  -3.2) {$\eseed_2$};
+  \node[leaflbl] at (3,  -3.2) {$\eseed_3$};
+  \node[leaflbl] at (4,  -3.2) {$\eseed_4$};
+  \node[leaflbl] at (5,  -3.2) {$\eseed_5$};
+  \node[leaflbl] at (6,  -3.2) {$\eseed_6$};
+  \node[leaflbl] at (7,  -3.2) {$\eseed_7$};
+  \node[leaflbl] at (8,  -3.2) {$\eseed_8$};
+  \node[leaflbl] at (9,  -3.2) {$\eseed_9$};
+  \node[leaflbl] at (10, -3.2) {$\eseed_{10}$};
+  \node[leaflbl] at (11, -3.2) {$\eseed_{11}$};
+  \node[leaflbl] at (12, -3.2) {$\eseed_{12}$};
+  \node[leaflbl] at (13, -3.2) {$\eseed_{13}$};
+  \node[leaflbl] at (14, -3.2) {$\eseed_{14}$};
+  \node[leaflbl] at (15, -3.2) {$\eseed_{15}$};
 
   % ---- legend ----
-  \matrix[draw=gray!40, rounded corners=2pt, inner sep=4pt,
-          above right=0.2cm and 0cm of r,
-          matrix of nodes, nodes={font=\tiny, inner sep=2pt},
-          column sep=4pt, row sep=1pt] {
-    \node[unknode,  minimum size=8pt]{}; & \node{unrevealed};   \\
-    \node[pubnode,   minimum size=8pt]{}; & \node{known};       \\
-    \node[compnode, minimum size=8pt]{}; & \node{unrevealed but computable};   \\
+  \matrix[draw=gray!40, rounded corners=2pt, inner sep=3pt,
+          above right=0.15cm and 0cm of r,
+          matrix of nodes, nodes={font=\tiny, inner sep=1.5pt},
+          column sep=3pt, row sep=1pt] {
+    \node[unknode,  minimum size=7pt]{}; & \node{unrevealed};   \\
+    \node[pubnode,   minimum size=7pt]{}; & \node{known};       \\
+    \node[compnode, minimum size=7pt]{}; & \node{unrevealed but computable};   \\
   };
 
 \end{tikzpicture}
