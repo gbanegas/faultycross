@@ -1,0 +1,19 @@
+We presented a unified study of fault attacks against 
+post-quantum signature schemes based on seed-tree compression. 
+Through the GZKST abstraction, we identified a 
+common seed-hiding invariant underlying schemes such as 
+LESS-v2, CROSS, and MEDS, and showed that previously 
+proposed attacks can be viewed as violations of this 
+invariant.
+
+Building on this framework, we derived generic key-recovery 
+procedures and analyzed their query complexity. We also 
+demonstrated practical clock-glitch attacks against the 
+MEDS reference implementation on an ARM Cortex-M4 
+microcontroller, revealing multiple fault surfaces that 
+enable hidden-seed disclosure and secret-key recovery. 
+Finally, we proposed and evaluated several countermeasures, 
+showing that effective protections can be achieved with 
+small overhead. Overall, our results highlight the 
+importance of securing seed-publication mechanisms 
+against implementation-level fault attacks.
