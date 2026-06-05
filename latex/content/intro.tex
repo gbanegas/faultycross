@@ -95,36 +95,36 @@ invariants implicitly exploited by prior works, while additionally
 providing practical fault attacks against MEDS.
 
 \paragraph{Our Contributions.}
-This work provides a unified analysis of fault attacks against 
-post-quantum signature schemes relying on seed-tree compression 
-mechanisms. Our main contributions are as follows:
+This work provides a unified analysis of fault attacks against
+post-quantum signature schemes relying on seed-tree compression.
+Our main contributions are as follows:
 \begin{itemize}
-    \item \textbf{Generic Seed-Tree Abstraction.}
-    We introduce the \emph{Generic ZK Seed Tree} (GZKST) model, a unified
-    abstraction capturing the seed-tree generation used in schemes 
-    such as LESS-v2, MEDS, and CROSS.
 
-    \item \textbf{Unified Analysis of Existing Attacks.}
-    We show that previous fault attacks against LESS-v1 and LESS-v2 can be
-    interpreted as concrete violations of the same seed-hiding invariant,
-    despite targeting different implementation layers and tree constructions.
-        
-    \item \textbf{Query Complexity Analysis.}
-    We provide bounds on the number of effective faulted signatures required
-    for complete secret recovery and show that, for all MEDS parameter sets,
-    only a small number of successful queries is sufficient in practice.
+\item \textbf{Generic Seed-Tree Abstraction.}
+We introduce the \emph{Generic ZK Seed Tree} (GZKST), a unified model
+capturing the seed-tree generation mechanisms used in schemes such as
+LESS-v2, MEDS, and CROSS.
 
-    \item \textbf{Practical Fault Injection Attacks on MEDS.}
-    We present practical clock-glitch fault injection attacks against the MEDS
-    reference implementation on an ARM Cortex-M4 microcontroller using a
-    ChipWhisperer-Lite platform. We identify multiple exploitable fault surfaces
-    in the tree traversal logic, including complete and partial disclosure of the 
-    seed tree.
+\item \textbf{Unified View of Existing Attacks.}
+We show that previously proposed fault attacks against LESS-v1 and
+LESS-v2 can be interpreted as violations of a common seed-hiding
+invariant.
 
-    \item \textbf{Countermeasures for MEDS.}
-    We present countermeasures that one can apply to 
-    mitigate the fault attacks. Also, we present the costs 
-    to apply such countermeasures. 
+\item \textbf{Query Complexity Analysis.}
+We derive bounds on the number of faulted signatures required for
+secret-key recovery and show that only a small number of successful
+queries is needed for all MEDS parameter sets.
+
+\item \textbf{Practical Attacks on MEDS.}
+We show fault attacks against the MEDS reference
+implementation on an ARM Cortex-M4 using a ChipWhisperer-Lite,
+revealing several fault surfaces that enable complete or partial
+seed-tree disclosure.
+
+\item \textbf{Countermeasures for MEDS.}
+We propose and evaluate practical countermeasures against 
+fault attacks.
+
 \end{itemize}
 
 \begin{comment}

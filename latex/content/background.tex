@@ -201,7 +201,7 @@ while keeping $\eseed_i$ hidden.  If an attacker obtains both values
 simultaneously, Theorem~2 of~\cite{FaultToForge2025} shows that the secret
 permutation $\pi_{b[i]}$ is recoverable.  The flag tree is the
 \emph{sole enforcement mechanism} that prevents this dual revelation.
-Table~\ref{tab:scheme-params} lists the LESS-v2 parameter sets.
+%Table~\ref{tab:scheme-params} lists the LESS-v2 parameter sets.
 
 
 % ============================================================
@@ -259,8 +259,8 @@ For round $i$ with $c_i = 1$, the signer reveals a ZK response encoding the
 relationship between $\eseed_i$ and the long-term secret R-SDP solution.
 If an attacker obtains both the response and $\eseed_i$, the secret is
 recoverable by the linear-algebra argument of ZKFault~\cite{ZKFault},
-which demonstrated full key recovery from a single fault for all CROSS
-parameter sets (see Table~\ref{tab:scheme-params}).
+which demonstrated full key recovery from a single fault for CROSS.
+%parameter sets (see Table~\ref{tab:scheme-params}).
 
 % ============================================================
 \textbf{MEDS.}
@@ -299,26 +299,27 @@ reference implementation of MEDS, we are going to explain better the algorithms 
 key generation, signing and verification. Table~\ref{tab:scheme-params} shows
 the parameters for MEDS~\cite{ChouNPRRST23}.
 
-\begin{table}[t]
+\begin{table}[htp]
 \centering
-\caption{Cryptographic parameters for LESS-v2~\cite{LESS-spec},
-  MEDS~\cite{ChouNPRRST23}, and CROSS~\cite{CROSSspec} ($\star$: MEDS uses
+\caption{Cryptographic parameters for 
+  MEDS~\cite{ChouNPRRST23}. ($\star$: MEDS uses
   $n{=}m{=}k$; CROSS uses $q{=}2$ implicitly via $\mathbb{F}_p$).}
+%LESS-v2~\cite{LESS-spec},  and CROSS~\cite{CROSSspec} 
 \label{tab:scheme-params}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}llrrrrr@{}}
 \toprule
 \textbf{Scheme} & \textbf{Parameter set} & $t$ & $w$ & $s$ & \textbf{Sec.} & \textbf{Extra} \\
 \midrule
-\multirow{7}{*}{\textbf{LESS-v2}}
-  & LESS-252-45   &  45 & 34 & 8 & I   & $n{=}252,\,k{=}126,\,q{=}127$ \\
-  & LESS-252-68   &  68 & 42 & 4 & I   & $n{=}252,\,k{=}126,\,q{=}127$ \\
-  & LESS-252-192  & 192 & 36 & 2 & I   & $n{=}252,\,k{=}126,\,q{=}127$ \\
-  & LESS-400-102  & 102 & 61 & 4 & III & $n{=}400,\,k{=}200,\,q{=}127$ \\
-  & LESS-400-220  & 220 & 68 & 2 & III & $n{=}400,\,k{=}200,\,q{=}127$ \\
-  & LESS-548-137  & 137 & 79 & 4 & V   & $n{=}548,\,k{=}274,\,q{=}127$ \\
-  & LESS-548-345  & 345 & 75 & 2 & V   & $n{=}548,\,k{=}274,\,q{=}127$ \\
-\midrule
+%\multirow{7}{*}{\textbf{LESS-v2}}
+%  & LESS-252-45   &  45 & 34 & 8 & I   & $n{=}252,\,k{=}126,\,q{=}127$ \\
+%  & LESS-252-68   &  68 & 42 & 4 & I   & $n{=}252,\,k{=}126,\,q{=}127$ \\
+%  & LESS-252-192  & 192 & 36 & 2 & I   & $n{=}252,\,k{=}126,\,q{=}127$ \\
+%  & LESS-400-102  & 102 & 61 & 4 & III & $n{=}400,\,k{=}200,\,q{=}127$ \\
+%  & LESS-400-220  & 220 & 68 & 2 & III & $n{=}400,\,k{=}200,\,q{=}127$ \\
+%  & LESS-548-137  & 137 & 79 & 4 & V   & $n{=}548,\,k{=}274,\,q{=}127$ \\
+%  & LESS-548-345  & 345 & 75 & 2 & V   & $n{=}548,\,k{=}274,\,q{=}127$ \\
+%\midrule
 \multirow{6}{*}{\textbf{MEDS}$^\star$}
   & MEDS-9923   & 1152 & 14 & 4 & I   & $n{=}14,\,q{=}4093$ \\
   & MEDS-13220  &  192 & 20 & 5 & I   & $n{=}14,\,q{=}4093$ \\
@@ -326,14 +327,14 @@ the parameters for MEDS~\cite{ChouNPRRST23}.
   & MEDS-69497  &  160 & 36 & 5 & III & $n{=}22,\,q{=}4093$ \\
   & MEDS-134180 &  192 & 52 & 5 & V   & $n{=}30,\,q{=}2039$ \\
   & MEDS-167717 &  112 & 66 & 6 & V   & $n{=}30,\,q{=}2039$ \\
-\midrule
-\multirow{6}{*}{\textbf{CROSS}}
-  & CROSS-R-SDP-1   & 163 & 60 & 2 & I   & $p{=}127,\,n{=}68,\,k{=}8$ \\
-  & CROSS-R-SDP-3   & 200 & 75 & 2 & III & $p{=}127,\,n{=}80,\,k{=}9$ \\
-  & CROSS-R-SDP-5   & 250 & 94 & 2 & V   & $p{=}127,\,n{=}90,\,k{=}9$ \\
-  & CROSS-R-SDPe-1  &  55 & 25 & 2 & I   & $p{=}509,\,n{=}60,\,k{=}6$ \\
-  & CROSS-R-SDPe-3  &  75 & 34 & 2 & III & $p{=}509,\,n{=}80,\,k{=}8$ \\
-  & CROSS-R-SDPe-5  &  90 & 40 & 2 & V   & $p{=}509,\,n{=}90,\,k{=}8$ \\
+%\midrule
+%\multirow{6}{*}{\textbf{CROSS}}
+%  & CROSS-R-SDP-1   & 163 & 60 & 2 & I   & $p{=}127,\,n{=}68,\,k{=}8$ \\
+%  & CROSS-R-SDP-3   & 200 & 75 & 2 & III & $p{=}127,\,n{=}80,\,k{=}9$ \\
+%  & CROSS-R-SDP-5   & 250 & 94 & 2 & V   & $p{=}127,\,n{=}90,\,k{=}9$ \\
+%  & CROSS-R-SDPe-1  &  55 & 25 & 2 & I   & $p{=}509,\,n{=}60,\,k{=}6$ \\
+%  & CROSS-R-SDPe-3  &  75 & 34 & 2 & III & $p{=}509,\,n{=}80,\,k{=}8$ \\
+%  & CROSS-R-SDPe-5  &  90 & 40 & 2 & V   & $p{=}509,\,n{=}90,\,k{=}8$ \\
 \bottomrule
 \end{tabular}
 \end{table}

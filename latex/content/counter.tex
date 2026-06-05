@@ -1,12 +1,18 @@
-In this section we suggest a set of countermeasures that would make the signature scheme more secure against the exposed fault models.
+In this section, we present several countermeasures aimed at 
+improving the resilience of the signature scheme against the 
+fault attacks described above.
 
-We split the countermeasures into different categories :
+We group the countermeasures into three categories. The 
+first category consists of \emph{post-publication code-path 
+checks}, which preserve both the signature size and the 
+original tree-construction procedure. The second category 
+comprises \emph{modifications to the path-construction 
+algorithm}, which maintain the original signature size while 
+altering the path-generation process. Finally, the third 
+category considers \emph{tree-less GGM signatures}, which 
+eliminate the tree structure entirely at the cost of a 
+larger signature size.
 
-\begin{itemize}
-    \item Post-publication code path check : same signature size, no modification of the tree construction.
-    \item Path construction algorithm change : same signature size.
-    \item GGM tree-less signature : larger signature.
-\end{itemize}
 
 \subsection{Post-publication path check}
 

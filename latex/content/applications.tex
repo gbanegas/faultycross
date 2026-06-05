@@ -151,22 +151,38 @@ which specifies the continuous duration (in clock cycles) of the clock glitch. W
 maximum value based on the nominal cycle execution counts provided in the ARM documentation for 
 the target instruction sequence. 
 
-Finally, we iteratively sweep the following spatial and temporal parameters to map the physical 
-fault space and isolate high-yield vulnerability regions:
+We iteratively sweep three spatial and temporal 
+parameters to map the physical fault space and identify 
+high-yield vulnerability regions. The parameter 
+\texttt{width} controls the width of the glitch pulse, 
+obtained by XORing the system clock, and is expressed as a 
+percentage of the clock period ranging from (0\%) to (50\%). 
+The parameter \texttt{offset} specifies the phase shift 
+between the glitch pulse and the system clock and is varied 
+from (-50\%) to (50\%) of the clock period. Finally, 
+\texttt{ext\_offset} denotes the number of clock cycles 
+elapsed between the trigger signal and the start of the 
+glitch injection.
+%Finally, we iteratively sweep the following spatial and temporal parameters to map the physical 
+%fault space and isolate high-yield vulnerability regions:
+%\begin{itemize}
+%    \item \texttt{width}: The width of the glitch pulse, achieved by XORing the system clock (expressed as a percentage of the clock period, spanning from 0\% to 50\%).
+%    \item \texttt{offset}: The phase shift or delay introduced before the rising edge of the glitch pulse relative to the clock cycle (expressed as a percentage of the clock period, spanning from -50\% to 50\%).
+%    \item \texttt{ext\_offset}: The absolute number of clock cycles elapsed after the trigger signal before the glitch injection begins.
+%\end{itemize}
 
-\begin{itemize}
-    \item \texttt{width}: The width of the glitch pulse, achieved by XORing the system clock (expressed as a percentage of the clock period, spanning from 0\% to 50\%).
-    \item \texttt{offset}: The phase shift or delay introduced before the rising edge of the glitch pulse relative to the clock cycle (expressed as a percentage of the clock period, spanning from -50\% to 50\%).
-    \item \texttt{ext\_offset}: The absolute number of clock cycles elapsed after the trigger signal before the glitch injection begins.
-\end{itemize}
+\textit{Full tree recovery.}
+This attack is successful if the returned path contains a 
+single node which is the root node.
 
-\paragraph{Full tree recovery.}
+\textbf{Compilation.} This attack is carried out on a 
+code compiled with the default \texttt{-Os} optimization.
 
-This attack is successful if the returned path contains a single node which is the root node.
-
-\textbf{Compilation.} This attack is carried out on a code compiled with the default \texttt{-Os} optimization.
-
-\textbf{Trigger position.} We directly target the evaluation of the conditional and the branching instruction corresponding to line 19 of \ref{lst:path}). The compiled result is in \ref{lst:f1asm}. We fault for 3 clock cycles.
+\textbf{Trigger position.} We directly target the 
+evaluation of the conditional and the branching 
+instruction corresponding to line 19 of \ref{lst:path}). 
+The compiled result is in \ref{lst:f1asm}. We fault for 3 
+clock cycles.
 
 \begin{lstlisting}[style=asmstyle, label=lst:f1asm, caption=Compiled trigger points for fault model 1.]
 0800062c <stree_to_path_to_stree_glitch>:
@@ -182,19 +198,19 @@ This attack is successful if the returned path contains a single node which is t
 ...
 \end{lstlisting}
 
-\paragraph{Parameters.} Figure~\ref{fig:fault1_results} shows that the attack has
+\textit{Parameters.} Figure~\ref{fig:fault1_results} shows that the attack has
  a high success rate and lower reset rates for an \texttt{ext\_offset} ranging 
  from $1.5$ to $2.5$, a small \texttt{offset} of $-1$ to $1$ and rather wide 
  glitches (\texttt{width} over $20$).
 
-\begin{figure}[H]
+\begin{figure}[htp]
     \centering
-    \includegraphics[width=\textwidth]{content/images/glitch_3d_results.png} 
+    \includegraphics[width=0.85\textwidth]{content/images/glitch_3d_results.png} 
     \caption{Glitch success frequency by glitch width and offset for fault model 1, with 10 tries per parameter set. Valid glitches are runs that did not crash and output paths that were neither correct nor the target faulted path.}
     \label{fig:fault1_results}
 \end{figure}
 
-\paragraph{Subtree recovery.} This attack is successful if 
+\textit{Subtree recovery.} This attack is successful if 
 the returned path contains a hidden subtree, that is, we hit a node 
 that gives us a subtree that should be hidden.
 
@@ -217,7 +233,7 @@ that gives us a subtree that should be hidden.
 \end{lstlisting}
 
 
-\paragraph{Parameters.} The evaluation of the condition and 
+\textit{Parameters.} The evaluation of the condition and 
 the incrementation of \texttt{id} require 3 clock cycles. 
 We therefore set \texttt{repeat} to $3$. We consider 
 the attack successful if we obtain the faulted path pattern 
@@ -227,7 +243,7 @@ of glitch offset and width.
 
 \begin{figure}[htp]
     \centering
-    \includegraphics[width=\textwidth]{content/images/glitch_2d_results_ext2.png}
+    \includegraphics[width=0.8\textwidth]{content/images/glitch_2d_results_ext2.png}
     \caption{Glitch success frequency by glitch width and offset for fault model 2, with 10 tries per parameter pair.}
     \label{fig:fault2_results}
 \end{figure}
