@@ -252,7 +252,7 @@ We observe a distinct, bounded region of system resets delimited by successful a
 Crucially, the paths of many of these valid glitches contain a large set of intermediate nodes which provide sufficient 
 coverage to compute all of the leaf values.
 
-\paragraph{Model 3: Single hidden leaf recovery.}
+\textit{Model 3: Single hidden leaf recovery.}
 In this model, we recover only a hidden leaf. 
 
 \textbf{Compilation.} Higher compiler optimization levels made it difficult to precisely target the flags. 
@@ -275,7 +275,7 @@ the binary size beyond the storage capacity of the target board.
 ...
 \end{lstlisting}
 
-\paragraph{Parameters.} The disassembled code shows that the assignement is done in two instructions, first The CPU loads the integer value 1 into 
+\textbf{Parameters.} The disassembled code shows that the assignement is done in two instructions, first The CPU loads the integer value 1 into 
 the register \texttt{r3}, then it takes that value 1 from \texttt{r3} and writes it out to memory. 
 According to ARM documentation, each of these instruction is 1 clock cycle long. 
 We set the \texttt{repeat} parameter of the glitch controller to 2. Figure~\ref{fig:fault3_results}
