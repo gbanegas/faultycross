@@ -16,33 +16,46 @@ parametrised by:
         (e.g., permutations for LESS, matrix pairs for MEDS, party shares for MPCitH).
 \end{itemize}
 The six algorithms are:
-\begin{enumerate}
-  \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$:
-        samples a master seed $\seed_r \getsr \{0,1\}^{\lam}$ and a public salt.
-  \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$:
-        builds a binary tree $\calT$ by top-down \PRG-expansion from $\seed_r$.
-        Each leaf $i \in \{0, \ldots, t-1\}$ holds a seed $\eseed_i$.
-        Tree topology may be complete or incomplete (scheme-dependent).
-  \item $\Chal(\cmt, \msg) \to \mathbf{c} = (c_0, \ldots, c_{t-1})$:
-        derives a Fiat--Shamir challenge from the commitment and message.
-        $c_i = 0$ indicates that round $i$ requires the ephemeral seed;
-        $c_i \neq 0$ indicates a secret-dependent response.
-  \item $\Decide(\mathbf{c}) \to (\calH, \calR)$:
-        partitions $\{0, \ldots, t-1\}$ into the hidden index set
-        $\calH = \{i : c_i \neq 0\}$ and the revealed index set
-        $\calR = \{i : c_i = 0\}$.
-  \item $\Publish(\calT, \calH) \to \tpath$:
-        constructs a flag structure $\calF : V(\calT) \to \{0,1\}$ and returns the
-        minimal set of nodes $\tpath$ from which every $\eseed_i$ with
-        $i \in \calR$ is reconstructible, while no $\eseed_i$ with
-        $i \in \calH$ is derivable.
-  \item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_i : i \in \calR\}$:
-        verifier-side reconstruction of revealed leaf seeds from $\tpath$.
+\begin{multicols}{2}
+\begin{enumerate}[leftmargin=*]
+  \item $\Setup(1^{\lambda}) \to (\seed_r,\salt)$:
+        samples a master seed $\seed_r \getsr \{0,1\}^{\lambda}$
+        and a public salt.
+
+  \item $\Expand(\seed_r,\salt)
+        \to (\calT,(\eseed_0,\ldots,\eseed_{t-1}))$:
+        builds a binary tree $\calT$ by top-down
+        \PRG-expansion from $\seed_r$. Each leaf
+        $i\in\{0,\ldots,t-1\}$ holds a seed $\eseed_i$.
+        Tree topology may be complete or incomplete.
+
+  \item $\Chal(\cmt,\msg)
+        \to \mathbf{c}=(c_0,\ldots,c_{t-1})$:
+        derives a Fiat--Shamir challenge from the
+        commitment and message.
+
+  \item $\Decide(\mathbf{c})
+        \to (\calH,\calR)$:
+        partitions $\{0,\ldots,t-1\}$ into the hidden
+        set $\calH=\{i:c_i\neq0\}$ and the revealed
+        set $\calR=\{i:c_i=0\}$.
+
+  \item $\Publish(\calT,\calH)\to\tpath$:
+        returns the minimal set of nodes from which
+        every $\eseed_i$ with $i\in\calR$ is
+        reconstructible while no $\eseed_i$ with
+        $i\in\calH$ is derivable.
+
+  \item $\Recon(\tpath,\mathbf{c},\salt)
+        \to \{\eseed_i:i\in\calR\}$:
+        verifier-side reconstruction of revealed
+        leaf seeds from $\tpath$.
 \end{enumerate}
+\end{multicols}
 \end{definition}
 
 % ------------------------------------------------------------
-\paragraph{The Flag Structure.}
+\textbf{The Flag Structure.}
 The flag structure $\calF$ produced internally by $\Publish$ is the key
 intermediate object.  It is a labelling $\calF : V(\calT) \to \{0,1\}$ where:
 \begin{itemize}
@@ -95,50 +108,30 @@ $\SeedTreeToPath$ construction regardless of whether the tree is
 complete or incomplete; see Appendix~\ref{app:proof-meds}.
 \end{proposition}
 
-\begin{itemize}
-    \item $\Setup(1^{\lam}) \to (\seed_r, \salt)$:
-MEDS samples a fresh random scalar and derives the tree seed and salt via a single $\XOF$ call.
-    \item $\Expand(\seed_r, \salt) \to (\calT, (\eseed_0, \ldots, \eseed_{t-1}))$:
-A binary tree of height $\lceil \log_2 t \rceil$ is built by
-hashing each parent with the salt and node index; the first $t$ leaves are
-returned.  When $t$ is not a power of two, the rightmost
-$2^{\lceil\log_2 t\rceil} - t$ potential leaves are unused, making the tree
-incomplete---the same structural situation as LESS-v2.
-    \item $\Chal(\cmt, \msg) \to \mathbf{c}$:
-Each leaf is expanded into sub-seeds via $\XOF$, ephemeral matrices are sampled, and
-the commitment is the hash of all compressed generator matrices together with $m$.
-Parsing the digest via $\ParseHash_{s,t,w}$ yields
-$\mathbf{h} \in \{0,\ldots,s-1\}^t$ of weight $w$; setting $c_i = h_i$,
-$c_i = 0$ (resp.\ $c_i \neq 0$) signals a revealed (resp.\ hidden) round.
-    \item $\Decide(\mathbf{c}) \to (\calH, \calR)$:
-$\calH = \{i : c_i \neq 0\}$, $\calR = \{i : c_i = 0\}$.
-    \item $\Publish(\calT, \calH) \to \tpath$:
-$\SeedTreeToPath_t$ removes the label of each leaf $i \in \calH$ and
-propagates each deletion upward, erasing every ancestor that has at least
-one hidden leaf in its subtree (i.e., the same bottom-up
-$\calF(v) = \calF(\ell) \vee \calF(r)$ rule as LESS-v2).
-Surviving boundary nodes—those with $\calF(v) = 0$ and
-$\calF(\mathrm{parent}(v)) = 1$—are serialised in depth-first order.
-    \item $\Recon(\tpath, \mathbf{c}, \salt) \to \{\eseed_i : i \in \calR\}$:
-$\PathToSeedTree_t$ places path nodes on an empty tree and re-expands
-downward via $\PRG$; positions $i \in \calH$ remain empty.
-\end{itemize}
+The six algorithms instantiate as follows. $\Setup$ derives $(\seed_r,\salt)$
+from a single $\XOF$ call, and $\Expand$ builds the height-$\lceil\log_2 t\rceil$
+tree by hashing each parent with the salt and node index, returning the first
+$t$ leaves (the rightmost $2^{\lceil\log_2 t\rceil}-t$ are unused when $t$ is not
+a power of two, exactly as in LESS-v2). $\Chal$ expands each leaf into ephemeral
+matrices, hashes the compressed generators with $m$, and parses the digest via
+$\ParseHash_{s,t,w}$ into $\mathbf{h}\in\{0,\ldots,s-1\}^t$ of weight $w$;
+$\Decide$ then sets $\calH=\{i:h_i\neq0\}$, $\calR=\{i:h_i=0\}$. Finally,
+$\Publish=\SeedTreeToPath_t$ applies the bottom-up rule
+$\calF(v)=\calF(\ell)\vee\calF(r)$ and serialises the boundary nodes
+(Invariant~\ref{inv:correctness}) in depth-first order, while
+$\Recon=\PathToSeedTree_t$ re-expands them downward, leaving the positions
+$i\in\calH$ empty.
 
 \begin{remark}
-  In this instantiation of the $\Publish$ algorithm, 
-  we rely on the path construction as described 
-  in the MEDS submission~\cite{MEDS_PQC}. However, 
-  the reference implementation uses a different algorithm, 
-  that is further explained in Section~\ref{sec:app}.
+  This $\Publish$ description follows the MEDS submission~\cite{MEDS_PQC}; the
+  reference implementation uses a different algorithm, detailed in
+  Section~\ref{sec:app}.
 \end{remark}
 
 
-Using the same idea as in MEDS, we can apply 
-to LESS-v2, and CROSS. One can easily see 
-that the abstract model applies to LESS and CROSS. 
-Also, we can see that we can derive Proposition~\ref{prop:less-gzkst} and 
-Proposition~\ref{prop:cross-gzkst}. The proofs follow the same 
-idea as in MEDS (in Appendix~\ref{app:proof-meds}). 
+The same instantiation extends to LESS-v2 and CROSS, yielding
+Propositions~\ref{prop:less-gzkst} and~\ref{prop:cross-gzkst}; the proofs
+follow the MEDS argument (Appendix~\ref{app:proof-meds}).
 
 \begin{proposition}[LESS-v2 is a \GZKST\ instance]
 \label{prop:less-gzkst}
@@ -153,10 +146,9 @@ of the three-phase flag tree.
 \begin{remark}[Invariants under incomplete trees]
 \label{rem:incomplete}
 When the tree is incomplete, some leaves appear at depth
-$\lceil \log_2 t \rceil - 1$.  The index-tracking arrays
-$\mathsf{npl}$, $\mathsf{ll}$, $\mathsf{off}$, and $\mathsf{lsi}$ ensure that
-$\LabelLeaves$ and $\ComputeSeeds$ visit the correct nodes regardless of level.
-Both invariants therefore hold for any tree shape produced by the LESS-v2 expansion.
+$\lceil \log_2 t \rceil - 1$. The LESS-v2 index-tracking arrays
+keep $\LabelLeaves$ and $\ComputeSeeds$ on the correct nodes regardless of
+level, so both invariants hold for any tree shape the expansion produces.
 \end{remark}
 
 \begin{figure}[tb]
@@ -334,6 +326,54 @@ Upward propagation is applied as normal after this assignment.
 The oracle returns the resulting (possibly faulted) signature $\sig^*$.
 \end{definition}
 \end{comment}
+
+\subsection{Oracle Abstraction}
+\label{sec:oracle}
+
+To model fault attacks, we extend the \GZKST abstraction with a faulted signing oracle and a secret-extraction procedure.
+
+\begin{definition}[Faulted Signing Oracle]
+\label{def:fault-oracle}
+Let $\Pi=(\Setup,\Expand,\Chal,\Decide,\Publish,\Recon)$ be a \GZKST
+instance and let $(\sk,\pk)$ be a fixed key pair. For a node
+$v^*\in V(\calT)$, the oracle $\Oracle^{v^*}(\sk,\pk)$ signs a
+message $\msg$ as usual except that, during
+$\Publish(\calT,\calH)$, it forces
+$\calF(v^*) \leftarrow 0$
+before the normal upward propagation step. The oracle outputs the
+resulting (possibly faulted) signature $\sig^*$.
+\end{definition}
+
+A fault is \emph{effective} if $v^*$ originally satisfies
+$\calF(v^*)=1$ and is an ancestor of some hidden leaf
+$\eseed_i$ with $i\in\calH$. In this case, the published path
+reveals a node from which $\eseed_i$ is derivable, violating
+Invariant~\ref{inv:hiding}. Otherwise, the fault is
+\emph{ineffective}.
+
+\begin{remark}
+Definition~\ref{def:fault-oracle} captures several practical fault
+mechanisms, including instruction skips, stuck-at-zero faults,
+bit-flips, and clock glitches~\cite{ZKFault,FaultToForge2025}.
+\end{remark}
+
+\begin{remark}
+We assume access to an algorithm \texttt{SolverS} that efficiently
+recovers secrets of type $\calS$ once sufficient information is
+revealed. For LESS, for example, this follows from
+Lemma~1 of~\cite{ZKFault}.
+\end{remark}
+
+For every hidden round $i\in\calH$, a valid signature reveals the
+response $\resp_i$ while keeping $\eseed_i$ hidden. An effective
+fault breaks this separation: the attacker obtains both
+$\resp_i$ and $\eseed_i$. We call this event
+\emph{dual revelation}; it is the basic primitive underlying all
+secret-recovery attacks considered in this work.
+
+
+
+\begin{comment}
 \subsection{Oracle Abstraction}
 \label{sec:oracle}
 
@@ -344,7 +384,7 @@ extending the \GZKST tuple with a fault model and a secret-extraction
 procedure.
 
 
-\paragraph{Faulted signing oracle.}
+\noindent\textbf{Faulted signing oracle.}
 Let $\Pi = (\Setup,\Expand,\Chal,\Decide,\Publish,\Recon)$ be a
 \GZKST\ instance with secret type $\calS$, and let
 $(\sk, \pk)$ be a fixed key pair.
@@ -392,7 +432,7 @@ literature~\cite{ZKFault,FaultToForge2025}.
   to solve the secret type.
 \end{remark}
 
-\paragraph{Dual revelation.}
+\noindent\textbf{Dual revelation.}
 The invariant that the $\Publish$ phase must enforce is that, for
 every hidden round $i \in \calH$, the signer simultaneously publishes:
 \begin{itemize}
@@ -407,6 +447,7 @@ $\eseed_i$ (reachable from the faulted path) and $\resp_i$ (always
 present in the signature).  This \emph{dual revelation} is the
 primitive from which all secret-extraction procedures in this work
 are built.
+\end{comment}
 
 \begin{comment}
 \begin{figure}[tb]
@@ -434,7 +475,7 @@ and public key $\mathsf{pk}$, it outputs partial secret $\mathsf{sk}'$.}
 \end{figure}
 \end{comment}
 
-\paragraph{Secret extraction.}
+\textbf{Secret extraction.}
 We extend the \GZKST\ tuple with a seventh, scheme-specific procedure:
 
 \begin{definition}[Extract]
@@ -474,7 +515,7 @@ as:
         $\mathbf{e} = \mathbf{v}_i \star \mathbf{e}'_i$ directly.
 \end{itemize}
 
-\paragraph{Full key recovery.}
+\noindent\textbf{Full key recovery.}
 When $|\calS| = s - 1 > 1$ (as in MEDS with $s \geq 3$, and
 LESS with $s \geq 3$), a single effective fault recovers only the secret
 indexed by $h_i$.  Full recovery requires observing each index
@@ -537,48 +578,32 @@ least one hidden leaf falls in the subtree of $v^*$.
 This detection is detailed for LESS in~\cite{ZKFault} and applies
 unchanged to MEDS and CROSS.
 
-\paragraph{Expected query count.}
-Let $\ell$ denote the number of leaves in the subtree rooted at $v^*$.
+\noindent\textbf{Expected query count.}
+With $p_{\min}$ as in Proposition~\ref{prop:alg-correctness}, the root fault
+admits a clean expectation bound.
 
 \begin{proposition}
 \label{prop:query-count}
-Let $v^* = \mathrm{root}$, so $L = w$ exactly.  Define
-$p_{\min} = 1 - \bigl(\tfrac{s-2}{s-1}\bigr)^{\!w}$.
-The per-query success probability satisfies $p_r \geq p_{\min}$ for all
+Let $v^* = \mathrm{root}$, so $L = w$ exactly. Then $p_r \geq p_{\min}$ for all
 $r \geq 1$, and the expected total number of effective queries satisfies
-\[
-  \mathbb{E}[Q] \;\leq\; \frac{s-1}{p_{\min}}.
-\]
+$\mathbb{E}[Q] \leq (s-1)/p_{\min}$.
 See Appendix~\ref{app:proof-query} for the derivation.
 \end{proposition}
 
-\begin{remark}[Role of $E_{\mathrm{dist}}$ and Jensen's inequality]
+\begin{remark}[Role of Jensen's inequality]
 \label{rem:edist}
-The quantity $E_{\mathrm{dist}} = (s-1)\,p_{\min}$ equals the expected number
-of distinct secret indices revealed per effective query (when $L = w$ is
-deterministic at the root).  When $v^* \neq \mathrm{root}$ and $L$ is random
-with mean $\bar{w} = w\ell/t$, Jensen's inequality (the function
-$\alpha^x$ is convex in $x$) gives
-$\mathbb{E}[\text{\#distinct}] \leq E_{\mathrm{dist}}$:
-$E_{\mathrm{dist}}$ is an \emph{upper} bound on expected per-query gain,
-which implies a \emph{lower} bound on $\mathbb{E}[Q]$, not an upper bound.
-The upper bound $\mathbb{E}[Q] \leq (s-1)/p_{\min}$ stated in
-Proposition~\ref{prop:query-count} follows from the direct inequality
-$p_r \geq p_{\min}$, not from the Jensen argument.
+The per-query gain $E_{\mathrm{dist}} = (s-1)\,p_{\min}$ is the expected number
+of distinct secret indices revealed when $L = w$ is deterministic at the root.
+For $v^* \neq \mathrm{root}$, convexity of $\alpha^x$ makes $E_{\mathrm{dist}}$
+an \emph{upper} bound on per-query gain, hence only a \emph{lower} bound on
+$\mathbb{E}[Q]$; the bound in Proposition~\ref{prop:query-count} relies solely
+on the direct inequality $p_r \geq p_{\min}$, not on the Jensen argument.
 \end{remark}
 
-For all MEDS parameter sets (Table~\ref{tab:scheme-params}), faulting
-the root ($v^* = \mathrm{root}$, $\ell = t$) gives $\bar{w} = w$; for
-those parameters $w \gg 1$, so $p_{\min} \approx 1$ and
-$\mathbb{E}[Q] \lesssim s - 1$, which is at most~$5$ across all sets.
-
-\begin{remark}[Concrete query counts for MEDS]
-\label{rem:meds-query}
-Table~\ref{tab:meds-eq} reports $p_{\min}$ and $\mathbb{E}[Q]$ for every
-MEDS parameter set when $v^* = \mathrm{root}$ (so $L = w$ exactly).
-The values use the exact formula
-$p_{\min} = 1 - \bigl((s-2)/(s-1)\bigr)^w$; for all parameter sets
-$p_{\min} > 0.99$, giving $\mathbb{E}[Q] \leq s-1 \leq 5$.
+Table~\ref{tab:meds-eq} instantiates the root-fault bound
+($p_{\min} = 1 - ((s-2)/(s-1))^w$, $L = w$ exactly) for every MEDS parameter
+set: since $\ell = t$ gives $\bar{w} = w \gg 1$, all sets have
+$p_{\min} > 0.99$ and $\mathbb{E}[Q] \leq s-1 \leq 5$.
 
 \begin{table}[h]
 \centering
@@ -597,9 +622,8 @@ MEDS-167717 & 6 &  66 & 5 & 1.0000 & 5.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
-\end{remark}
 
-\paragraph{From key recovery to forgery.}
+\noindent\textbf{From key recovery to forgery.}
 Once Algorithm~\ref{alg:key-recovery} terminates, the adversary holds
 a complete signing key $\widehat{\sk}$ and can produce valid signatures
 on any message $\msg^*$ — including messages never submitted to any
