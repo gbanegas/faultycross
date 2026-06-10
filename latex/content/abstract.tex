@@ -334,7 +334,8 @@ To model fault attacks, we extend the \GZKST abstraction with a faulted signing 
 
 \begin{definition}[Faulted Signing Oracle]
 \label{def:fault-oracle}
-Let $\Pi=(\Setup,\Expand,\Chal,\Decide,\Publish,\Recon)$ be a \GZKST
+Let $\Pi=(\Setup,\Expand,\Chal,\Decide,\allowbreak
+\Publish,\allowbreak\Recon)$ be a \GZKST
 instance and let $(\sk,\pk)$ be a fixed key pair. For a node
 $v^*\in V(\calT)$, the oracle $\Oracle^{v^*}(\sk,\pk)$ signs a
 message $\msg$ as usual except that, during
