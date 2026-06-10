@@ -161,11 +161,12 @@ new fault surfaces.
 \label{fig:ggm-receiver}
 \end{figure}
 
-\subsection{Attack targets}
+\subsection{Attack target}
 
 This section provides an overview of the signature schemes, to which we apply our generalized
 model and against which we carry out our attacks. 
 
+\begin{comment}
 \textbf{LESS-v2.}
 \label{sec:less}
 LESS (Linear Equivalence Signature Scheme)~\cite{LESS-spec} uses a Fiat--Shamir
@@ -263,6 +264,7 @@ which demonstrated full key recovery from a single fault for CROSS.
 %parameter sets (see Table~\ref{tab:scheme-params}).
 
 % ============================================================
+\end{comment}
 \textbf{MEDS.}
 \label{sec:meds}
 MEDS (Matrix Equivalence Digital Signature)~\cite{ChouNPRRST23} is a code-based
@@ -271,7 +273,7 @@ signature scheme whose security rests on the Matrix Code Equivalence Problem
 protocol between a prover holding a secret equivalence
 $(A, B) \in \GL_k(q) \times \GL_n(q)$ and a verifier.
 
-\paragraph{Role of the seed tree in signing and verification.}
+\textbf{Role of the seed tree in signing and verification.}
 Each leaf $\sigma_i$, for $0 \le i < t$, is an ephemeral seed of length
 $\ell_{\mathrm{tree\_seed}}$ bytes from which the $i$-th pair of ephemeral
 invertible matrices $(\tilde{A}_i, \tilde{B}_i) \in \GL_m(q) \times \GL_n(q)$
@@ -340,23 +342,92 @@ the parameters for MEDS~\cite{ChouNPRRST23}.
 \end{tabular}
 \end{table}
 
-\paragraph{Key Generation.}
-Algorithm~\ref{alg:keygen_meds} is the simplification of the key generation.
-It begins by sampling a master secret seed $\delta$ and immediately
-deriving two sub-seeds via $\XOF$: a \emph{public} seed $\sigma_{G_0}$, used to
-expand the base systematic matrix $G_0 \in \mathbb{F}_q^{k \times mn}$, and a
-\emph{private} chaining seed $\sigma$ that is used in the rest of the process.
-For each of the $s-1$ public keys, the algorithm performs a
-\emph{compressed key-generation} step: a secret invertible matrix $T_i \in
-\GL_k(q)$ twists $G_0$ into $G'_0 = T_i G_0$, and a structured linear system
-(the $\mathrm{Solve}$ step, made efficient by fixing $P_0 = I_m$ and
-$P_1 = U_m$) recovers the equivalence pair $(A_i, B_i) \in \GL_m(q) \times
-\GL_n(q)$ satisfying $G_i = \SF(\pimap{A_i}{B_i}(G_0))$.
-The public key stores only the seed $\sigma_{G_0}$ and the compressed matrices
-$G_1, \ldots, G_{s-1}$; the secret key retains $\delta$ together with the
-stored inverses $A_i^{-1}$, $B_i^{-1}$---the sole secret material consumed
-at signing time.
+\textbf{Key Generation.}
+Algorithm~\ref{alg:keygen_meds} samples a master secret seed $\delta$ and derives
+via $\XOF$ a public seed $\sigma_{G_0}$ (expanding the systematic matrix
+$G_0 \in \mathbb{F}_q^{k \times mn}$) and a private chaining seed $\sigma$.
+For each of the $s-1$ public keys, a \emph{compressed} step twists $G_0$ by a
+secret $T_i \in \GL_k(q)$ and solves (with $P_0 = I_m$, $P_1 = U_m$) for the
+equivalence pair $(A_i, B_i)$ satisfying $G_i = \SF(\pimap{A_i}{B_i}(G_0))$.
+The public key stores $\sigma_{G_0}$ and $G_1, \ldots, G_{s-1}$; the secret key
+retains $\delta$ and the inverses $A_i^{-1}, B_i^{-1}$, the sole secret material
+used at signing.
 
+
+\begin{figure}[t]
+\centering
+% --- left column: Key Generation ---
+\begin{minipage}[t]{0.48\textwidth}
+\begin{algorithm}[H]
+\scriptsize
+\setlength{\algomargin}{0.9em}
+\caption{MEDS Key Generation (simplified)}
+\label{alg:keygen_meds}
+\KwIn{---}
+\KwOut{Public key $\pk$, secret key $\sk$}
+
+$\delta \xleftarrow{\$} \mathcal{B}^{\ell_{\mathrm{sec\_seed}}}$\;
+$\sigma_{G_0},\, \sigma \leftarrow \XOF(\delta,\, \ell_{\mathrm{pub\_seed}},\, \ell_{\mathrm{sec\_seed}})$\;
+$G_0 \leftarrow \ExpandSystMat(\sigma_{G_0})$\;
+
+\For{$i = 1$ \KwTo $s-1$}{
+    $\sigma_a,\, \sigma_{T_i},\, \sigma \leftarrow \XOF(\sigma,\, \ell_{\mathrm{sec\_seed}},\, \ell_{\mathrm{sec\_seed}},\, \ell_{\mathrm{sec\_seed}})$\;
+    $T_i \leftarrow \ExpandInvMat(\sigma_{T_i},\, k)$\;
+    $a_{m-1,m-1} \leftarrow \ExpandFqs(\sigma_a,\, 1)$\;
+    $G'_0 \leftarrow T_i G_0$\;
+    $(A_i,\, B_i^{-1}) \leftarrow \Solve(G'_0,\, a_{m-1,m-1})$
+    \tcp*[r]{Fail $\Rightarrow$ retry ln.~5}
+    $G_i \leftarrow \SF\!\bigl(\pimap{A_i}{B_i}(G_0)\bigr)$
+    \tcp*[r]{$\perp\Rightarrow$ retry ln.~5}
+}
+
+$\pk \leftarrow \bigl(\sigma_{G_0} \mid \CompressG(G_1) \mid \cdots \mid \CompressG(G_{s-1})\bigr)$\;
+$\sk \leftarrow \bigl(\delta \mid \sigma_{G_0} \mid \Compress(A_1^{-1}) \mid \cdots$
+\Indp\Indp $\mid \Compress(A_{s-1}^{-1}) \mid \Compress(B_1^{-1}) \mid \cdots \mid \Compress(B_{s-1}^{-1})\bigr)$\;\Indm\Indm
+\Return $\pk,\, \sk$
+\end{algorithm}
+\end{minipage}\hfill
+% --- right column: Signing ---
+\begin{minipage}[t]{0.48\textwidth}
+\begin{algorithm}[H]
+\scriptsize
+\setlength{\algomargin}{0.9em}
+\caption{MEDS Signing (simplified)}
+\label{alg:sign_meds}
+\KwIn{Secret key $\sk$, message $m$}
+\KwOut{Signed message $m_s$}
+
+Parse $\sk$ to recover $\sigma_{G_0}$, $A_i^{-1}$, $B_i^{-1}$, $i=1,\ldots,s-1$\;
+$G_0 \leftarrow \ExpandSystMat(\sigma_{G_0})$\;
+$\delta \xleftarrow{\$} \mathcal{B}^{\ell_{\mathrm{sec\_seed}}}$\;
+$\rho,\, \alpha \leftarrow \XOF(\delta,\, \ell_{\mathrm{tree\_seed}},\, \ell_{\mathrm{salt}})$\;
+$(\sigma_0, \ldots, \sigma_{t-1}) \leftarrow \SeedTree_t(\rho,\, \alpha)$\;
+
+\For{$i = 0$ \KwTo $t-1$}{
+    $\sigma'_i \leftarrow \bigl(\alpha \mid \sigma_i \mid \ToBytes(2^{1+\lceil\log_2 t\rceil}+i,4)\bigr)$\;
+    $\sigma_{\tilde{A}_i},\, \sigma_{\tilde{B}_i} \leftarrow \XOF(\sigma'_i,\, \ell_{\mathrm{pub\_seed}},\, \ell_{\mathrm{pub\_seed}})$\;
+    $\tilde{A}_i \leftarrow \ExpandInvMat(\sigma_{\tilde{A}_i}, m)$;
+    $\tilde{B}_i \leftarrow \ExpandInvMat(\sigma_{\tilde{B}_i}, n)$\;
+    $\tilde{G}_i \leftarrow \SF\!\bigl(\pimap{\tilde{A}_i}{\tilde{B}_i}(G_0)\bigr)$
+    \tcp*[r]{$\perp\Rightarrow$ resample}
+}
+
+$d \leftarrow H\!\bigl(\Compress(\tilde{G}_0[;k,mn{-}1]) \mid \cdots$
+\Indp\Indp $\mid \Compress(\tilde{G}_{t-1}[;k,mn{-}1]) \mid m\bigr)$\;\Indm\Indm
+$(h_0,\ldots,h_{t-1}) \leftarrow \ParseHash_{s,t,w}(d)$\;
+
+\For{$i = 0$ \KwTo $t-1$ \textbf{with} $h_i > 0$}{
+    $\mu_i \leftarrow \tilde{A}_i A_{h_i}^{-1}$;\quad
+    $\nu_i \leftarrow B_{h_i}^{-1} \tilde{B}_i$\;
+    Append $\bigl(\Compress(\mu_i) \mid \Compress(\nu_i)\bigr)$ to $v$\;
+}
+
+$p \leftarrow \SeedTreeToPath_t(h_0,\ldots,h_{t-1},\rho,\alpha)$\;
+\Return $m_s \leftarrow \bigl(v \mid p \mid d \mid \alpha \mid m\bigr)$
+\end{algorithm}
+\end{minipage}
+\end{figure}
+\begin{comment}
 \begin{algorithm}[t]
 \scriptsize
 \caption{MEDS Key Generation (simplified)}
@@ -383,24 +454,21 @@ $\pk \leftarrow \bigl(\sigma_{G_0} \big| \CompressG(G_1) \big| \cdots \big| \Com
 $\sk \leftarrow \bigl(\delta \big| \sigma_{G_0} \big| \Compress(A_1^{-1}) \big| \cdots \big| \Compress(A_{s-1}^{-1}) \big| \Compress(B_1^{-1}) \big| \cdots \big| \Compress(B_{s-1}^{-1})\bigr)$\;
 \Return $\pk,\, \sk$
 \end{algorithm}
+\end{comment}
 
 
-\paragraph{Signing.}
-Algorithm~\ref{alg:sign_meds} is the simplification of the signing algorithm.
-A fresh master seed $\delta$ is drawn and expanded into a tree-root seed $\rho$
-and a salt $\alpha$; the seed tree $\SeedTree_t(\rho, \alpha)$ then materialises
-all $t$ leaf seeds $\sigma_0, \ldots, \sigma_{t-1}$ at once.
-For every round $i$, a pair of ephemeral matrices
-$(\tilde{A}_i, \tilde{B}_i) \in \GL_m(q) \times \GL_n(q)$ is expanded from
-$\sigma_i$ (together with $\alpha$ and an address for domain separation), and
-the commitment $\tilde{G}_i = \SF(\pimap{\tilde{A}_i}{\tilde{B}_i}(G_0))$ is
-computed.  Hashing all non-systematic parts of the $\tilde{G}_i$ alongside the
-message yields the digest $d$, which is parsed into the fixed-weight challenge
-vector $(h_0, \ldots, h_{t-1})$.  For each \emph{non-zero} challenge $h_i$,
-the signer releases the coset representative
-$(\mu_i, \nu_i) = (\tilde{A}_i A_{h_i}^{-1},\, B_{h_i}^{-1} \tilde{B}_i)$;
-the remaining seeds are transmitted compactly via a seed-tree path $p$.
-
+\textbf{Signing.}
+Algorithm~\ref{alg:sign_meds} draws a fresh master seed $\delta$, expands it into
+a tree-root seed $\rho$ and salt $\alpha$, and materialises all $t$ leaf seeds via
+$\SeedTree_t(\rho, \alpha)$. Each $\sigma_i$ yields an ephemeral pair
+$(\tilde{A}_i, \tilde{B}_i)$ and commitment
+$\tilde{G}_i = \SF(\pimap{\tilde{A}_i}{\tilde{B}_i}(G_0))$; hashing their
+non-systematic parts with the message gives the digest $d$, parsed into the
+fixed-weight challenge $(h_0, \ldots, h_{t-1})$. For each non-zero $h_i$ the
+signer releases the coset representative
+$(\mu_i, \nu_i) = (\tilde{A}_i A_{h_i}^{-1},\, B_{h_i}^{-1} \tilde{B}_i)$, and the
+remaining seeds travel compactly in the seed-tree path $p$.
+\begin{comment}
 \begin{algorithm}[t]
 \scriptsize
 \caption{MEDS Signing (simplified)}
@@ -436,24 +504,52 @@ $(h_0,\ldots,h_{t-1}) \leftarrow \ParseHash_{s,t,w}(d)$\;
 $p \leftarrow \SeedTreeToPath_t(h_0,\ldots,h_{t-1},\,\rho,\,\alpha)$\;
 \Return $m_s \leftarrow \bigl(v \big| p \big| d \big| \alpha \big| m\bigr)$
 \end{algorithm}
+\end{comment}
 
 
-\paragraph{Verification.}
-Algorithm~\ref{alg:verify_meds} is the simplification of the verification algorithm.
-The verifier first reconstructs the public matrices $G_0, G_1, \ldots, G_{s-1}$
-from the public key and parses the signed message to recover the path $p$, the
-digest $d$, the salt $\alpha$, and the $w$ response pairs.
-The challenge vector $(h_0, \ldots, h_{t-1})$ is recomputed from $d$, and
-$\PathToSeedTree_t$ recovers the $t-w$ disclosed leaf seeds from $p$.
-For each round $i$, one of two paths is taken: if $h_i > 0$, the verifier
-applies the published coset representative $(\mu_i, \nu_i)$ to the
-corresponding public matrix $G_{h_i}$ and checks invertibility before
-computing $\hat{G}_i = \SF(\pimap{\mu_i}{\nu_i}(G_{h_i}))$; if $h_i = 0$,
-the verifier re-expands $(\hat{A}_i, \hat{B}_i)$ from the recovered seed and
-computes $\hat{G}_i = \SF(\pimap{\hat{A}_i}{\hat{B}_i}(G_0))$.
-Finally, the recomputed digest $d'$ is compared to $d$; equality confirms the
-signature.
+\textbf{Verification.}
+Algorithm~\ref{alg:verify_meds} reconstructs $G_0, \ldots, G_{s-1}$ from the
+public key, recovers the path $p$, digest $d$, salt $\alpha$, and the $w$ response
+pairs from $m_s$, recomputes the challenge from $d$, and runs
+$\PathToSeedTree_t$ to recover the $t-w$ disclosed seeds. For each round, if
+$h_i > 0$ it applies the published $(\mu_i, \nu_i)$ to $G_{h_i}$ (checking
+invertibility); if $h_i = 0$ it re-expands $(\hat{A}_i, \hat{B}_i)$ from the
+recovered seed. The signature is accepted iff the recomputed digest $d'$ equals
+$d$.
 
+\begin{algorithm}[t]
+\scriptsize
+\setlength{\algomargin}{0.9em}
+\caption{MEDS Verification (simplified)}
+\label{alg:verify_meds}
+\KwIn{Public key $\pk$, signed message $m_s$}
+\KwOut{Message $m$ or $\perp$}
+
+$G_0 \leftarrow \ExpandSystMat(\pk[0,\ell_{\mathrm{pub\_seed}}{-}1])$;\quad
+$G_1,\ldots,G_{s-1} \leftarrow \DecompressG(\pk)$\;
+Parse $m_s$: pairs $((\mu_i,\nu_i))_{h_i>0}$, path $p$, digest $d$, salt $\alpha$, message $m$\;
+$(h_0,\ldots,h_{t-1}) \leftarrow \ParseHash_{s,t,w}(d)$\;
+$(\sigma_0,\ldots,\sigma_{t-1}) \leftarrow \PathToSeedTree_t(h_0,\ldots,h_{t-1},p,\alpha)$\;
+
+\For{$i = 0$ \KwTo $t-1$}{
+    \eIf{$h_i > 0$}{
+        $(\mu_i,\nu_i) \leftarrow$ next response pair from $m_s$\;
+        $\hat{G}_i \leftarrow \SF\!\bigl(\pimap{\mu_i}{\nu_i}(G_{h_i})\bigr)$\;
+        \lIf{$\mu_i \notin \GL_m(q)$ \textbf{or} $\nu_i \notin \GL_n(q)$ \textbf{or} $\hat{G}_i = \perp$}{\Return $\perp$}
+    }{
+        $\sigma'_i \leftarrow \bigl(\alpha \mid \sigma_i \mid \ToBytes(2^{1+\lceil\log_2 t\rceil}+i,4)\bigr)$\;
+        $\hat{A}_i \leftarrow \ExpandInvMat(\XOF(\sigma'_i)_1, m)$;\quad
+        $\hat{B}_i \leftarrow \ExpandInvMat(\XOF(\sigma'_i)_2, n)$\;
+        $\hat{G}_i \leftarrow \SF\!\bigl(\pimap{\hat{A}_i}{\hat{B}_i}(G_0)\bigr)$\;
+    }
+}
+
+$d' \leftarrow H\!\bigl(\Compress(\hat{G}_0[;k,mn{-}1]) \mid \cdots \mid \Compress(\hat{G}_{t-1}[;k,mn{-}1]) \mid m\bigr)$\;
+\lIf{$d = d'$}{\Return $m$}
+\Return $\perp$
+\end{algorithm}
+
+\begin{comment}
 \begin{algorithm}[t]
 \scriptsize
 \caption{MEDS Verification (simplified)}
@@ -488,13 +584,14 @@ $d' \leftarrow H\!\bigl(\Compress(\hat{G}_0[\,;k,mn{-}1])\big|\cdots\big|\Compre
 \lIf{$d = d'$}{\Return $m$}
 \Return $\perp$
 \end{algorithm}
+\end{comment}
 
 
-\paragraph{Secret-extraction opportunity.}
-For round $i$ with $h_i = 1$, the signer reveals its ZK response.  If an attacker
-obtains both the response and $\eseed_i$, the secret equivalence pair $(A, B)$ is
-recoverable by linear algebra.  The Reference Tree is the sole enforcement mechanism
-preventing this dual revelation.
+%\paragraph{Secret-extraction opportunity.}
+%For round $i$ with $h_i = 1$, the signer reveals its ZK response.  If an attacker
+%obtains both the response and $\eseed_i$, the secret equivalence pair $(A, B)$ is
+%recoverable by linear algebra.  The Reference Tree is the sole enforcement mechanism
+%preventing this dual revelation.
 
 
 \begin{comment}

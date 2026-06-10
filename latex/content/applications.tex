@@ -3,7 +3,7 @@ the C reference implementation of MEDS. We focus on
 exploiting the tree traversal logic used in the path construction to leak 
 hidden seeds.
 
-\subsection{Target Analysis}
+\paragraph{Target Analysis.}
 The primary target of our analysis is the $\SeedTreePath$ function, 
 specifically targeting the logic represented in the signing phase of 
 the MEDS algorithm (instruction 16 of algorithm~\ref{alg:sign_meds}). 
@@ -13,16 +13,9 @@ available in \url{https://github.com/MEDSpqc/meds}.}, both $\SeedTreePath$
 \texttt{stree\_to\_path\_to\_stree}, which operates in two modes defined 
 by a \texttt{mode} parameter.
 
-\begin{lstlisting}[style=cstyle,caption={\texttt{stree\_to\_path\_to\_stree} implementation}., label=lst:path]
+\begin{lstlisting}[style=cstyle,caption={minimal description of \texttt{stree\_to\_path\_to\_stree} implementation}., label=lst:path]
 void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, uint8_t *salt, int mode) {
-    int h = 0, i = 0;
-    unsigned int id = 0, idx = 0;
-    unsigned int indices[MEDS_w] = {0};
-    for (int i = 0; i < MEDS_t; i++) {
-        if (h_digest[i] > 0) {
-            indices[idx++] = i;
-        }
-    }
+    ...
     while (1==1) {
         int index_leaf = 0;
         `\highlight{yhl}{while ((indices[id] >> (MEDS\_seed\_tree\_height-h)) == i)}` 
@@ -37,49 +30,34 @@ void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, ui
                 break;
             }
         }
-        if (index_leaf == 0) {
-            if (mode == STREE_TO_PATH) {
-                memcpy(path, &stree[MEDS_st_seed_bytes * SEED_TREE_ADDR(h, i)], MEDS_st_seed_bytes);
-                path += MEDS_st_seed_bytes;
-            } else {
-                memcpy(&stree[MEDS_st_seed_bytes * SEED_TREE_ADDR(h, i)], path, MEDS_st_seed_bytes);
-                path += MEDS_st_seed_bytes;
-                t_hash(stree, salt, h, i);
-            }
-        }
-        // Backtracking logic
-        while ((i & 1) == 1) {
-            h -= 1;
-            i >>= 1;
-        }
-        i += 1; 
-        if ((i << (MEDS_seed_tree_height - h)) >= MEDS_t) return;
+        ...
     }
 }
 \end{lstlisting}
 
 The algorithm identifies secret leaves (where $h[i] > 0$) and performs a Depth-First Search (DFS). The exploration halts as soon as it reaches a node that is no longer an ancestor of the hidden leaf. This node is then appended to the signature path. If the exploration reaches a target hidden leaf, the \texttt{index\_leaf} flag is set to ensure the leaf seed remains unpublished and we move on to the next hidden leaf.
 
-\paragraph{Objective.}
+\noindent\textbf{Objective.}
 The main goal for these attacks is to manipulate the control flow 
 via fault injection to leak unpublished seeds (internal nodes or leaves) 
 into the public signature path, ultimately compromising the security 
 of the signature scheme.
 
-\subsection{Experimental Setup}
+\paragraph{Experimental Setup.}
 Our experimental platform consists of a \textbf{CW303-STM32F3} target board, featuring an ARM Cortex-M4 STM32F303RCT7 processor. Clock glitching is performed using a \textbf{ChipWhisperer-Lite}. As a proof-of-concept, the target board is flashed exclusively with the \texttt{stree\_to\_path\_to\_stree} function, using fixed values for the reference tree, salt, and challenge.
 
-\subsection{Fault Models}
+%\subsection{Fault Models}
+\paragraph{Fault Models.}
 We propose three fault models targeting different stages of the tree traversal.
 
-\subsubsection{Model 1: Full Tree Recovery (Root Leakage)}
+\noindent\textbf{Model 1: Full Tree Recovery (Root Leakage).}
 This attack aims to reveal the root seed, which effectively compromises the entire tree. By injecting a fault that causes the skip of the first iteration of \highlight{yhl}{\texttt{while} loop} at line 13 of listing~\ref{lst:path}, the DFS halts immediately at the root ($h=0, i=0$). The root is incorrectly identified as a node ready for publication.
 
-\paragraph{Detection and recovery.} The signature path contains only a single non-zero element. Verification is performed by expanding this single seed into a full tree and checking if the resulting signature is accepted.
+\noindent\textbf{Detection and recovery.} The signature path contains only a single non-zero element. Verification is performed by expanding this single seed into a full tree and checking if the resulting signature is accepted.
 
-\subsubsection{Model 2: Subtree Recovery}
+\noindent\textbf{Model 2: Subtree Recovery.}
 By glitching the loop \highlight{rhl}{\texttt{if (id + 1 < MEDS\_w) id++;}} at line 19 of listing~\ref{lst:path}, the algorithm fails to update the target index \texttt{id}. The traversal logic becomes desynchronized, resulting in the algorithm treating subsequent branches as public. All leaves to the right of the faulted \texttt{id} become computable.
-\paragraph{Detection and recovery. } This fault is hard to detect without a reference signature. However, one can simulate tree reconstructions for all possible faulted \texttt{id} values to verify which leads to a valid signature. (up to $w$ verifications)
+\noindent\textbf{Detection and recovery. } This fault is hard to detect without a reference signature. However, one can simulate tree reconstructions for all possible faulted \texttt{id} values to verify which leads to a valid signature. (up to $w$ verifications)
 
 \begin{figure}[H]
 \centering
@@ -118,10 +96,10 @@ By glitching the loop \highlight{rhl}{\texttt{if (id + 1 < MEDS\_w) id++;}} at l
 \label{fig:faulted_path}
 \end{figure}
 
-\subsubsection{Model 3: Hidden Leaf Recovery}
+\noindent\textbf{Model 3: Hidden Leaf Recovery.}
 This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf = 1;}} at line 20 of listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
 
-\paragraph{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iterations of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
+\noindent\textbf{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iterations of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
 
 
 
@@ -130,46 +108,20 @@ This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf 
 
 We successfully executed the fault models on the Chipwhisperer board. This section detailed the compiler and glitcher configurations that were required to obtain the desired faults.
 
-%\subsubsection{Methodology}
-\paragraph{Step-by-Step attack.}
-For each target fault model, we aim to identify the parameter configurations that yield the highest 
-attack success rate. First, we define a target output state that signifies a successful fault 
-injection. 
+\noindent\textbf{Step-by-Step attack.}
+For each fault model we first define a target output state signifying a
+successful injection, then bracket the target assembly instructions with a
+\texttt{trigger\_high()}/\texttt{trigger\_low()} pair so the ChipWhisperer
+counts the right clock-cycle window; we verify the disassembly to confirm
+compiler optimizations did not move or drop the triggers. The \texttt{repeat}
+parameter sets the glitch duration in clock cycles, calibrated from the ARM
+nominal cycle counts for the target sequence.
 
-Next, we establish a precise faulting window encompassing one or more target 
-assembly instructions. To synchronize the injection hardware, we instrument the 
-firmware by inserting a \texttt{trigger\_high()} 
-instruction immediately before the target instruction block to signal the 
-ChipWhisperer to begin 
-counting clock cycles, followed by a \texttt{trigger\_low()} instruction to 
-terminate the window. 
-We then verify the disassembled binary to ensure that compiler optimizations 
-have not rearranged, omitted, or reordered these trigger placements.
-
-To configure the temporal bounds of the injection, we define the \texttt{repeat} parameter, 
-which specifies the continuous duration (in clock cycles) of the clock glitch. We calibrate this 
-maximum value based on the nominal cycle execution counts provided in the ARM documentation for 
-the target instruction sequence. 
-
-We iteratively sweep three spatial and temporal 
-parameters to map the physical fault space and identify 
-high-yield vulnerability regions. The parameter 
-\texttt{width} controls the width of the glitch pulse, 
-obtained by XORing the system clock, and is expressed as a 
-percentage of the clock period ranging from 0\% to 50\%. 
-The parameter \texttt{offset} specifies the phase shift 
-between the glitch pulse and the system clock and is varied 
-from -50\% to 50\% of the clock period. Finally, 
-\texttt{ext\_offset} denotes the number of clock cycles 
-elapsed between the trigger signal and the start of the 
-glitch injection.
-%Finally, we iteratively sweep the following spatial and temporal parameters to map the physical 
-%fault space and isolate high-yield vulnerability regions:
-%\begin{itemize}
-%    \item \texttt{width}: The width of the glitch pulse, achieved by XORing the system clock (expressed as a percentage of the clock period, spanning from 0\% to 50\%).
-%    \item \texttt{offset}: The phase shift or delay introduced before the rising edge of the glitch pulse relative to the clock cycle (expressed as a percentage of the clock period, spanning from -50\% to 50\%).
-%    \item \texttt{ext\_offset}: The absolute number of clock cycles elapsed after the trigger signal before the glitch injection begins.
-%\end{itemize}
+We sweep three parameters to map the fault space: \texttt{width}, the glitch
+pulse width (XOR of the system clock, $0\%$--$50\%$ of the clock period);
+\texttt{offset}, the phase shift relative to the system clock
+($-50\%$--$50\%$); and \texttt{ext\_offset}, the number of clock cycles between
+the trigger and the glitch.
 
 \textit{Model 1: Full tree recovery.}
 This attack is successful if the returned path contains a 
@@ -205,7 +157,7 @@ clock cycles.
 
 \begin{figure}[htp]
     \centering
-    \includegraphics[width=0.85\textwidth]{content/images/glitch_3d_results.png} 
+    \includegraphics[width=0.62\textwidth]{content/images/glitch_3d_results.png} 
     \caption{Glitch success frequency by glitch width and offset for fault model 1, with 10 tries per parameter set. Valid glitches are runs that did not crash and output paths that were neither correct nor the target faulted path.}
     \label{fig:fault1_results}
 \end{figure}
@@ -243,7 +195,7 @@ of glitch offset and width.
 
 \begin{figure}[htp]
     \centering
-    \includegraphics[width=0.73\textwidth]{content/images/glitch_2d_results_ext2.png}
+    \includegraphics[width=0.58\textwidth]{content/images/glitch_2d_results_ext2.png}
     \caption{Glitch success frequency by glitch width and offset for fault model 2, with 10 tries per parameter pair.}
     \label{fig:fault2_results}
 \end{figure}
@@ -283,12 +235,12 @@ shows the success rate and reset for the glitch offset and width.
 
 \begin{figure}[htbp]
     \centering
-        \includegraphics[scale=0.3]{content/images/glitch_2d_results_ext3.png} 
+        \includegraphics[width=0.58\textwidth]{content/images/glitch_2d_results_ext3.png} 
     \caption{Glitch success frequency by glitch width and offset for fault model 3, with 10 tries per parameter pair.}
     \label{fig:fault3_results}
 \end{figure}
 
-\paragraph{Results.} The experiments confirm that the attack is reproducible. 
+\noindent\textbf{Results.} The experiments confirm that the attack is reproducible. 
 Across all parameter sweeps, attempts strictly resulted in either normal execution, a device reset, or the expected exploit. 
 We observed a complete absence of other valid glitches. This is due to our single-instruction targeting. Unlike  
 fault models that disrupt larger execution windows and introduce non-deterministic errors, this injection is less likely

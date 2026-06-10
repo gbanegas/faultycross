@@ -21,31 +21,25 @@
 \maketitle
 
 \begin{abstract}
-Post-quantum signature schemes derived from Fiat-Shamir transformations of 
-zero-knowledge identification protocols frequently rely on GGM-tree-based 
-seed compression to reduce signature size. This mechanism is used in several 
-recent constructions, including LESS, CROSS, and MEDS, where only 
-challenge-dependent subsets of ephemeral seeds are hidden while the 
-remaining seeds are disclosed for verification. Although essential for 
-efficiency, this design introduces a fault-attack surface: faults affecting 
-the seed-publication logic may reveal hidden seeds together with their 
-associated zero-knowledge responses, enabling recovery of secret information. 
-In this work, we introduce the Generic ZK Seed Tree (GZKST) abstraction, 
-a unified framework capturing the common structure of GGM-tree generation, 
-challenge partitioning, and seed publication across these schemes. Within this 
-model, we formalize correctness and seed-hiding invariants and show that previously 
-proposed attacks against LESS-v1 and LESS-v2 correspond to violations of the 
-same underlying invariant despite targeting different implementation layers 
-and tree constructions. Using this abstraction, we derive generic key-recovery 
-algorithms and analyze the number of effective faulted signatures required for 
-complete secret recovery. For all MEDS parameter sets, we show that only a 
-small number of successful faulted queries is sufficient in practice. We 
-additionally demonstrate the practicality of these attacks through clock-glitch 
-fault injections against the MEDS reference implementation on an ARM Cortex-M4 
-microcontroller using a ChipWhisperer-Lite platform. Our experiments identify 
-multiple exploitable fault surfaces in the tree traversal and path-construction 
-logic, enabling complete tree disclosure, partial subtree recovery, or leakage 
-of hidden leaves.
+Post-quantum signatures built from Fiat--Shamir transforms of zero-knowledge 
+identification protocols---including LESS, CROSS, and MEDS---use GGM-tree seed 
+compression to shrink signatures, revealing only the seeds of public rounds 
+while hiding the challenge-dependent ones. This mechanism introduces a 
+fault-attack surface: faulting the seed-publication can expose hidden seeds 
+alongside their zero-knowledge responses, enabling recovery of secret 
+information. We introduce the Generic ZK Seed Tree (GZKST), a unified 
+abstraction of GGM-tree generation, challenge partitioning, and seed 
+publication across these schemes, and formalize its correctness and 
+seed-hiding invariants. We show that prior attacks on LESS-v1 and LESS-v2 
+violate the same invariant despite targeting different implementation layers 
+and tree constructions, derive generic key-recovery algorithms from this view, 
+and bound the number of effective faulted signatures needed for full 
+recovery---only a few successful queries suffice for every MEDS parameter set. 
+We further demonstrate the attacks in practice through clock-glitch fault 
+injection against the MEDS reference implementation on an ARM Cortex-M4 
+(ChipWhisperer-Lite), identifying multiple exploitable surfaces in tree 
+traversal and path construction that enable complete tree disclosure, partial 
+subtree recovery, or leakage of hidden leaves.
 \keywords{GGM tree \and Zero-knowledge signatures \and Fault attacks \and 
 Post-quantum cryptography \and Seed compression}
 \end{abstract}

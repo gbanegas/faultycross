@@ -63,6 +63,27 @@ This paper provides the following:
 
 \subsection{Related Work}
 \label{sec:relwork}
+Several recent works study fault attacks on \GGM{}- or seed-tree-based 
+post-quantum signatures---LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, 
+MEDS~\cite{ChouNPRRST23}, and MPC-in-the-Head schemes~\cite{ryde2025,FAESTv22025}. 
+ZKFault~\cite{ZKFault} faults the seed-publication of code-based ZK signatures 
+(LESS-v1, extended to CROSS and MEDS), disclosing hidden ephemeral seeds and 
+recovering secret information. Fault-to-Forge~\cite{FaultToForge2025} revisits 
+LESS-v2, whose incomplete \GGM{}-tree breaks that strategy, finding new 
+injection points in the incomplete tree-generation and seed-publication and 
+showing that secret-equivalent information suffices for universal forgery. 
+More recently,~\cite{HuangHHYSTY26} avoids the tree entirely, exploiting 
+iteration-skip and loop-abort faults in the digest-preprocessing step before 
+tree generation for high-probability full key recovery.
+
+Our work unifies these attacks under a single Generic ZK Seed Tree (GZKST) 
+abstraction, formalizing the correctness and seed-hiding invariants they 
+implicitly exploit, and additionally provides practical fault attacks against 
+MEDS.
+
+\begin{comment}
+\subsection{Related Work}
+\label{sec:relwork}
 Recent works have studied fault attacks against post-quantum 
 signature schemes relying on \GGM{}-tree or seed-tree compression 
 techniques, including LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, 
@@ -93,7 +114,7 @@ Our work unifies these attacks under a single Generic ZK Seed Tree
 (GZKST) abstraction, formalizing the correctness and seed-hiding 
 invariants implicitly exploited by prior works, while additionally 
 providing practical fault attacks against MEDS.
-
+\end{comment}
 \paragraph{Our Contributions.}
 This work provides a unified analysis of fault attacks against
 post-quantum signature schemes relying on seed-tree compression.
