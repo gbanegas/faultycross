@@ -88,9 +88,11 @@ structure, in Figure~\ref{fig:less-trees}.
 \subsection{Mapping Schemes to the GZKST Model}
 \label{sec:mapping}
 
-We now establish that each of the ZK-based post-quantum signature schemes
-introduced in Section~\ref{sec:background} is a valid \GZKST\ instance in the
-sense of Definition~\ref{def:gzkst}.  For each scheme, we exhibit the concrete
+We now establish that the MEDS signature scheme
+introduced in Section~\ref{sec:background}, as well as two other zero-knowledge-base 
+postquantum signature schemes, LESS-V2~\cite{LESS-spec} and CROSS~\cite{LESS-spec}, are 
+valid \GZKST\ instances in the
+sense of Definition~\ref{def:gzkst}.  We exhibit the concrete
 instantiation of the six algorithms and verify that
 Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by construction.
 
@@ -112,7 +114,7 @@ The six algorithms instantiate as follows. $\Setup$ derives $(\seed_r,\salt)$
 from a single $\XOF$ call, and $\Expand$ builds the height-$\lceil\log_2 t\rceil$
 tree by hashing each parent with the salt and node index, returning the first
 $t$ leaves (the rightmost $2^{\lceil\log_2 t\rceil}-t$ are unused when $t$ is not
-a power of two, exactly as in LESS-v2). $\Chal$ expands each leaf into ephemeral
+a power of two). $\Chal$ expands each leaf into ephemeral
 matrices, hashes the compressed generators with $m$, and parses the digest via
 $\ParseHash_{s,t,w}$ into $\mathbf{h}\in\{0,\ldots,s-1\}^t$ of weight $w$;
 $\Decide$ then sets $\calH=\{i:h_i\neq0\}$, $\calR=\{i:h_i=0\}$. Finally,
@@ -135,7 +137,7 @@ follow the MEDS argument (Appendix~\ref{app:proof-meds}).
 
 \begin{proposition}[LESS-v2 is a \GZKST\ instance]
 \label{prop:less-gzkst}
-LESS-v2 instantiates Definition~\ref{def:gzkst} with secret type
+LESS-v2\cite{LESS-spec} instantiates Definition~\ref{def:gzkst} with secret type
 $\calS = \{\pi_1, \ldots, \pi_{s-1}\}$ (the $s-1$ secret monomial permutations),
 $t$ parallel repetitions, and an \emph{incomplete} \GGM\ tree of height
 $\lceil \log_2 t \rceil$.
@@ -268,7 +270,7 @@ recovered seeds from which monomial matrices and commitments are re-derived.
 
 \begin{proposition}[CROSS is a \GZKST\ instance]
 \label{prop:cross-gzkst}
-CROSS instantiates Definition~\ref{def:gzkst} with secret type
+CROSS~\cite{CROSSspec} instantiates Definition~\ref{def:gzkst} with secret type
 $\calS = \{\mathbf{e}\}$ (the R-SDP solution),
 $t$ parallel repetitions, and a complete \GGM\ tree.
 The seed-publishing component satisfies
@@ -491,16 +493,16 @@ as:
 \begin{itemize}
   \item \textbf{MEDS}.
         For a hidden round $i$ with $h_i = j$, the signer publishes
-        $(\mu_i, \nu_i) = (A_j\widetilde{A}_i^{-1},\, B_j^{-1}\widetilde{B}_i)$
+        $(\mu_i, \nu_i) = (\widetilde{A}_iA_j^{-1},\, B_j^{-1}\widetilde{B}_i)$
         (consistent with the background description in \S\ref{sec:meds}).
         Expanding $\eseed_i$ yields $(\widetilde{A}_i, \widetilde{B}_i)$,
         so
         \[
-          A_j \;=\; \mu_i \cdot \widetilde{A}_i,
+          A_j^{-1} \;=\; \widetilde{A}_i^{-1} \cdot \mu_i ,
           \qquad
           B_j^{-1} \;=\; \nu_i \cdot \widetilde{B}_i^{-1}.
         \]
-        Both operations are direct matrix multiplications (and one inversion)
+        Both operations are direct matrix multiplications and inversions
         over $\mathbb{F}_q$; no column-reconstruction step is required.
   \item \textbf{LESS-v2}.
         The response is a coset representative

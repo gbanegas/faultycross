@@ -53,11 +53,11 @@ We propose three fault models targeting different stages of the tree traversal.
 \noindent\textbf{Model 1: Full Tree Recovery (Root Leakage).}
 This attack aims to reveal the root seed, which effectively compromises the entire tree. By injecting a fault that causes the skip of the first iteration of \highlight{yhl}{\texttt{while} loop} at line 5 of listing~\ref{lst:path}, the DFS halts immediately at the root ($h=0, i=0$). The root is incorrectly identified as a node ready for publication.
 
-\noindent\textbf{Detection and recovery.} The signature path contains only a single non-zero element. Verification is performed by expanding this single seed into a full tree and checking if the resulting signature is accepted.
+\noindent\textit{Detection and recovery.} The signature path contains only a single non-zero element. Verification is performed by expanding this single seed into a full tree and checking if the resulting signature is accepted.
 
 \noindent\textbf{Model 2: Subtree Recovery.}
 By glitching the conditional \highlight{rhl}{\texttt{if (id + 1 < MEDS\_w) id++;}} at line 12 of listing~\ref{lst:path}, the algorithm fails to update the target index \texttt{id}. The traversal logic becomes desynchronized, resulting in the algorithm treating subsequent branches as public. All leaves to the right of the faulted \texttt{id} become computable.
-\noindent\textbf{Detection and recovery. } This fault is hard to detect without a reference signature. However, one can simulate tree reconstructions for all possible faulted \texttt{id} values to verify which leads to a valid signature. (up to $w$ verifications)
+\noindent\textit{Detection and recovery. } This fault is hard to detect without a reference signature. However, one can simulate tree reconstructions for all possible faulted \texttt{id} values to verify which leads to a valid signature. (up to $w$ verifications)
 
 \begin{figure}[H]
 \centering
@@ -99,7 +99,7 @@ By glitching the conditional \highlight{rhl}{\texttt{if (id + 1 < MEDS\_w) id++;
 \noindent\textbf{Model 3: Hidden Leaf Recovery.}
 This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf = 1;}} at line 13 of listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
 
-\noindent\textbf{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iterations of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
+\noindent\textit{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iterations of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
 
 
 
@@ -123,14 +123,14 @@ pulse width (XOR of the system clock, $0\%$--$50\%$ of the clock period);
 ($-50\%$--$50\%$); and \texttt{ext\_offset}, the number of clock cycles between
 the trigger and the glitch.
 
-\textit{Model 1: Full tree recovery.}
+\textbf{Model 1: Full tree recovery.}
 This attack is successful if the returned path contains a 
 single node which is the root node.
 
-\textbf{Compilation.} This attack is carried out on a 
+\textit{Compilation.} This attack is carried out on a 
 code compiled with the default \texttt{-Os} optimization.
 
-\textbf{Trigger position.} We directly target the 
+\textit{Trigger position.} We directly target the 
 evaluation of the conditional and the branching 
 instruction corresponding to line 5 of Listing~\ref{lst:path}. 
 The compiled result is in Listing~\ref{lst:f1asm}. We fault for 3 
@@ -150,7 +150,7 @@ clock cycles.
 ...
 \end{lstlisting}
 
-\textbf{Parameters.} Figure~\ref{fig:fault1_results} shows that the attack has
+\textit{Parameters.} Figure~\ref{fig:fault1_results} shows that the attack has
  a high success rate and lower reset rates for an \texttt{ext\_offset} ranging 
  from $1.5$ to $2.5$, a small \texttt{offset} of $-1$ to $1$ and rather wide 
  glitches (\texttt{width} over $20$).
@@ -162,14 +162,13 @@ clock cycles.
     \label{fig:fault1_results}
 \end{figure}
 
-\textit{Model 2: Subtree recovery.} This attack is successful if 
-the returned path contains a hidden subtree, that is, we hit a node 
-that gives us a subtree that should be hidden.
+\textbf{Model 2: Subtree recovery.} We consider 
+this attack successful if we obtain the faulted path pattern 
+described by Figure~\ref{fig:faulted_path}. 
 
+\textit{Compilation.} This is carried out on a code compiled with the default \texttt{-Os} optimization.
 
-\textbf{Compilation.} This is carried out on a code compiled with the default \texttt{-Os} optimization.
-
-\textbf{Trigger position.} We set the trigger to frame line $12$ of Listing~\ref{lst:path}. The compiled result is in Listing~\ref{lst:f2asm}.
+\textit{Trigger position.} We set the trigger to frame line $12$ of Listing~\ref{lst:path}. The compiled result is in Listing~\ref{lst:f2asm}.
 
 
 \begin{lstlisting}[style=asmstyle, label=lst:f2asm, caption=Compiled trigger points for fault model 2.]
@@ -185,11 +184,9 @@ that gives us a subtree that should be hidden.
 \end{lstlisting}
 
 
-\textbf{Parameters.} The evaluation of the condition and 
+\textit{Parameters.} The evaluation of the condition and 
 the incrementation of \texttt{id} require 3 clock cycles. 
-We therefore set \texttt{repeat} to $3$. We consider 
-the attack successful if we obtain the faulted path pattern 
-described by Figure~\ref{fig:faulted_path}. 
+We therefore set \texttt{repeat} to $3$. 
 Figure~\ref{fig:fault2_results} shows the success in terms 
 of glitch offset and width.
 
@@ -201,22 +198,22 @@ of glitch offset and width.
 \end{figure}
 
 We observe a distinct, bounded region of system resets delimited by successful attacks and other valid glitches. 
-Crucially, the paths of many of these valid glitches contain a large set of intermediate nodes which provide sufficient 
+The paths of many of these valid glitches contain a large set of intermediate nodes which provide sufficient 
 coverage to compute all of the leaf values.
 
-\textit{Model 3: Single hidden leaf recovery.}
+\textbf{Model 3: Single hidden leaf recovery.}
 In this model, we recover only a hidden leaf. 
 
-\textbf{Compilation.} Higher compiler optimization levels made it difficult to precisely target the flags. 
-Specifically, the \texttt{-O1}, \texttt{-O2}, \texttt{-O3}, and \texttt{-Os} optimization flags resulted in compiled 
+\textit{Compilation.} Higher compiler optimization levels made it difficult to precisely target the flags. 
+The  optimization flags \texttt{-O1}, \texttt{-O2}, \texttt{-O3}, and \texttt{-Os} resulted in compiled 
 assembly code that omitted the explicit assignment instruction entirely, relying instead on complex control-flow 
 manipulations to achieve the same logical outcome. To resolve this issue, we enforced the \texttt{-O0} optimization 
-level strictly on the targeted function. Applying \texttt{-O0} to the entire project was unfeasible, as it increased 
+level on the targeted function, as applying \texttt{-O0} to the entire project increased 
 the binary size beyond the storage capacity of the target board. 
 
 
 
-\textbf{Trigger position.} For the unoptimized version, we position the glitch high trigger right before the \texttt{index\_leaf} assignment and the low trigger right after. This results in the compiled code in listing~\ref{lst:f3asm}. 
+\textit{Trigger position.} For the unoptimized version, we position the glitch high trigger right before the \texttt{index\_leaf} assignment and the low trigger right after. This results in the compiled code in listing~\ref{lst:f3asm}. 
 \begin{lstlisting}[style=asmstyle, label=lst:f3asm, caption=Compiled trigger points for fault model 3.]
 0800062c <stree_to_path_to_stree_glitch>:
 ...
@@ -227,9 +224,7 @@ the binary size beyond the storage capacity of the target board.
 ...
 \end{lstlisting}
 
-\textbf{Parameters.} The disassembled code shows that the assignement is done in two instructions, first The CPU loads the integer value 1 into 
-the register \texttt{r3}, then it takes that value 1 from \texttt{r3} and writes it out to memory. 
-According to ARM documentation, each of these instruction is 1 clock cycle long. 
+\textit{Parameters.} The disassembled code shows that the assignement is done in two instructions which are both 1 clock cycle long. 
 We set the \texttt{repeat} parameter of the glitch controller to 2. Figure~\ref{fig:fault3_results}
 shows the success rate and reset for the glitch offset and width. 
 

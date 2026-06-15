@@ -47,9 +47,9 @@ one or more seeds while revealing the rest, as shown in Figure~\ref{fig:ggm-rece
 \paragraph{Incomplete \GGM\ trees.}
 When the number of required leaves $t$ is not a power of $2$, a scheme may use an
 \emph{incomplete} tree: leaves appear at multiple levels, and internal nodes near
-the bottom may have fewer than two children or act as leaves themselves.  This
+the bottom may have fewer than two children or act as leaves themselves. This
 reduces memory and computation, but the additional index-tracking logic introduces
-new fault surfaces.
+new fault surfaces. The scheme may also use the first $t$ leaves of the tree.
 %as detailed in Section~\ref{sec:theoretical}.
 \begin{figure}[tb]
 \centering
@@ -163,7 +163,7 @@ new fault surfaces.
 
 \subsection{Attack target}
 
-This section provides an overview of the signature schemes, to which we apply our generalized
+This section provides an overview of the signature scheme to which we apply our generalized
 model and against which we carry out our attacks. 
 
 \begin{comment}
@@ -265,40 +265,19 @@ which demonstrated full key recovery from a single fault for CROSS.
 
 % ============================================================
 \end{comment}
-\textbf{MEDS.}
+
+
+\textbf{The MEDS Signature Scheme.} 
 \label{sec:meds}
-MEDS (Matrix Equivalence Digital Signature)~\cite{ChouNPRRST23} is a code-based
-signature scheme whose security rests on the Matrix Code Equivalence Problem
-(MCEP).  Like LESS, it applies the Fiat--Shamir transform to a 3-pass Sigma
-protocol between a prover holding a secret equivalence
-$(A, B) \in \GL_k(q) \times \GL_n(q)$ and a verifier.
+The Matrix Equivalence Digital Signature (MEDS) scheme~\cite{ChouNPRRST23} is a code-based post-quantum primitive whose security relies on the hardness of the Matrix Code Equivalence (MCE) Problem. Given a public matrix pair $(G_0, G_1)$, the MCEP asks an adversary to find a secret tuple $(A, B) \in \GL_k(q) \times \GL_n(q)$ such that $G_1 = A \cdot G_0 \cdot B$. 
 
-\textbf{Role of the seed tree in signing and verification.}
-Each leaf $\sigma_i$, for $0 \le i < t$, is an ephemeral seed of length
-$\ell_{\mathrm{tree\_seed}}$ bytes from which the $i$-th pair of ephemeral
-invertible matrices $(\tilde{A}_i, \tilde{B}_i) \in \GL_m(q) \times \GL_n(q)$
-is sampled via a PRNG\@.
-The commitment for round $i$ is then $h_i = H\!\bigl(\mathrm{SF}(\pi_{\tilde{A}_i,
-\tilde{B}_i}(G_0))\bigr)$, so the seed tree compactly encodes all $t$ ephemeral
-matrix pairs required by the iterated Sigma protocol from a single master seed
-$\rho_{0,0} \in \mathcal{B}^{\ell_{\mathrm{tree\_seed}}}$.
+To transform this structural identification problem into a non-interactive digital signature, MEDS applies the classical Fiat--Shamir paradigm to an underlying $3$-pass identification protocol across $t$ parallel execution rounds. In each round, the signer expands an ephemeral leaf seed into a randomized matrix pair $(\tilde{A}_i, \tilde{B}_i)$, computing a commitment hash based on their product. To minimize the signature size, all $t$ ephemeral seeds are hierarchically derived from a single master seed using a binary GGM seed tree. 
 
-During signing, the Fiat--Shamir challenge string
-$\mathbf{h} = (h_0, \ldots, h_{t-1}) \in \{0, \ldots, s-1\}^t$ of fixed
-weight~$w$ partitions the rounds into two sets: the $w$ rounds with
-$h_i \neq 0$, for which the signer publishes the coset representative
-$(\mu_i, \nu_i) = (A\tilde{A}_i^{-1},\, B^{-1}\tilde{B}_i)$ and must
-\emph{conceal} $\sigma_i$, and the remaining $t - w$ rounds with $h_i = 0$,
-for which $\sigma_i$ is disclosed so that the verifier can re-expand
-$(\tilde{A}_i, \tilde{B}_i)$ and recover the commitment $h_i$.
+During the execution of the Fiat--Shamir transform, the message and the accumulated commitments are hashed to generate a challenge vector of weight~$w$. This vector splits the execution rounds into two validation paths: for $w$ active rounds, the signer publishes a masked variant of the secret matrices while keeping the corresponding leaf seeds strictly hidden. For the remaining $t-w$ rounds, the signer discloses the internal leaf seeds, allowing the verifier to recompute the commitments.
 
-On the verifier side, the required leaf seeds are recovered; the $w$ hidden seeds, corresponding to
-rounds with $h_i \neq 0$, are provably unreachable from any published node.
-
-
-Since we are going to show in \S\ref{sec:app} an application of the attack in the 
-reference implementation of MEDS, we are going to explain better the algorithms of 
-key generation, signing and verification. Table~\ref{tab:scheme-params} shows
+Since Section~\ref{sec:app} demonstrates a practical attack on the 
+reference implementation of MEDS, we describe the algorithms of 
+key generation, signing and verification in more detail below. Table~\ref{tab:scheme-params} shows
 the parameters for MEDS~\cite{ChouNPRRST23}.
 
 \begin{table}[htp]
@@ -342,17 +321,7 @@ the parameters for MEDS~\cite{ChouNPRRST23}.
 \end{tabular}
 \end{table}
 
-\textbf{Key Generation.}
-Algorithm~\ref{alg:keygen_meds} samples a master secret seed $\delta$ and derives
-via $\XOF$ a public seed $\sigma_{G_0}$ (expanding the systematic matrix
-$G_0 \in \mathbb{F}_q^{k \times mn}$) and a private chaining seed $\sigma$.
-For each of the $s-1$ public keys, a \emph{compressed} step twists $G_0$ by a
-secret $T_i \in \GL_k(q)$ and solves (with $P_0 = I_m$, $P_1 = U_m$) for the
-equivalence pair $(A_i, B_i)$ satisfying $G_i = \SF(\pimap{A_i}{B_i}(G_0))$.
-The public key stores $\sigma_{G_0}$ and $G_1, \ldots, G_{s-1}$; the secret key
-retains $\delta$ and the inverses $A_i^{-1}, B_i^{-1}$, the sole secret material
-used at signing.
-
+\textbf{Key Generation.} As detailed in Algorithm~\ref{alg:keygen_meds}, key generation initializes a master secret seed~$\delta$ to derive a public matrix seed~$\sigma_{G_0}$, which expands into a baseline systematic matrix $G_0 \in \mathbb{F}_q^{k \times mn}$, and a private seed~$\sigma$. For each of the~$s-1$ rounds, a private randomized matrix~$T_i \in \text{GL}_k(q)$ is generated to multiply~$G_0$, yielding an intermediate matrix~$G'_0$. The $\text{Solve}$ function then parses~$G'_0$ into a linear system over~$\mathbb{F}_q$ bounded by an explicit scalar constraint~$a_{m-1,m-1}$, which is uniquely resolved by the secret equivalence pair~$(A_i, B_i^{-1})$. Finally, the target public matrix~$G_i$ is computed via the equivalence transformation~$\pi_{A_i, B_i}(G_0)$ and evaluated by the~$\text{SF}$ operator. The resulting public key comprises~$\sigma_{G_0}$ alongside the compressed representations of~$(G_1, \ldots, G_{s-1})$, while the secret key retains~$\delta$, $\sigma_{G_0}$, and the matrix inverses~$(A_i^{-1}, B_i^{-1})$.
 
 \begin{figure}[t]
 \centering
@@ -467,7 +436,7 @@ non-systematic parts with the message gives the digest $d$, parsed into the
 fixed-weight challenge $(h_0, \ldots, h_{t-1})$. For each non-zero $h_i$ the
 signer releases the coset representative
 $(\mu_i, \nu_i) = (\tilde{A}_i A_{h_i}^{-1},\, B_{h_i}^{-1} \tilde{B}_i)$, and the
-remaining seeds travel compactly in the seed-tree path $p$.
+remaining seeds are revealed compactly in the seed-tree path $p$.
 \begin{comment}
 \begin{algorithm}[t]
 \scriptsize
