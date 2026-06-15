@@ -34,10 +34,10 @@ on the obtained path and to compare the obtained leaves to $\calH$ and the refer
 
 \subsection{Path construction algorithm modification}
 
-Although the unified implementation of $\SeedTreeToPath$ and $\PathToSeedTree$ is highly efficient, 
+Although the unified implementation of $\SeedTreeToPath$ and $\PathToSeedTree$ is efficient, 
 its structural coupling of the flag tree construction and path extraction phases creates a vulnerability.
 Decoupling these operations into independent processing stages, and introducing validation checks after each phase, 
-reduces the attack surface. This structural redundancy ensures that any fault injected during the initial flag tree 
+adds a redundancy that ensures that any fault injected during the initial flag tree 
 generation will cause a detectable mismatch during the subsequent path construction phase.
 
 We implement this countermeasure using the following multi-stage verification procedure:
@@ -109,14 +109,12 @@ v[i] =
 
 While this design ensures that the secret matrices $(\tilde{A}_i, \tilde{B}_i)$ remain computationally 
 infeasible to derive for any index $i$, it introduces a disadvantage by significantly inflating 
-the overall signature size by adding $t-w$ couples of matrices to the signature. 
-
-The signature size with countermeasure \texttt{sig\_cm} is given by: $\ell_{\text{digest}} + t(\ell_{\mathbb{F}_q^{m \times m}} + \ell_{\mathbb{F}_q^{n \times n}}) + \ell_{\text{salt}}$,
-The signature sizes by parameter set are presented in table~\ref{tab:medsoverhead}.
+the overall signature size to the size \texttt{sig\_cm} shown in table~\ref{tab:medsoverhead}.
 
 \begin{table}[htbp]
 \centering
-\caption{Comparison of Signature Sizes and Overhead across MEDS Parameter Sets}
+\caption{Comparison of Signature Sizes and Overhead across MEDS Parameter Sets. \texttt{sig\_cm} is given by $\ell_{\text{digest}} + t(\ell_{\mathbb{F}_q^{m \times m}} + \ell_{\mathbb{F}_q^{n \times n}}) + \ell_{\text{salt}}$
+}
 \label{tab:medsoverhead}
 \begin{tabularx}{\textwidth}{l c >{\raggedleft\arraybackslash}X >{\raggedleft\arraybackslash}X r}
 \toprule
