@@ -12,11 +12,17 @@
 \title{So Long, and Thanks for All the Seeds: Attacking GGM-trees in Post-quantum signatures}
 \titlerunning{So Long, and Thanks for All the Seeds}
 
-%\author{}
-%%\authorrunning{}
-%\institute{ \\
-%\email{}
-%}
+\author{Gustavo Banegas\inst{1} \and Damya Bouizegarene\inst{2}}
+\authorrunning{}
+\institute{Inria, LIX, CNRS, École Polytechnique, 
+Institut Polytechnique de Paris\\
+  Palaiseau, France\\
+  \email{gustavo@cryptme.in}\\
+  \and
+  Telecom Paris,
+  Palaiseau, France\\
+  \email{bouizegarene.damya@gmail.com}\\
+}
 
 \maketitle
 
@@ -43,6 +49,18 @@ subtree recovery, or leakage of hidden leaves.
 \keywords{GGM tree \and Zero-knowledge signatures \and Fault attacks \and 
 Post-quantum cryptography \and Seed compression}
 \end{abstract}
+  \makeatletter%
+\begingroup%
+ \makeatletter%
+ \def\@thefnmark{$*$}\relax%
+ \@footnotetext{\relax%
+   Author list in alphabetical order; see \url{https://ams.org/profession/leaders/CultureStatement04.pdf}.
+   This work was supported by the HYPERFORM consortium, funded by France through Bpifrance, and by the France
+   2030 program under grant agreement ANR-22-PETQ-0008 PQ-TLS.
+\def\ymdtoday{\leavevmode\hbox{\the\year-\twodigits\month-\twodigits\day}}\def\twodigits#1{\ifnum#1<10 0\fi\the#1}%
+  Date of this document: \ymdtoday.%
+ }%
+\endgroup
 
 \section{Introduction}
 \label{sec:intro}
