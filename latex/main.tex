@@ -27,26 +27,33 @@ Institut Polytechnique de Paris\\
 \maketitle
 
 \begin{abstract}
-Post-quantum signatures built from Fiat--Shamir transforms of zero-knowledge 
-identification protocols---including LESS, CROSS, and MEDS---use GGM-tree seed 
-compression to shrink signatures, revealing only the seeds of public rounds 
-while hiding the challenge-dependent ones. This mechanism introduces a 
-fault-attack surface: faulting the seed-publication can expose hidden seeds 
-alongside their zero-knowledge responses, enabling recovery of secret 
-information. We introduce the Generic ZK Seed Tree (GZKST), a unified 
-abstraction of GGM-tree generation, challenge partitioning, and seed 
-publication across these schemes, and formalize its correctness and 
-seed-hiding invariants. We show that prior attacks on LESS-v1 and LESS-v2 
-violate the same invariant despite targeting different implementation layers 
-and tree constructions, derive generic key-recovery algorithms from this view, 
-and bound the number of effective faulted signatures needed for full 
-recovery---only a few successful queries suffice for every MEDS parameter set. 
-We further demonstrate the attacks in practice through clock-glitch fault 
-injection against the MEDS reference implementation on an ARM Cortex-M4 
-(ChipWhisperer-Lite), identifying multiple exploitable surfaces in tree 
-traversal and path construction that enable complete tree disclosure, partial 
-subtree recovery, or leakage of hidden leaves.
-\keywords{GGM tree \and Zero-knowledge signatures \and Fault attacks \and 
+Post-quantum signatures built from Fiat--Shamir transforms of zero-knowledge
+identification protocols---including LESS, CROSS, MEDS, and the
+MPC-in-the-Head family---compress their ephemeral randomness with a GGM seed
+tree, publishing only the seeds of the revealed rounds while hiding the
+challenge-dependent ones. Deciding, per node, which seeds may be released is
+the single point at which zero knowledge is enforced in the implementation,
+and it is a fault-attack surface.
+We introduce the Generic ZK Seed Tree (GZKST), an abstraction of seed-tree
+generation, challenge partitioning, and seed publication, together with the
+signature scheme derived from it, and formalise its correctness and
+seed-hiding invariants. Classifying the published fault attacks on this family
+by which component of the abstraction they corrupt shows that five independent
+attacks against four schemes occupy only three of six components; the empty
+cells are predictions, and one of them led us to a fault surface in the MEDS
+reference implementation with no analogue in prior work.
+We derive generic key-recovery algorithms from this view and bound the number
+of effective faulted signatures required for full recovery---at most $s-1
+\leq 5$ for every MEDS parameter set. We then demonstrate the attacks in
+practice through clock-glitch fault injection against the MEDS reference
+implementation on an ARM Cortex-M4 (ChipWhisperer-Lite), identifying three
+exploitable surfaces in tree traversal and path construction that yield
+complete tree disclosure, partial subtree recovery, or leakage of individual
+hidden leaves. Finally, we evaluate countermeasures, and show that the obvious
+defence---verifying a signature before releasing it---is weaker than it looks
+here, because path construction and path reconstruction share a single
+function in the reference code.
+\keywords{GGM tree \and Zero-knowledge signatures \and Fault attacks \and
 Post-quantum cryptography \and Seed compression}
 \end{abstract}
   \makeatletter%
@@ -70,13 +77,9 @@ Post-quantum cryptography \and Seed compression}
 \label{sec:background}
 \input{content/background.tex}
 
-\section{Abstract Model}
+\section{The Generic ZK Seed Tree}
 \label{sec:abstract}
 \input{content/abstract.tex}
-
-%\section{Fault Model Taxonomy}
-%\label{sec:theoretical}
-%\input{content/theoretical_leakage.tex}
 
 \section{Fault Injection attacks on MEDS}
 \label{sec:app}
@@ -94,6 +97,10 @@ Post-quantum cryptography \and Seed compression}
 \bibliography{references}
 
 \appendix
+\section{MEDS Key Generation and Verification}
+\label{app:algs}
+\input{content/app_algs.tex}
+
 \section{Full Proofs}
 \label{app:proofs}
 \input{content/app_proofs.tex}

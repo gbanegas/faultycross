@@ -9,10 +9,9 @@ signature scheme may have severe consequences, including malicious
 software updates, device impersonation, and unauthorized access to 
 sensitive information.
 
-The security of classical signature schemes, such as RSA-based signatures and 
-elliptic-curve-based signatures rely on the prime integer factorization 
-and Elliptic Curve Discrete Logarithm Problem (ECDLP), would be compromised by a 
-large quantum computer through the use of Shor's algorithm. This threat has 
+Classical signature schemes rely on the hardness of integer factorisation
+(RSA) or of the Elliptic Curve Discrete Logarithm Problem (ECDLP), both of
+which a large quantum computer would solve using Shor's algorithm. This threat has 
 motivated the development of post-quantum cryptography, whose objective is to 
 design cryptographic schemes resistant to both classical and quantum adversaries. 
 Among the most promising candidates are zero-knowledge-based signature schemes 
@@ -61,6 +60,24 @@ This paper provides the following:
 \end{enumerate}
 \end{comment}
 
+\paragraph{Why seed trees, and not one scheme.}
+The three schemes named above have all now left the NIST additional-signatures
+process: MEDS was not selected for the second round, and CROSS and LESS were
+eliminated at the end of it~\cite{NISTIR8610}. It would be a mistake to read
+this as making seed-tree fault attacks a closed subject. The compression
+technique is not specific to those three designs: it is the standard way to
+shrink any Fiat--Shamir signature obtained from a parallel-repeated
+identification protocol, and it is used by several of the schemes that did
+advance --- FAEST, SDitH and MQOM all publish an all-but-one vector commitment
+built from exactly the same tree. What we analyse here is the mechanism, not
+its host. Accordingly, our abstraction is stated for the mechanism, our
+practical attacks are carried out against MEDS because its reference
+implementation realises the mechanism in its cleanest form, and the
+conclusions transfer to any scheme that publishes a seed-tree path. This
+matters now rather than later: the third round is explicitly an
+implementation-security phase, and physical attacks on the surviving
+candidates are squarely in scope.
+
 \subsection{Related Work}
 \label{sec:relwork}
 Several recent works study fault attacks on \GGM{}- or seed-tree-based 
@@ -85,6 +102,24 @@ implicitly exploit, and additionally provides practical fault attacks against
 MEDS.
 
 \begin{comment}
+\paragraph{Why seed trees, and not one scheme.}
+The three schemes named above have all now left the NIST additional-signatures
+process: MEDS was not selected for the second round, and CROSS and LESS were
+eliminated at the end of it~\cite{NISTIR8610}. It would be a mistake to read
+this as making seed-tree fault attacks a closed subject. The compression
+technique is not specific to those three designs: it is the standard way to
+shrink any Fiat--Shamir signature obtained from a parallel-repeated
+identification protocol, and it is used by several of the schemes that did
+advance --- FAEST, SDitH and MQOM all publish an all-but-one vector commitment
+built from exactly the same tree. What we analyse here is the mechanism, not
+its host. Accordingly, our abstraction is stated for the mechanism, our
+practical attacks are carried out against MEDS because its reference
+implementation realises the mechanism in its cleanest form, and the
+conclusions transfer to any scheme that publishes a seed-tree path. This
+matters now rather than later: the third round is explicitly an
+implementation-security phase, and physical attacks on the surviving
+candidates are squarely in scope.
+
 \subsection{Related Work}
 \label{sec:relwork}
 Recent works have studied fault attacks against post-quantum 
@@ -134,6 +169,14 @@ We show that previously proposed fault attacks against LESS-v1 and
 LESS-v2 can be interpreted as violations of a common seed-hiding
 invariant.
 
+\item \textbf{A Taxonomy of Fault Surfaces.}
+We classify every published fault attack on this family by which component
+of the abstraction it corrupts (Section~\ref{sec:taxonomy}), showing that
+five independent attacks against four schemes occupy only three of six
+components. The empty cells are predictions, and one of them led us
+directly to a new attack surface in the MEDS reference implementation
+that has no analogue in prior work.
+
 \item \textbf{Query Complexity Analysis.}
 We derive bounds on the number of faulted signatures required for
 secret-key recovery and show that only a small number of successful
@@ -145,9 +188,13 @@ implementation on an ARM Cortex-M4 using a ChipWhisperer-Lite,
 revealing several fault surfaces that enable complete or partial
 seed-tree disclosure.
 
-\item \textbf{Countermeasures for MEDS.}
-We propose and evaluate practical countermeasures against 
-fault attacks.
+\item \textbf{Countermeasures for MEDS, and their limits.}
+We propose and evaluate three families of countermeasures. We also show
+that the obvious defence --- verifying a signature before releasing it ---
+is weaker than it looks against this particular implementation, because
+path construction and path reconstruction share a single function, so the
+same glitch at the same code offset defeats both passes
+(Section~\ref{sec:counter}).
 
 \end{itemize}
 
