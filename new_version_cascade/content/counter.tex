@@ -1,0 +1,181 @@
+In this section, we present several countermeasures aimed at 
+improving the resilience of the signature scheme against the 
+fault attacks described above.
+
+We group the countermeasures into three categories. The 
+first category consists of \emph{post-publication code-path 
+checks}, which preserve both the signature size and the 
+original tree-construction procedure. The second category 
+comprises \emph{modifications to the path-construction 
+algorithm}, which maintain the original signature size while 
+altering the path-generation process. Finally, the third 
+category considers \emph{tree-less GGM signatures}, which 
+eliminate the tree structure entirely at the cost of a 
+larger signature size.
+
+
+\subsection{Post-publication path check}
+
+This countermeasure runs checks on the output of \SeedTreeToPath.
+
+A simple size check on the path is enough to be secure against fault models 1 and 3, 
+since they result in path lengths of $1$ and $\text{golden path size}+1$ respectively.
+The expected path size can be computed in linear time from $\calH$. 
+A more thorough check would be to rebuild the tree using $\PathToSeedTree$ 
+on the obtained path and to compare the obtained leaves to $\calH$ and the reference tree.
+
+\paragraph{Verify-before-release, and why it is weaker than it looks.}
+The most natural version of this countermeasure is the classical one: run the
+verification algorithm on the signature before releasing it, and suppress the
+output on mismatch. Against the attacks of Section~\ref{sec:app} this does
+work in principle, because none of the three faulted paths deserialises to the
+honest leaf set and the recomputed digest therefore differs from $d$.
+
+It is weaker than it looks for a structural reason specific to this
+implementation. In the MEDS reference code, $\SeedTreeToPath$ and
+$\PathToSeedTree$ are not two functions but two modes of a single function,
+\texttt{stree\_to\_path\_to\_stree}, selected by a \texttt{mode} parameter and
+sharing the traversal loop of Listing~\ref{lst:path}. The instruction the
+attacker glitches during signing is therefore \emph{the same instruction}, at
+the same code offset, that the verification pass will execute. An attacker who
+can place one glitch can place two, and a ChipWhisperer can emit both within a
+single trace. The redundancy is nominal: the check re-executes the faulted
+code rather than checking it independently.
+
+This is the reason we recommend the decoupled construction of
+Section~\ref{sec:decouple} over verification alone, and it generalises beyond
+MEDS --- any implementation that folds $\Publish$ and $\Recon$ into shared code
+inherits the same weakness. We have not measured the success rate of the
+double-glitch experiment on our platform, and doing so is the most useful
+single extension of this work: it would turn a structural observation into a
+cost.
+
+\begin{remark}
+Sign-then-verify is also the wrong shape of defence for a second reason. As
+noted in Section~\ref{sec:app}, the adversary does not need a valid signature;
+it needs the device to emit a corrupted path. Any countermeasure of this
+family must therefore suppress the output entirely on detection, not merely
+flag it.
+\end{remark}
+
+
+
+\subsection{Path construction algorithm modification}
+\label{sec:decouple}
+
+Although the unified implementation of $\SeedTreeToPath$ and $\PathToSeedTree$ is efficient, 
+its structural coupling of the flag tree construction and path extraction phases creates a vulnerability.
+Decoupling these operations into independent processing stages, and introducing validation checks after each phase, 
+adds a redundancy that ensures that any fault injected during the initial flag tree 
+generation will cause a detectable mismatch during the subsequent path construction phase.
+
+We implement this countermeasure using the following multi-stage verification procedure:
+
+\begin{enumerate}
+\item Construct a binary flag tree $\calF$ derived from $\calH$.
+\item Verify that for every leaf position $i$ where $\calF[i] = 1$, no ancestral node in its path to the root is flagged as $0$.
+\item Reconstruct the node path using the validated flag tree $\calF$ and the reference seed tree.
+\item Assert that no leaf node explicitly flagged as $1$ is included in the final extracted path.
+\end{enumerate}
+
+\noindent\textbf{Complexity. }  All four verification steps scale linearly with the size of the tree, maintaining a time complexity of $\mathcal{O}(t)$.
+
+
+\noindent\textbf{Impact on performances.}
+We implement all three countermeasures and compare the execution times of the signature. 
+
+The results are summarised in Table~\ref{tab:counter_1_cmp}. We write
+$C_{size}$ for the path-size check, $C_{tree}$ for the full reconstruction
+check, and $C_{flagtree}$ for the decoupled flag-tree construction of
+Section~\ref{sec:decouple}.
+
+\noindent\textit{Experimental Setup.} We evaluated MEDS under RIOT OS on two
+platforms. The embedded target is a bare-metal Nordic nRF52840 DK (32-bit ARM
+Cortex-M4 at 64 MHz, 256 KB RAM, 1 MB Flash) running the Toy parameter set; the
+host baseline runs all parameter sets (MEDS9923--MEDS167717) natively on an
+Intel Core i7 desktop under Ubuntu 24.04 LTS. Code was compiled with
+\texttt{arm-none-eabi-gcc} (Cortex-M4) and \texttt{gcc} 13.3.0 (host).
+
+
+\begin{table}[htbp]
+\centering
+\caption{MEDS signature time (microseconds) by parameter set. All values are the median value of 100 runs.}
+\label{tab:counter_1_cmp}
+\smallskip
+\begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}cccc}
+\toprule
+\textbf{Parameter set} & \textbf{base} & $C_{size}$ & $C_{tree}$ & $C_{flagtree}$ \\
+\midrule
+Toy                    & 6845    & 6793      & 6794      & 6835          \\
+MEDS9923               & 1609626	& 1582806	& 1590051.5	& 1585796 \\
+MEDS13220              & 299950	& 275909	& 283484	& 283477.5         \\
+MEDS41711              & 4847694.5	& 5200203	& 4962401.5	& 5360679.5 \\
+MEDS55604              & 1280193	& 1381107	& 1321436	& 1307889          \\
+MEDS134180             & 5009655.5	& 5074072.5	& 5140707.5	& 5735290 \\
+MEDS167717             & 2950702	& 2951835.5	& 3076849.5	& 3051602.5  \\
+\midrule
+Toy (Cortex M4)        & 753566	& 737162	& 738843	& 737739
+\\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+All three checks are $\mathcal{O}(t)$ against a signing cost dominated by
+matrix arithmetic over $\Fq$, so the expected overhead is small, and this is
+what Table~\ref{tab:counter_1_cmp} shows: the largest observed figures are
+$+7.9\%$ for $C_{size}$, $+4.3\%$ for $C_{tree}$ and $+14.5\%$ for
+$C_{flagtree}$, the last on \textit{MEDS134180}.
+
+These numbers should be read with care, and we prefer to say so rather than
+overstate them. Several rows report the instrumented build as \emph{faster}
+than the baseline --- $-8.0\%$ for $C_{size}$ on \textit{MEDS13220},
+$-1.7\%$ on \textit{MEDS9923} --- which cannot be a real effect, since the
+countermeasure only adds work. The noise floor of a whole-signature wall-clock
+measurement on this platform is therefore of the same order as the overheads
+we are trying to report. The correct experiment is to instrument
+$\SeedTreeToPath$ alone in cycle counts and to report a distribution rather
+than a median; we regard the numbers below as an upper bound on the order of
+magnitude ($\le 15\%$ of signing time in the worst case, and negligible for
+the shallow-tree parameter sets) rather than as precise measurements.
+\todo[inline]{Re-run: per-function cycle counts, $\ge 1000$ runs, report
+median with IQR. Also: Table~\ref{tab:counter_1_cmp} lists MEDS55604, which is
+absent from Tables~\ref{tab:scheme-params} and~\ref{tab:medsoverhead}
+(MEDS69497 there). Reconcile the parameter set actually benchmarked.}
+
+\subsection{GGM-tree-less signature}
+
+Alternative architectural designs could consider abandoning GGM tree structures entirely. 
+A potential solution, adapting the fault attack countermeasure for LESS proposed by \cite{ZKFault} 
+would require the response vector $v$ to explicitly contain the precomputed matrices 
+$\tilde{A}_i$ and $\tilde{B}_i$ that are sampled from the published leaves $\sigma_i$.
+
+\begin{equation}
+v[i] = 
+\begin{cases}
+    (\tilde{A}_i . A_{h_i}^{-1}, B_{h_i}^{-1}.\tilde{B}_i), & \text{if } h_i > 0 \\
+    (\tilde{A}_i,\, \tilde{B}_i), & \text{if } h_i = 0
+\end{cases}
+\end{equation}
+
+While this design ensures that the secret matrices $(\tilde{A}_i, \tilde{B}_i)$ remain computationally 
+infeasible to derive for any index $i$, it introduces a disadvantage by significantly inflating 
+the overall signature size to the size \texttt{sig\_cm} shown in table~\ref{tab:medsoverhead}.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparison of Signature Sizes and Overhead across MEDS Parameter Sets. \texttt{sig\_cm} is given by $\ell_{\text{digest}} + t(\ell_{\mathbb{F}_q^{m \times m}} + \ell_{\mathbb{F}_q^{n \times n}}) + \ell_{\text{salt}}$
+}
+\label{tab:medsoverhead}
+\begin{tabularx}{\textwidth}{l c >{\raggedleft\arraybackslash}X >{\raggedleft\arraybackslash}X r}
+\toprule
+\textbf{Parameter Set} & NIST Level & \texttt{sig} (Bytes) & \texttt{sig\_cm} (Bytes) & \textbf{Size Overhead} \\
+\midrule
+MEDS-9923   & I   & 9,896   & 677,440 & 6745.59\% \\
+MEDS-13220  & I   & 12,976  & 112,960 & 770.53\%  \\
+MEDS-41711  & III & 41,080  & 882,880 & 2049.17\% \\
+MEDS-69497  & III & 54,736  & 232,384 & 324.55\%  \\
+MEDS-134180 & V   & 132,424 & 475,072 & 258.75\%  \\
+MEDS-167717 & V   & 165,332 & 277,152 & 67.63\%   \\
+\bottomrule
+\end{tabularx}
+\end{table}

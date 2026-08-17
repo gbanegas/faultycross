@@ -1,0 +1,69 @@
+
+For completeness we reproduce the MEDS key generation and verification
+algorithms, following the reference specification~\cite{ChouNPRRST23,MEDS_PQC}.
+Signing is given in the body as Algorithm~\ref{alg:sign_meds}, since it
+contains the attack target. Subroutine names are explained in
+Table~\ref{tab:meds-notation}.
+
+\begin{algorithm}[htbp]
+\small
+\setlength{\algomargin}{1.2em}
+\caption{MEDS key generation (simplified)}
+\label{alg:keygen_meds}
+\KwIn{---}
+\KwOut{Public key $\pk$, secret key $\sk$}
+
+$\delta \xleftarrow{\$} \mathcal{B}^{\ell_{\mathrm{sec\_seed}}}$\;
+$\sigma_{G_0},\, \sigma \leftarrow \XOF(\delta,\, \ell_{\mathrm{pub\_seed}},\, \ell_{\mathrm{sec\_seed}})$\;
+$G_0 \leftarrow \ExpandSystMat(\sigma_{G_0})$\;
+
+\For{$i = 1$ \KwTo $s-1$}{
+    $\sigma_a,\, \sigma_{T_i},\, \sigma \leftarrow \XOF(\sigma,\, \ell_{\mathrm{sec\_seed}},\, \ell_{\mathrm{sec\_seed}},\, \ell_{\mathrm{sec\_seed}})$\;
+    $T_i \leftarrow \ExpandInvMat(\sigma_{T_i},\, k)$
+    \tcp*[r]{unknown basis change of Rem.~\ref{rem:mce-hardness}}
+    $a_{m-1,m-1} \leftarrow \ExpandFqs(\sigma_a,\, 1)$
+    \tcp*[r]{scaling constraint}
+    $G'_0 \leftarrow T_i G_0$\;
+    $(A_i,\, B_i^{-1}) \leftarrow \Solve(G'_0,\, a_{m-1,m-1})$
+    \tcp*[r]{linear solve; fail $\Rightarrow$ retry ln.~5}
+    $G_i \leftarrow \SF\!\bigl(\pimap{A_i}{B_i}(G_0)\bigr)$
+    \tcp*[r]{$\perp\Rightarrow$ retry ln.~5}
+}
+
+$\pk \leftarrow \bigl(\sigma_{G_0} \mid \CompressG(G_1) \mid \cdots \mid \CompressG(G_{s-1})\bigr)$\;
+$\sk \leftarrow \bigl(\delta \mid \sigma_{G_0} \mid \Compress(A_1^{-1}) \mid \cdots$
+\Indp\Indp $\mid \Compress(A_{s-1}^{-1}) \mid \Compress(B_1^{-1}) \mid \cdots \mid \Compress(B_{s-1}^{-1})\bigr)$\;\Indm\Indm
+\Return $\pk,\, \sk$
+\end{algorithm}
+
+\begin{algorithm}[htbp]
+\small
+\setlength{\algomargin}{1.2em}
+\caption{MEDS verification (simplified)}
+\label{alg:verify_meds}
+\KwIn{Public key $\pk$, signed message $m_s$}
+\KwOut{Message $m$ or $\perp$}
+
+$G_0 \leftarrow \ExpandSystMat(\pk[0,\ell_{\mathrm{pub\_seed}}{-}1])$;\quad
+$G_1,\ldots,G_{s-1} \leftarrow \DecompressG(\pk)$\;
+Parse $m_s$: pairs $((\mu_i,\nu_i))_{h_i>0}$, path $p$, digest $d$, salt $\alpha$, message $m$\;
+$(h_0,\ldots,h_{t-1}) \leftarrow \ParseHash_{s,t,w}(d)$\;
+$(\sigma_0,\ldots,\sigma_{t-1}) \leftarrow \PathToSeedTree_t(h_0,\ldots,h_{t-1},p,\alpha)$\;
+
+\For{$i = 0$ \KwTo $t-1$}{
+    \eIf{$h_i > 0$}{
+        $(\mu_i,\nu_i) \leftarrow$ next response pair from $m_s$\;
+        $\hat{G}_i \leftarrow \SF\!\bigl(\pimap{\mu_i}{\nu_i}(G_{h_i})\bigr)$\;
+        \lIf{$\mu_i \notin \GL_m(q)$ \textbf{or} $\nu_i \notin \GL_n(q)$ \textbf{or} $\hat{G}_i = \perp$}{\Return $\perp$}
+    }{
+        $\sigma'_i \leftarrow \bigl(\alpha \mid \sigma_i \mid \ToBytes(2^{1+\lceil\log_2 t\rceil}+i,4)\bigr)$\;
+        $\hat{A}_i \leftarrow \ExpandInvMat(\XOF(\sigma'_i)_1, m)$;\quad
+        $\hat{B}_i \leftarrow \ExpandInvMat(\XOF(\sigma'_i)_2, n)$\;
+        $\hat{G}_i \leftarrow \SF\!\bigl(\pimap{\hat{A}_i}{\hat{B}_i}(G_0)\bigr)$\;
+    }
+}
+
+$d' \leftarrow H\!\bigl(\Compress(\hat{G}_0[;k,mn{-}1]) \mid \cdots \mid \Compress(\hat{G}_{t-1}[;k,mn{-}1]) \mid m\bigr)$\;
+\lIf{$d = d'$}{\Return $m$}
+\Return $\perp$
+\end{algorithm}
