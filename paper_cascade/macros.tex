@@ -1,0 +1,160 @@
+% ============================================================
+%  macros.tex  --  unified notation for the GGM-tree paper
+% ============================================================
+
+% --- Base fields and groups ---------------------------------
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Fq}{\mathbb{F}_q}
+\newcommand{\Mon}{\mathrm{Mon}}
+\newcommand{\GL}{\mathrm{GL}}
+
+% --- Security parameter / lengths ---------------------------
+\newcommand{\lam}{\lambda}          % security parameter
+\newcommand{\seedbytes}{\lambda_s}  % seed length in bytes
+
+% --- Calligraphic sets (abstract model) ---------------------
+\newcommand{\calH}{\ensuremath{\mathcal{H}}}
+\newcommand{\calR}{\ensuremath{\mathcal{R}}}
+\newcommand{\calT}{\ensuremath{\mathcal{T}}}
+\newcommand{\calS}{\ensuremath{\mathcal{S}}}
+\newcommand{\calF}{\ensuremath{\mathcal{F}}}
+\newcommand{\Oracle}{\ensuremath{\mathcal{O}}}
+
+% --- Seeds --------------------------------------------------
+\newcommand{\seed}{\ensuremath{\mathsf{seed}}}
+\newcommand{\seedsk}{\ensuremath{\mathsf{seed}_{\sk}}}
+\newcommand{\seedpk}{\ensuremath{\mathsf{seed}_{\pk}}}
+\newcommand{\seedtree}{\ensuremath{\mathsf{seed}_{\mathrm{tree}}}}
+\newcommand{\eseed}{\widetilde{s}}  % ephemeral leaf seed  ~s_i
+
+% --- Keys ---------------------------------------------------
+\newcommand{\pk}{\ensuremath{\mathsf{pk}}}
+\newcommand{\sk}{\ensuremath{\mathsf{sk}}}
+
+% --- Signature components -----------------------------------
+\newcommand{\salt}{\ensuremath{\mathsf{salt}}}
+\newcommand{\cmt}{\ensuremath{\mathsf{cmt}}}
+\newcommand{\msg}{\ensuremath{\mathsf{msg}}}
+\newcommand{\rsp}{\ensuremath{\mathsf{rsp}}}
+\newcommand{\idx}{\ensuremath{\mathsf{idx}}}
+\newcommand{\tpath}{\ensuremath{\mathsf{path}}}  % tree path (avoid clash with tikz \path)
+
+% --- GZKST abstract algorithms ------------------------------
+\newcommand{\GZKST}{\ensuremath{\mathsf{GZKST}}}
+\newcommand{\Setup}{\ensuremath{\mathsf{Setup}}}
+\newcommand{\Expand}{\ensuremath{\mathsf{Expand}}}
+\newcommand{\Chal}{\ensuremath{\mathsf{Chal}}}
+\newcommand{\Decide}{\ensuremath{\mathsf{Decide}}}
+\newcommand{\Publish}{\ensuremath{\mathsf{Publish}}}
+\newcommand{\Recon}{\ensuremath{\mathsf{Recon}}}
+\newcommand{\sig}{\ensuremath{\mathsf{sig}}}
+\newcommand{\resp}{\ensuremath{\mathsf{resp}}}
+\newcommand{\Extract}{\ensuremath{\mathsf{Extract}}}
+
+% --- LESS-specific algorithms -------------------------------
+\newcommand{\CF}{\ensuremath{\mathsf{CF}}}
+\newcommand{\Blind}{\ensuremath{\mathsf{Blind}}}
+\newcommand{\CosetRep}{\ensuremath{\mathsf{CosetRep}}}
+\newcommand{\RREF}{\ensuremath{\mathsf{RREF}}}
+\newcommand{\BuildGGM}{\ensuremath{\mathsf{BuildGGM}}}
+\newcommand{\GGMPath}{\ensuremath{\mathsf{GGMPath}}}
+\newcommand{\RebuildGGM}{\ensuremath{\mathsf{RebuildGGM}}}
+\newcommand{\LabelLeaves}{\ensuremath{\mathsf{LabelLeaves}}}
+\newcommand{\ComputeSeeds}{\ensuremath{\mathsf{ComputeSeeds}}}
+\newcommand{\SampleChallenge}{\ensuremath{\mathsf{SampleChallenge}}}
+\newcommand{\SampleGenerator}{\ensuremath{\mathsf{SampleGenerator}}}
+\newcommand{\SampleMonomial}{\ensuremath{\mathsf{SampleMonomial}}}
+\newcommand{\SeedLeaves}{\ensuremath{\mathsf{SeedLeaves}}}
+\newcommand{\CheckCosetRep}{\ensuremath{\mathsf{CheckCosetRep}}}
+
+% --- MEDS/CROSS-specific ------------------------------------
+\newcommand{\SeedTree}{\ensuremath{\mathsf{SeedTree}}}
+\newcommand{\SeedTreePath}{\ensuremath{\mathsf{SeedTreePath}}}
+\newcommand{\BuildSeeds}{\ensuremath{\mathsf{BuildSeeds}}}
+\newcommand{\ReconstructSeeds}{\ensuremath{\mathsf{ReconstructSeeds}}}
+\newcommand{\pimap}[2]{\pi_{#1,#2}}
+
+% --- Cryptographic primitives -------------------------------
+\newcommand{\GGM}{\ensuremath{\mathsf{GGM}}}
+\newcommand{\Hash}{\ensuremath{\mathsf{Hash}}}
+\newcommand{\XOF}{\ensuremath{\mathsf{XOF}}}
+\newcommand{\SHAKE}{\ensuremath{\mathsf{SHAKE}}}
+\newcommand{\PRG}{\ensuremath{\mathsf{G}}}               % PRG symbol: G:{0,1}^lambda -> {0,1}^{2lambda}
+\newcommand{\PRGl}{\ensuremath{\mathsf{G_0}}}            % left half of PRG output
+\newcommand{\PRGr}{\ensuremath{\mathsf{G_1}}}            % right half of PRG output
+
+% --- Signature scheme algorithms ----------------------------
+\newcommand{\KeyGen}{\ensuremath{\mathsf{KeyGen}}}
+\newcommand{\Sign}{\ensuremath{\mathsf{Sign}}}
+\newcommand{\Verify}{\ensuremath{\mathsf{Verify}}}
+% --- Flag array (implementation level) ----------------------
+\newcommand{\flags}{\mathtt{flags}}  % the flag array in algorithms
+
+% --- Misc operators -----------------------------------------
+\DeclareMathOperator{\supp}{supp}
+\newcommand{\getsr}{\mathrel{\xleftarrow{\$}}}  % sample uniformly
+
+% ============================================================
+% Unicode compatibility for pdflatex
+% ============================================================
+\DeclareUnicodeCharacter{03BB}{\ensuremath{\lambda}}
+\DeclareUnicodeCharacter{03A0}{\ensuremath{\Pi}}
+\DeclareUnicodeCharacter{03A3}{\ensuremath{\Sigma}}
+\DeclareUnicodeCharacter{2113}{\ensuremath{\ell}}
+\DeclareUnicodeCharacter{2190}{\ensuremath{\leftarrow}}
+\DeclareUnicodeCharacter{00B7}{\ensuremath{\cdot}}
+\DeclareUnicodeCharacter{03C0}{\ensuremath{\pi}}
+\DeclareUnicodeCharacter{03C4}{\ensuremath{\tau}}
+\DeclareUnicodeCharacter{1D4AE}{\ensuremath{\mathcal{S}}}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\to}}
+\DeclareUnicodeCharacter{21D0}{\ensuremath{\Leftarrow}}
+\DeclareUnicodeCharacter{2260}{\ensuremath{\neq}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2208}{\ensuremath{\in}}
+\DeclareUnicodeCharacter{2209}{\ensuremath{\notin}}
+\DeclareUnicodeCharacter{2218}{\ensuremath{\circ}}
+\DeclareUnicodeCharacter{2227}{\ensuremath{\wedge}}
+\DeclareUnicodeCharacter{2200}{\ensuremath{\forall}}
+\DeclareUnicodeCharacter{2308}{\ensuremath{\lceil}}
+\DeclareUnicodeCharacter{2309}{\ensuremath{\rceil}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{2013}{--}
+\DeclareUnicodeCharacter{2014}{---}
+\DeclareUnicodeCharacter{2019}{'}
+
+% Pandoc list compatibility (kept for safety, but no longer generated)
+\providecommand{\tightlist}{}
+\newcommand{\SF}{\ensuremath{\mathsf{SF}}}
+\newcommand{\ParseHash}{\ensuremath{\mathsf{ParseHash}}}
+\newcommand{\SeedPath}{\ensuremath{\mathsf{SeedTreeToPath}}}
+\newcommand{\PathToSeedTree}{\ensuremath{\mathsf{PathToSeedTree}}}
+\newcommand{\ExpandInvMat}{\ensuremath{\mathsf{ExpandInvMat}}}
+\newcommand{\ExpandSys}{\ensuremath{\mathsf{ExpandSystMat}}}
+\newcommand{\DecompressG}{\ensuremath{\mathsf{DecompressG}}}
+\newcommand{\CompressG}{\ensuremath{\mathsf{CompressG}}}
+\newcommand{\Compress}{\ensuremath{\mathsf{Compress}}}
+\newcommand{\ExpandSystMat}{\ensuremath{\mathsf{ExpandSystMat}}}
+\newcommand{\ExpandFqs}{\ensuremath{\mathsf{ExpandFqs}}}
+\newcommand{\Solve}{\ensuremath{\mathsf{Solve}}}
+\newcommand{\ToBytes}{\ensuremath{\mathsf{ToBytes}}}
+\newcommand{\SeedTreeToPath}{\ensuremath{\mathsf{SeedTreeToPath}}}
+
+
+%% ── Keyword styling (mimic handwriting informality) ──────────
+\SetKwFor{ForAll}{for}{do}{}
+\SetKwIF{If}{ElseIf}{Else}{if}{}{else if}{else}{}
+\SetKwData{pk}{\ensuremath{\mathsf{pk}}}
+\SetKwData{sk}{\ensuremath{\mathsf{sk}}}
+\SetKwData{Sgn}{\ensuremath{\mathsf{Sgn}}}
+
+% --- Added in restructure: generic round functions -----------
+\newcommand{\Commit}{\ensuremath{\mathsf{Commit}}}
+\newcommand{\Resp}{\ensuremath{\mathsf{Resp}}}
+\newcommand{\ChkRnd}{\ensuremath{\mathsf{Check}}}
+\newcommand{\Sig}{\ensuremath{\Sigma}}
+\newcommand{\vect}{\ensuremath{\mathrm{vec}}}
+\newcommand{\Mat}{\ensuremath{\mathcal{C}}}
+\newcommand{\Matd}{\ensuremath{\mathcal{D}}}

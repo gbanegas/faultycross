@@ -1,0 +1,233 @@
+Digital signatures form the backbone of many aspects of modern digital life, 
+ranging from firmware updates and secure boot mechanisms to messaging applications 
+and public-key infrastructures. Their primary purpose is to guarantee authenticity, 
+integrity, and non-repudiation: only the holder of the secret signing 
+key should be able to produce a valid signature for a given message, thereby 
+ensuring that the message has not been modified. Due to their widespread 
+deployment in security-critical systems, the compromise of a digital 
+signature scheme may have severe consequences, including malicious 
+software updates, device impersonation, and unauthorized access to 
+sensitive information.
+
+Classical signature schemes rely on the hardness of integer factorisation
+(RSA) or of the Elliptic Curve Discrete Logarithm Problem (ECDLP), both of
+which a large quantum computer would solve using Shor's algorithm. This threat has 
+motivated the development of post-quantum cryptography, whose objective is to 
+design cryptographic schemes resistant to both classical and quantum adversaries. 
+Among the most promising candidates are zero-knowledge-based signature schemes 
+obtained via the Fiat--Shamir transformation~\cite{DagdelenFG13,FiatS86}.
+Several recent constructions, including 
+LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, and MEDS~\cite{ChouNPRRST23,MEDS_PQC}, 
+rely on the Fiat--Shamir transform to construct digital signatures. However, 
+these schemes suffer from large signature sizes. To reduce this 
+issue, they employ \GGM-tree-like seed-compression techniques, which reduce the 
+signature size by compacting it to large collections of ephemeral randomness.
+
+During signing, these schemes reveal only the seeds associated with public rounds 
+while keeping challenge-dependent seeds hidden. Although this mechanism is essential 
+for efficiency, recent works have shown that it also introduces a significant 
+fault-attack surface: faults affecting the seed-publication logic may leak 
+hidden seeds together with their corresponding zero-knowledge responses, 
+enabling recovery of secret information and, in the end, full key recovery or 
+forgery attacks~\cite{FaultToForge2025,ZKFault}.
+
+
+%In 2022, the National Institute 
+%of Standards and Technology selected the first set of post-quantum 
+%digital signature schemes as part of its standardization process, 
+%marking a major step toward the deployment of quantum-resistant 
+%cryptography.
+
+
+
+
+\begin{comment}
+\paragraph{Contributions.}
+This paper provides the following:
+\begin{enumerate}
+  \item A description of the original \GGM\ construction and the punctured-PRF
+        property that underlies all uses in ZK signatures (Section~\ref{sec:background}).
+  \item A scheme-by-scheme analysis of how LESS-v2, MEDS, CROSS, and the
+        MPCitH/VOLEitH family each instantiate the \GGM\ tree and the associated
+        flag/reference-tree mechanism.
+  \item A unified abstract model, the \emph{Generic ZK Seed Tree} (\GZKST),
+        that captures all these instantiations
+        (Section~\ref{sec:abstract}).
+  \item A taxonomy of fault models applicable to the \GZKST\ abstraction and
+        a Generic Leakage Theorem showing that any effective fault yields a
+        dual-revelation and enables recovery of a secret-equivalent component
+        (Section~\ref{sec:theoretical}).
+\end{enumerate}
+\end{comment}
+
+\paragraph{Why seed trees, and not one scheme.}
+The three schemes named above have all now left the NIST additional-signatures
+process: MEDS was not selected for the second round, and CROSS and LESS were
+eliminated at the end of it~\cite{NISTIR8610}. It would be a mistake to read
+this as making seed-tree fault attacks a closed subject. The compression
+technique is not specific to those three designs: it is the standard way to
+shrink any Fiat--Shamir signature obtained from a parallel-repeated
+identification protocol, and it is used by several of the schemes that did
+advance --- FAEST, SDitH and MQOM all publish an all-but-one vector commitment
+built from exactly the same tree. What we analyse here is the mechanism, not
+its host. Accordingly, our abstraction is stated for the mechanism, our
+practical attacks are carried out against MEDS because its reference
+implementation realises the mechanism in its cleanest form, and the
+conclusions transfer to any scheme that publishes a seed-tree path. This
+matters now rather than later: the third round is explicitly an
+implementation-security phase, and physical attacks on the surviving
+candidates are squarely in scope.
+
+\subsection{Related Work}
+\label{sec:relwork}
+Several recent works study fault attacks on \GGM{}- or seed-tree-based 
+post-quantum signatures---LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, 
+MEDS~\cite{ChouNPRRST23}, and MPC-in-the-Head schemes~\cite{ryde2025,FAESTv22025}. 
+ZKFault~\cite{ZKFault} faults the seed-publication of code-based ZK signatures 
+(LESS-v1, extended to CROSS), disclosing hidden ephemeral seeds and 
+recovering secret information. Fault-to-Forge~\cite{FaultToForge2025} revisits 
+LESS-v2, whose incomplete \GGM{}-tree breaks that strategy, finding new 
+injection points in the incomplete tree-generation and seed-publication and 
+showing that secret-equivalent information suffices for universal forgery. 
+More recently,~\cite{HuangHHYSTY26} avoids the tree entirely, exploiting 
+iteration-skip and loop-abort faults in the digest-preprocessing step before 
+tree generation for high-probability full key recovery.
+In a different target,~\cite{cryptoeprint:2026/1266} attacks 
+PERK~\cite{BettaiebBDEGKP24} using fault attacks and attacking the 
+tree generation.
+
+Our work unifies these attacks under a single Generic ZK Seed Tree (GZKST) 
+abstraction, formalizing the correctness and seed-hiding invariants they 
+implicitly exploit, and additionally provides practical fault attacks against 
+MEDS.
+
+\begin{comment}
+\paragraph{Why seed trees, and not one scheme.}
+The three schemes named above have all now left the NIST additional-signatures
+process: MEDS was not selected for the second round, and CROSS and LESS were
+eliminated at the end of it~\cite{NISTIR8610}. It would be a mistake to read
+this as making seed-tree fault attacks a closed subject. The compression
+technique is not specific to those three designs: it is the standard way to
+shrink any Fiat--Shamir signature obtained from a parallel-repeated
+identification protocol, and it is used by several of the schemes that did
+advance --- FAEST, SDitH and MQOM all publish an all-but-one vector commitment
+built from exactly the same tree. What we analyse here is the mechanism, not
+its host. Accordingly, our abstraction is stated for the mechanism, our
+practical attacks are carried out against MEDS because its reference
+implementation realises the mechanism in its cleanest form, and the
+conclusions transfer to any scheme that publishes a seed-tree path. This
+matters now rather than later: the third round is explicitly an
+implementation-security phase, and physical attacks on the surviving
+candidates are squarely in scope.
+
+\subsection{Related Work}
+\label{sec:relwork}
+Recent works have studied fault attacks against post-quantum 
+signature schemes relying on \GGM{}-tree or seed-tree compression 
+techniques, including LESS~\cite{LESS-spec}, CROSS~\cite{CROSSspec}, 
+MEDS~\cite{ChouNPRRST23}, and MPC-in-the-Head-based 
+schemes~\cite{ryde2025,FAESTv22025}.
+
+In~\cite{ZKFault}, the authors introduce fault attacks against 
+the seed-tree compression mechanism used in zero-knowledge-based 
+code-based signatures, primarily targeting LESS-v1 and extending the 
+analysis to CROSS and MEDS. By faulting the seed-publication process, 
+the attacks disclose hidden ephemeral seeds and enable recovery of 
+secret information.
+
+The work of~\cite{FaultToForge2025} revisits these attacks for LESS-v2,
+whose incomplete \GGM{}-tree invalidates the original attack strategy. 
+The authors identify new fault-injection points in the incomplete 
+tree-generation and seed-publication procedures, showing that 
+recovering secret-equivalent information is sufficient for universal 
+forgery.
+
+More recently,~\cite{HuangHHYSTY26} proposes an alternative attack on 
+LESS-v2 that avoids targeting the tree structure itself. Instead, 
+the attack exploits iteration-skip and loop-abort faults in the 
+preprocessing step that transforms the digest vector before tree 
+generation, enabling high-probability full key recovery.
+
+Our work unifies these attacks under a single Generic ZK Seed Tree 
+(GZKST) abstraction, formalizing the correctness and seed-hiding 
+invariants implicitly exploited by prior works, while additionally 
+providing practical fault attacks against MEDS.
+\end{comment}
+\paragraph{Our Contributions.}
+This work provides a unified analysis of fault attacks against
+post-quantum signature schemes relying on seed-tree compression.
+Our main contributions are as follows:
+\begin{itemize}
+
+\item \textbf{Generic Seed-Tree Abstraction.}
+We introduce the \emph{Generic ZK Seed Tree} (GZKST), a unified model
+capturing the seed-tree generation mechanisms used in schemes such as
+LESS-v2, MEDS, and CROSS.
+
+\item \textbf{Unified View of Existing Attacks.}
+We show that previously proposed fault attacks against LESS-v1 and
+LESS-v2 can be interpreted as violations of a common seed-hiding
+invariant.
+
+\item \textbf{A Taxonomy of Fault Surfaces.}
+We classify every published fault attack on this family by which component
+of the abstraction it corrupts (Section~\ref{sec:taxonomy}), showing that
+five independent attacks against four schemes occupy only three of six
+components. The empty cells are predictions, and one of them led us
+directly to a new attack surface in the MEDS reference implementation
+that has no analogue in prior work.
+
+\item \textbf{Query Complexity Analysis.}
+We derive bounds on the number of faulted signatures required for
+secret-key recovery and show that only a small number of successful
+queries is needed for all MEDS parameter sets.
+
+\item \textbf{Practical Attacks on MEDS.}
+We show fault attacks against the MEDS reference
+implementation on an ARM Cortex-M4 using a ChipWhisperer-Lite,
+revealing several fault surfaces that enable complete or partial
+seed-tree disclosure.
+
+\item \textbf{Countermeasures for MEDS, and their limits.}
+We propose and evaluate three families of countermeasures. We also show
+that the obvious defence --- verifying a signature before releasing it ---
+is weaker than it looks against this particular implementation, because
+path construction and path reconstruction share a single function, so the
+same glitch at the same code offset defeats both passes
+(Section~\ref{sec:counter}).
+
+\end{itemize}
+
+\begin{comment}
+Table~\ref{tab:relwork} summarises the prior art on fault attacks against
+\GGM-tree-based post-quantum signature schemes.
+
+\begin{table}[tb]
+\centering
+\caption{Comparison with prior fault-attack analyses on ZK-based PQ signatures.}
+\label{tab:relwork}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}llllc@{}}
+\toprule
+Work & Target & Tree type & Surfaces & Generic? \\
+\midrule
+ZKFault~\cite{ZKFault}
+  & LESS-v1, CROSS & complete & 3 & partial \\
+Fault to Forge~\cite{FaultToForge2025}
+  & LESS-v2        & incomplete & 10 & no \\
+Huang et al.~\cite{HuangHHYSTY26}
+  & LESS-v2        & incomplete & 1  & no \\
+Jendral \& Dubrova~\cite{JendralD25}
+  & FAEST (VOLEitH)& complete   & 4  & partial \\
+Banda et al.~\cite{BandaBK26}
+  & Mirath, RYDE+4 & forest     & key-rec.\ + forgery & MPCitH only \\
+\midrule
+\textbf{This work}
+  & LESS-v2, MEDS, CROSS, MPCitH
+  & complete + incomplete & all phases & \textbf{yes (\GZKST)} \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+\end{comment}

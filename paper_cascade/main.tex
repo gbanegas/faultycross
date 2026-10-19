@@ -1,0 +1,109 @@
+\documentclass[runningheads]{llncs}
+
+\input{setup.tex}
+\input{macros.tex}
+\usepackage{lineno}
+\setcounter{tocdepth}{1} % Table of contents for llncs
+\renewcommand{\linenumberfont}{\normalfont\small\color{red}}%
+%\linenumbers
+
+\begin{document}
+
+\title{So Long, and Thanks for All the Seeds: Attacking GGM-trees in Post-quantum signatures}
+\titlerunning{So Long, and Thanks for All the Seeds}
+
+\author{Gustavo Banegas\inst{1} \and Damya Bouizegarene\inst{2}}
+\authorrunning{}
+\institute{Inria, LIX, CNRS, École Polytechnique, 
+Institut Polytechnique de Paris\\
+  Palaiseau, France\\
+  \email{gustavo@cryptme.in}\\
+  \and
+  T\'el\'ecom Paris,
+  Palaiseau, France\\
+  \email{bouizegarene.damya@gmail.com}\\
+}
+
+\maketitle
+
+\begin{abstract}
+Post-quantum signatures built from Fiat--Shamir transforms of zero-knowledge
+identification protocols---including LESS, CROSS, MEDS, and the
+MPC-in-the-Head family---compress their ephemeral randomness with a GGM seed
+tree, publishing only the seeds of the revealed rounds while hiding the
+challenge-dependent ones. Deciding, per node, which seeds may be released is
+the single point at which zero knowledge is enforced in the implementation,
+and it is a fault-attack surface.
+We introduce the Generic ZK Seed Tree (GZKST), an abstraction of seed-tree
+generation, challenge partitioning, and seed publication, together with the
+signature scheme derived from it, and formalise its correctness and
+seed-hiding invariants. Classifying the published fault attacks on this family
+by which component of the abstraction they corrupt shows that five independent
+attacks against four schemes occupy only three of six components; the empty
+cells are predictions, and one of them led us to a fault surface in the MEDS
+reference implementation with no analogue in prior work.
+We derive generic key-recovery algorithms from this view and bound the number
+of effective faulted signatures required for full recovery---at most $s-1
+\leq 5$ for every MEDS parameter set. We then demonstrate the attacks in
+practice through clock-glitch fault injection against the MEDS reference
+implementation on an ARM Cortex-M4 (ChipWhisperer-Lite), identifying three
+exploitable surfaces in tree traversal and path construction that yield
+complete tree disclosure, partial subtree recovery, or leakage of individual
+hidden leaves. Finally, we evaluate countermeasures, and show that the obvious
+defence---verifying a signature before releasing it---is weaker than it looks
+here, because path construction and path reconstruction share a single
+function in the reference code.
+\keywords{GGM tree \and Zero-knowledge signatures \and Fault attacks \and
+Post-quantum cryptography \and Seed compression}
+\end{abstract}
+  \makeatletter%
+\begingroup%
+ \makeatletter%
+ \def\@thefnmark{$*$}\relax%
+ \@footnotetext{\relax%
+   Author list in alphabetical order; see \url{https://ams.org/profession/leaders/CultureStatement04.pdf}.
+   This work was supported by the HYPERFORM consortium, funded by France through Bpifrance, and by the France
+   2030 program under grant agreement ANR-22-PETQ-0008 PQ-TLS.
+\def\ymdtoday{\leavevmode\hbox{\the\year-\twodigits\month-\twodigits\day}}\def\twodigits#1{\ifnum#1<10 0\fi\the#1}%
+  Date of this document: \ymdtoday.%
+ }%
+\endgroup
+
+\section{Introduction}
+\label{sec:intro}
+\input{content/intro.tex}
+
+\section{Background}
+\label{sec:background}
+\input{content/background.tex}
+
+\section{The Generic ZK Seed Tree}
+\label{sec:abstract}
+\input{content/abstract.tex}
+
+\section{Fault Injection attacks on MEDS}
+\label{sec:app}
+\input{content/applications.tex}
+
+\section{Countermeasures}
+\label{sec:counter}
+\input{content/counter.tex}
+
+\section{Conclusion}
+\label{sec:conclusion}
+\input{content/conclusion.tex}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\appendix
+\section{MEDS Key Generation and Verification}
+\label{app:algs}
+\input{content/app_algs.tex}
+
+\section{Full Proofs}
+\label{app:proofs}
+\input{content/app_proofs.tex}
+
+
+\end{document}
