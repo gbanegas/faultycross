@@ -1,28 +1,27 @@
 
-The construction requires the response vector $v$ to carry the ephemeral
-matrices of the revealed rounds explicitly:
-
-Alternative architectural designs could consider abandoning GGM tree structures entirely. 
-A potential solution, adapting the fault attack countermeasure for LESS proposed by \cite{ZKFault} 
-would require the response vector $v$ to explicitly contain the precomputed matrices 
-$\tilde{A}_i$ and $\tilde{B}_i$ that are sampled from the published leaves $\sigma_i$.
+\chg{Adapting the LESS countermeasure of~\cite{ZKFault}, the tree is dropped and
+the response vector $v$ carries the ephemeral matrices of the revealed rounds
+explicitly, instead of the seeds $\sigma_i$ they are sampled from:}
 
 \begin{equation}
 v[i] = 
 \begin{cases}
-    (\tilde{A}_i . A_{h_i}^{-1}, B_{h_i}^{-1}.\tilde{B}_i), & \text{if } h_i > 0 \\
+    (\tilde{A}_i A_{h_i}^{-1},\, B_{h_i}^{-1}\tilde{B}_i), & \text{if } h_i > 0 \\
     (\tilde{A}_i,\, \tilde{B}_i), & \text{if } h_i = 0
 \end{cases}
 \end{equation}
 
-While this design ensures that the secret matrices $(\tilde{A}_i, \tilde{B}_i)$ remain computationally 
-infeasible to derive for any index $i$, it introduces a disadvantage by significantly inflating 
-the overall signature size to the size \texttt{sig\_cm} shown in table~\ref{tab:medsoverhead}.
+\chg{No seed is ever published, so the ephemeral matrices of the hidden rounds
+($h_i > 0$) remain hidden by construction. The price is the signature size
+\texttt{sig\_cm} of Table~\ref{tab:medsoverhead}.}
 
 \begin{table}[htbp]
 \centering
-\caption{Comparison of Signature Sizes and Overhead across MEDS Parameter Sets. \texttt{sig\_cm} is given by $\ell_{\text{digest}} + t(\ell_{\mathbb{F}_q^{m \times m}} + \ell_{\mathbb{F}_q^{n \times n}}) + \ell_{\text{salt}}$
-}
+\caption{\chg{Comparison of signature sizes and overhead across MEDS parameter
+sets. \texttt{sig\_cm} is
+$\ell_{\text{digest}} + \lceil t(\ell_{\mathbb{F}_q^{m \times m}} +
+\ell_{\mathbb{F}_q^{n \times n}})/8 \rceil + \ell_{\text{salt}}$ bytes, with
+the matrix lengths $\ell$ in bits.}}
 \label{tab:medsoverhead}
 \begin{tabularx}{\textwidth}{l c >{\raggedleft\arraybackslash}X >{\raggedleft\arraybackslash}X r}
 \toprule
@@ -32,8 +31,66 @@ MEDS-9923   & I   & 9,896   & 677,440 & 6745.59\% \\
 MEDS-13220  & I   & 12,976  & 112,960 & 770.53\%  \\
 MEDS-41711  & III & 41,080  & 882,880 & 2049.17\% \\
 MEDS-69497  & III & 54,736  & 232,384 & 324.55\%  \\
-MEDS-134180 & V   & 132,424 & 475,072 & 258.75\%  \\
-MEDS-167717 & V   & 165,332 & 277,152 & 67.63\%   \\
+MEDS-134180 & V   & 132,424 & \chg{475,264} & \chg{258.90\%}  \\
+MEDS-167717 & V   & 165,332 & \chg{277,264} & \chg{67.70\%}   \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\section{Countermeasure Timings}
+\label{app:timings}
+
+\chg{This appendix gives the signing times of the three countermeasures of
+Section~\ref{sec:counter}, summarised in Table~\ref{tab:counter_1_cmp}.} We write
+$C_{\mathrm{size}}$ for the path-size check, $C_{\mathrm{tree}}$ for the full
+reconstruction check, and $C_{\mathrm{flag}}$ for the decoupled flag-tree
+construction.
+
+\noindent\textit{Setup.} \chg{MEDS runs under RIOT OS on a Nordic nRF52840 DK
+(Cortex-M4, 64\,MHz, 256\,KB RAM), compiled with \texttt{arm-none-eabi-gcc},
+for the row marked Cortex-M4, and natively on an Intel Core i7 under Ubuntu
+24.04, compiled with \texttt{gcc}~13.3.0, for all other rows.}
+
+
+\begin{table}[htbp]
+\centering
+\caption{MEDS signature time (microseconds) by parameter set. All values are the median value of 100 runs.}
+\label{tab:counter_1_cmp}
+\smallskip
+\begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}cccc}
+\toprule
+\textbf{Parameter set} & \textbf{base} & $C_{\mathrm{size}}$ & $C_{\mathrm{tree}}$ & $C_{\mathrm{flag}}$ \\
+\midrule
+Toy                    & 6845    & 6793      & 6794      & 6835          \\
+MEDS-9923               & 1609626	& 1582806	& 1590051.5	& 1585796 \\
+MEDS-13220              & 299950	& 275909	& 283484	& 283477.5         \\
+MEDS-41711              & 4847694.5	& 5200203	& 4962401.5	& 5360679.5 \\
+MEDS-55604              & 1280193	& 1381107	& 1321436	& 1307889          \\
+MEDS-134180             & 5009655.5	& 5074072.5	& 5140707.5	& 5735290 \\
+MEDS-167717             & 2950702	& 2951835.5	& 3076849.5	& 3051602.5  \\
+\midrule
+Toy (Cortex M4)        & 753566	& 737162	& 738843	& 737739
+\\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+All three checks are $\mathcal{O}(t)$ against a signing cost dominated by
+matrix arithmetic over $\Fq$, so the expected overhead is small, and this is
+what Table~\ref{tab:counter_1_cmp} shows: the largest observed figures are
+$+7.9\%$ for $C_{\mathrm{size}}$, $+4.3\%$ for $C_{\mathrm{tree}}$ and
+$+14.5\%$ for $C_{\mathrm{flag}}$, the last on MEDS-134180.
+
+These numbers should be read with care. Several rows report the instrumented
+build as \emph{faster} than the baseline --- $-8.0\%$ for $C_{\mathrm{size}}$
+on MEDS-13220 --- which cannot be real, since the countermeasure only adds
+work: the noise floor of a whole-signature wall-clock measurement here is of
+the same order as the overheads being reported. The correct experiment
+instruments $\SeedTreeToPath$ alone in cycle counts and reports a distribution
+rather than a median. \chg{The pattern of the table confirms that it is noise:
+the largest apparent overheads occur on $t = 192$ and $t = 608$, not on the
+deepest tree ($t = 1152$, MEDS-9923, $-1.5\%$). We therefore read it only as
+indicating that the overhead is not large, not as a measurement.}
+% TODO(authors): re-run as per-function cycle counts, >=1000 runs, report median
+% with IQR. Also: Table 4 lists MEDS55604, absent from Table 2 and from the
+% size table in Appendix D (which has MEDS69497). Reconcile the set benchmarked.

@@ -1,5 +1,5 @@
 We now attack the C reference implementation of MEDS,\footnote{\url{https://github.com/MEDSpqc/meds}}
-exploiting the tree-traversal logic of the path construction --- line~14 of
+exploiting the tree-traversal logic of the path construction --- \chg{line~\ref{alg:meds:path}} of
 Algorithm~\ref{alg:sign_meds} --- to leak hidden seeds. In that
 implementation, path generation and tree reconstruction are not two functions
 but two modes of one, \texttt{stree\_to\_path\_to\_stree}, selected by a
@@ -9,15 +9,15 @@ but two modes of one, \texttt{stree\_to\_path\_to\_stree}, selected by a
 void stree_to_path_to_stree(uint8_t *stree, ..., uint8_t *path, int mode) {
     while (1==1) {
         int index_leaf = 0;
-        `\highlight{yhl}{while ((indices[id] >> (MEDS\_seed\_tree\_height-h)) == i)}` 
+        `\label{lst:path:while}\highlight{yhl}{while ((indices[id] \chg{>{}>} (MEDS\_seed\_tree\_height-h)) == i)}` 
         {// Traverse down toward the secret leaf
             h += 1;
             i <<= 1;
             if (h > MEDS_seed_tree_height) {
                 h -= 1;
                 i >>= 1;
-                `\highlight{rhl}{if (id + 1 < MEDS\_w) id++; }`
-                `\highlight{bhl}{index\_leaf = 1;}` // Flag node as hidden
+                `\label{lst:path:inc}\highlight{rhl}{if (id + 1 < MEDS\_w) id++; }`
+                `\label{lst:path:leaf}\highlight{bhl}{index\_leaf = 1;}` // Flag node as hidden
                 break;
             }
         }
@@ -66,7 +66,7 @@ executed once per signature --- but these experiments do not establish it.
 We propose three fault models targeting different stages of the tree traversal.
 
 \noindent\textbf{Model 1: Full Tree Recovery (Root Leakage).}
-This attack aims to reveal the root seed, which effectively compromises the entire tree. By injecting a fault that causes the skip of the first iteration of \highlight{yhl}{\texttt{while} loop} at line~5 of Listing~\ref{lst:path}, the DFS halts immediately at the root ($h=0, i=0$). The root is incorrectly identified as a node ready for publication.
+This attack aims to reveal the root seed, which effectively compromises the entire tree. By injecting a fault that causes the skip of the first iteration of \highlight{yhl}{\texttt{while} loop} at \chg{line~\ref{lst:path:while}} of Listing~\ref{lst:path}, the DFS halts immediately at the root ($h=0, i=0$). The root is incorrectly identified as a node ready for publication.
 
 \noindent\textit{Detection and recovery.} The signature path contains only a
 single non-zero element. The adversary confirms the fault offline by expanding
@@ -77,9 +77,10 @@ correctly under an honest $\PathToSeedTree_t$, so this fault is detectable by
 the signer --- see Section~\ref{sec:counter}.
 
 \noindent\textbf{Model 2: Subtree Recovery.}
-By glitching the guarded increment \highlight{rhl}{\texttt{id++}} at line~12
+By glitching the guarded increment \highlight{rhl}{\texttt{id++}} at \chg{line~\ref{lst:path:inc}}
 of Listing~\ref{lst:path}, the algorithm fails to advance the cursor
 \texttt{id} into the list of hidden leaves. The traversal logic becomes desynchronized, resulting in the algorithm treating subsequent branches as public. All leaves to the right of the faulted \texttt{id} become computable.
+
 \noindent\textit{Detection and recovery.} This fault is harder to recognise
 than the other two, since the path has a plausible length. The adversary can
 nonetheless simulate the reconstruction for each of the $w$ possible faulted
@@ -119,18 +120,35 @@ at a cost of at most $w$ verifications.
   \draw[treeedge](s3)--(s7);\draw[treeedge](s3)--(s8);
   \draw[treeedge](s4)--(s9);\draw[treeedge](s4)--(s10);
 \end{tikzpicture}
-\caption{Effect of fault model 2 on the example presented in Figure~\ref{fig:less-trees}, if the glitch occured while \texttt{id==1}. The returned path is $\{s_7,s_9,s_4,s_2\}$ and all leaves are computable except $\eseed_1$.}
+\caption{Effect of fault model 2 on the example presented in Figure~\ref{fig:less-trees}, if the glitch \chg{occurred while \texttt{id==0}, i.e.\ at the first hidden leaf $\eseed_1$ (at \texttt{id==1} the guarded increment is already a no-op for $w=2$)}. The returned path is $\{s_7,s_9,s_4,s_2\}$ and all leaves are computable except $\eseed_1$.}
 \label{fig:faulted_path}
 \end{figure}
 
 \noindent\textbf{Model 3: Hidden Leaf Recovery.}
-This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf = 1;}} at line~13 of Listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
+This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf = 1;}} at \chg{line~\ref{lst:path:leaf}} of Listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
 
-\noindent\textit{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iterations of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
+\noindent\textit{Detection and recovery.} \chg{The path carries $k > 0$ extra
+seeds, one per skipped assignment, so it is $k$ entries longer than the honest
+path, whose length the adversary computes from $\mathbf{h}$. No subset search
+is needed to exploit it: for each path entry $\sigma$ and each hidden round
+$i$, the adversary expands $\sigma$ as the round-$i$ seed, extracts a candidate
+$(A_j^{-1},B_j^{-1})$ with $j = h_i$ by~\eqref{eq:meds-extract}, and keeps it
+if $\SF(\pimap{A_j}{B_j}(G_0)) = G_j$. This costs at most $w\cdot|\tpath|$
+such tests, each a handful of matrix operations over $\Fq$.}
+
+\chg{\noindent\textit{Relation to Definition~\ref{def:fault-oracle}.} The
+reference implementation has no flag array, but Models~1 and~3 have the effect
+of the faulted oracle: Model~1 publishes the root, as $\Oracle^{\mathrm{root}}$
+does, so Proposition~\ref{prop:alg-correctness} applies with $L = w$; Model~3
+publishes a single hidden leaf, as $\Oracle^{v^*}$ does with $v^*$ that leaf
+($L = 1$, the $(s-1)H_{s-1}$ case of Section~\ref{sec:extract}). Model~2
+corrupts the cursor rather than one node's release decision, so it is not an
+instance of Definition~\ref{def:fault-oracle}; it exposes the hidden leaves
+to the right of the faulted position, so $1 \leq L \leq w$.}
 
 \subsection{Results and Observations}
 
-We successfully executed the fault models on the Chipwhisperer board. This section detailed the compiler and glitcher configurations that were required to obtain the desired faults.
+We successfully executed the fault models on the \chg{ChipWhisperer} board. This section \chg{details} the compiler and glitcher configurations that were required to obtain the desired faults.
 
 \noindent\textbf{Method.}
 For each model we fix a target output state that signifies a successful
@@ -153,7 +171,7 @@ code compiled with the default \texttt{-Os} optimization.
 
 \textit{Trigger position.} We directly target the 
 evaluation of the conditional and the branching 
-instruction corresponding to line 5 of Listing~\ref{lst:path}. 
+instruction corresponding to \chg{line~\ref{lst:path:while}} of Listing~\ref{lst:path}. 
 The compiled result is Listing~\ref{lst:f1asm} in
 Appendix~\ref{app:asm}; we fault for three clock cycles.
 
@@ -178,7 +196,7 @@ described by Figure~\ref{fig:faulted_path}.
 
 \textit{Compilation.} This is carried out on a code compiled with the default \texttt{-Os} optimization.
 
-\textit{Trigger position.} The trigger frames line~12 of
+\textit{Trigger position.} The trigger frames \chg{line~\ref{lst:path:inc}} of
 Listing~\ref{lst:path}; the compiled result is Listing~\ref{lst:f2asm} in
 Appendix~\ref{app:asm}.
 
@@ -203,6 +221,7 @@ board's flash.
 immediately before the \texttt{index\_leaf} assignment and the low trigger
 immediately after; the compiled result is Listing~\ref{lst:f3asm} in
 Appendix~\ref{app:asm}.
+
 \textit{Parameters.} The disassembly shows the assignment compiled to two
 single-cycle instructions, so we set \texttt{repeat} to $2$;
 Figure~\ref{fig:fault3_results} gives the success map.
@@ -224,10 +243,11 @@ parameter point; markers as in Figure~\ref{fig:fault1_results}.}
 \label{fig:glitch_results}
 \end{figure}
 
-\noindent\textbf{Results.} The attacks are reproducible. Across every sweep,
-attempts gave normal execution, a device reset, or the expected exploit, with
+\noindent\textbf{Results.} The attacks are reproducible. \chg{For Model~3, every
+attempt} gave normal execution, a device reset, or the expected exploit, with
 no other valid glitches --- a consequence of single-instruction targeting,
 which is less likely than a wider disruption window to bleed into surrounding
-cycles. Model~1, the root reveal, is both the most efficient and the most
+cycles\chg{; Models~1 and~2 also produce other valid glitches
+(Figures~\ref{fig:fault1_results} and~\ref{fig:fault2_results})}. Model~1, the root reveal, is both the most efficient and the most
 reproducible; Models~2 and~3 replicate less readily but are harder to detect
 during signing (Section~\ref{sec:counter}).

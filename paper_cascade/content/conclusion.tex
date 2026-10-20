@@ -2,13 +2,20 @@ The GZKST abstraction isolates the seed-hiding invariant common to
 seed-tree-based post-quantum signatures, exhibits the published fault attacks
 as violations of it, and turns the fault surface into an enumerable grid from
 which we derived generic key-recovery procedures with bounded query
-complexity. We demonstrated three clock-glitch attacks against the MEDS
+complexity. \emph{We demonstrated three clock-glitch attacks against the MEDS}
 reference implementation on an ARM Cortex-M4 and evaluated countermeasures
 whose cost is small relative to the matrix arithmetic dominating signing.
 
-Two directions follow. The first is to quantify the double-glitch attack of
-Section~\ref{sec:counter}, turning a structural observation about shared code
-into a concrete attacker cost. The second is to instantiate the abstraction
-against a scheme still under consideration --- FAEST, SDitH and MQOM all build
-an all-but-one vector commitment from the same tree --- since the empty cells
-of Table~\ref{tab:surfaces} are as much a programme as a classification.
+\chg{Three limitations remain. The glitches targeted the path-construction
+function in isolation, not inside a complete signature, so locating the target
+in a full signing trace is not yet demonstrated. Model~3 required building the
+target function at \texttt{-O0}, since optimised builds remove the targeted
+assignment. And the double glitch that defeats verify-before-release has not
+been measured.}
+
+%Two directions follow. The first is to quantify the double-glitch attack of
+%Section~\ref{sec:counter}, turning a structural observation about shared code
+%into a concrete attacker cost. The second is to instantiate the abstraction
+%against a scheme still under consideration --- FAEST, SDitH and MQOM all build
+%an all-but-one vector commitment from the same tree --- since the empty cells
+%of Table~\ref{tab:surfaces} are as much a programme as a classification.

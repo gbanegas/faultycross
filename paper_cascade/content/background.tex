@@ -161,9 +161,11 @@ publishes instead the boundary of the hidden subtree --- a small set of
 internal nodes from which exactly the revealed leaves, and no others, can be
 recomputed. We call this set the \emph{path}. Computing it is the only place
 in signing where the code decides, per node, whether a seed may be released,
-and that decision is the object of this paper: every attack surveyed in
-Section~\ref{sec:relwork}, and every attack we mount in
-Section~\ref{sec:app}, corrupts it.
+and that decision is the object of this paper: \chg{it is what the attacks
+of~\cite{ZKFault,FaultToForge2025}, and every attack we mount in
+Section~\ref{sec:app}, corrupt. The remaining attacks surveyed in
+Section~\ref{sec:relwork} reach the same leak through other components;
+Section~\ref{sec:taxonomy} places them.}
 
 % ============================================================
 \subsection{The MEDS signature scheme}
@@ -213,35 +215,15 @@ only if there exists a triple $(A,B,T)$ with
 where $\SF$ denotes the systematic form, which absorbs $T$ by fixing a
 canonical basis.
 
-\begin{remark}[Why MCE is not linear algebra]
-\label{rem:mce-hardness}
-The unknown $T$ in~\eqref{eq:mce-gen} is the entire source of hardness, and it
-is easy to miss. If one \emph{fixes} the basis correspondence, i.e.\ assumes
-$T = I$ so that the $i$-th basis matrix $C^{(0)}_i$ of $\Mat$ maps to the
-$i$-th basis matrix $C^{(1)}_i$ of $\Matd$, then the defining relations become
-\[
-  A^{-1} C^{(1)}_i \;=\; C^{(0)}_i B, \qquad i = 1,\ldots,k,
-\]
-which is a \emph{homogeneous linear} system in the joint unknowns
-$(A^{-1}, B)$ and is solved by Gaussian elimination. This is not a weakness of
-MCE but a routine used inside MEDS: key generation samples a random
-$T_i \in \GL_k(q)$, forms $G'_0 = T_i G_0$, and recovers $(A_i, B_i^{-1})$ from
-exactly this linear system (the $\Solve$ call of
-Algorithm~\ref{alg:keygen_meds}), with the scalar constraint
-$a_{m-1,m-1}$ pinning down the solution up to the residual scaling
-$(A,B) \mapsto (\lambda A, \lambda^{-1} B)$. Publishing only
-$\SF(\pimap{A_i}{B_i}(G_0))$ then destroys the basis correspondence, and with
-it the linearity: with $T$ unknown, \eqref{eq:mce-gen} is a system of
-\emph{bilinear} equations. MCE is Tensor-Isomorphism-complete in the sense of
-Grochow and Qiao~\cite{GrochowQiao23}; see~\cite{ReijndersST23,NarayananQT24}
-for the best known classical algorithms.
-\end{remark}
-
-\paragraph{Notation.}
-Table~\ref{tab:meds-notation} collects the MEDS-specific subroutine names used
-in the algorithms below; all follow the reference
-specification~\cite{ChouNPRRST23,MEDS_PQC}.
-
+\chg{The unknown $T$ is the entire source of hardness: with $T$ fixed the
+relations are linear in $(A,B^{-1})$, which MEDS key generation exploits to
+sample keys, whereas with $T$ unknown \eqref{eq:mce-gen} is a system of
+bilinear equations (Remark~\ref{rem:mce-hardness} in
+Appendix~\ref{app:algs}). MCE is Tensor-Isomorphism-complete~\cite{GrochowQiao23};
+see~\cite{ReijndersST23,NarayananQT24} for the best known classical
+algorithms. Subroutine names follow the reference
+specification~\cite{ChouNPRRST23,MEDS_PQC} and are summarised in
+Table~\ref{tab:meds-notation}.}
 \begin{table}[htbp]
 \centering
 \caption{MEDS subroutines used in Algorithm~\ref{alg:sign_meds} and
@@ -267,6 +249,7 @@ $\SeedTreeToPath_t$ & the $\Publish$ step
 \end{tabularx}
 \end{table}
 
+
 \paragraph{Key generation.}
 Key generation (Algorithm~\ref{alg:keygen_meds}, Appendix~\ref{app:algs})
 expands a public seed into $G_0$ and then produces $s-1$ equivalent codes: for
@@ -278,7 +261,7 @@ recover.
 
 \paragraph{Signing and the role of the seed tree.}
 Algorithm~\ref{alg:sign_meds} follows the template just described. A fresh $\delta$ is expanded into a root seed
-$\rho$ and a salt $\alpha$; line~3 grows the \GGM\ tree of
+$\rho$ and a salt $\alpha$; \chg{line~\ref{alg:meds:tree}} grows the \GGM\ tree of
 Definition~\ref{def:ggm} from $\rho$, yielding the $t$ ephemeral leaf seeds
 $\sigma_0,\ldots,\sigma_{t-1}$. Each $\sigma_i$ is expanded into an ephemeral
 equivalence $(\tilde{A}_i, \tilde{B}_i)$, and round $i$ commits to the
@@ -295,14 +278,14 @@ For each hidden round ($h_i > 0$) the signer publishes the response pair
                              B_{h_i}^{-1} \tilde{B}_i\bigr),
 \end{equation}
 and for the revealed rounds the seeds are released compactly through the path
-$p \leftarrow \SeedTreeToPath_t(\mathbf{h},\rho,\alpha)$ computed at line~14,
+$p \leftarrow \SeedTreeToPath_t(\mathbf{h},\rho,\alpha)$ computed at
+\chg{line~\ref{alg:meds:path}},
 the target of every attack in Section~\ref{sec:app}.
 
 \begin{algorithm}[tb]
 \footnotesize
 \setlength{\algomargin}{0.9em}
-\caption{MEDS signing (simplified). Line~14 is the attack target of
-Section~\ref{sec:app}.}
+\caption{MEDS signing (simplified).}
 \label{alg:sign_meds}
 \KwIn{Secret key $\sk$, message $m$}
 \KwOut{Signed message $m_s$}
@@ -311,7 +294,7 @@ Parse $\sk$ to recover $\sigma_{G_0}$, $A_i^{-1}$, $B_i^{-1}$, $i=1,\ldots,s-1$;
 $G_0 \leftarrow \ExpandSystMat(\sigma_{G_0})$\;
 $\delta \xleftarrow{\$} \mathcal{B}^{\ell_{\mathrm{sec\_seed}}}$;\quad
 $\rho,\, \alpha \leftarrow \XOF(\delta,\, \ell_{\mathrm{tree\_seed}},\, \ell_{\mathrm{salt}})$\;
-$(\sigma_0, \ldots, \sigma_{t-1}) \leftarrow \SeedTree_t(\rho,\, \alpha)$
+$(\sigma_0, \ldots, \sigma_{t-1}) \leftarrow \SeedTree_t(\rho,\, \alpha)$\label{alg:meds:tree}
 \tcp*[r]{\GGM\ tree, Def.~\ref{def:ggm}}
 
 \For{$i = 0$ \KwTo $t-1$}{
@@ -333,7 +316,7 @@ $(h_0,\ldots,h_{t-1}) \leftarrow \ParseHash_{s,t,w}(d)$
     append $\bigl(\Compress(\mu_i) \mid \Compress(\nu_i)\bigr)$ to $v$\;
 }
 
-$p \leftarrow \SeedTreeToPath_t(h_0,\ldots,h_{t-1},\rho,\alpha)$
+$p \leftarrow \SeedTreeToPath_t(h_0,\ldots,h_{t-1},\rho,\alpha)$\label{alg:meds:path}
 \tcp*[r]{\textbf{attack target}}
 \Return $m_s \leftarrow \bigl(v \mid p \mid d \mid \alpha \mid m\bigr)$
 \end{algorithm}
@@ -364,25 +347,26 @@ together.
 
 \begin{table}[htbp]
 \centering
-\caption{MEDS parameter sets~\cite{ChouNPRRST23}; MEDS uses $n{=}m{=}k$. The
-last two columns give the root-fault success probability
-$p_{\min} = 1-((s-2)/(s-1))^{w}$ and the resulting bound on the number of
-effective faulted signatures needed for full key recovery; both are derived in
-Section~\ref{sec:extract}.}
+\caption{MEDS parameter sets~\cite{ChouNPRRST23}; MEDS uses $n{=}m{=}k$. \chg{For
+an effective root fault, the last three columns give
+$p_{\min} = 1-((s-2)/(s-1))^{w}$ of Proposition~\ref{prop:alg-correctness},
+the probability $\Pr[Q{=}1]$ that a single faulted signature recovers the
+whole key, and the exact expected number $\mathbb{E}[Q]$ of effective faulted
+signatures needed (Appendix~\ref{app:proof-query}).}}
 \label{tab:scheme-params}
-\setlength{\tabcolsep}{5pt}
+\setlength{\tabcolsep}{4pt}
 \small
-\begin{tabular}{@{}lrrrcl rr@{}}
+\begin{tabular}{@{}lrrrcl rrr@{}}
 \toprule
-\textbf{Parameter set} & $t$ & $w$ & $s$ & \textbf{NIST level} & \textbf{Field}
- & $p_{\min}$ & $\mathbb{E}[Q] \leq$ \\
+\textbf{Parameter set} & $t$ & $w$ & $s$ & \chg{\textbf{Level}} & \textbf{Field}
+ & $p_{\min}$ & \chg{$\Pr[Q{=}1]$} & \chg{$\mathbb{E}[Q]$} \\
 \midrule
-MEDS-9923   & 1152 & 14 & 4 & I   & $n{=}14,\,q{=}4093$ & 0.9966 & 3.01 \\
-MEDS-13220  &  192 & 20 & 5 & I   & $n{=}14,\,q{=}4093$ & 0.9968 & 4.01 \\
-MEDS-41711  &  608 & 26 & 4 & III & $n{=}22,\,q{=}4093$ & 1.0000 & 3.00 \\
-MEDS-69497  &  160 & 36 & 5 & III & $n{=}22,\,q{=}4093$ & 1.0000 & 4.00 \\
-MEDS-134180 &  192 & 52 & 5 & V   & $n{=}30,\,q{=}2039$ & 1.0000 & 4.00 \\
-MEDS-167717 &  112 & 66 & 6 & V   & $n{=}30,\,q{=}2039$ & 1.0000 & 5.00 \\
+MEDS-9923   & 1152 & 14 & 4 & I   & $n{=}14,\,q{=}4093$ & 0.9966 & \chg{0.9897} & \chg{1.0103} \\
+MEDS-13220  &  192 & 20 & 5 & I   & $n{=}14,\,q{=}4093$ & 0.9968 & \chg{0.9873} & \chg{1.0127} \\
+MEDS-41711  &  608 & 26 & 4 & III & $n{=}22,\,q{=}4093$ & 1.0000 & \chg{0.9999} & \chg{1.0001} \\
+MEDS-69497  &  160 & 36 & 5 & III & $n{=}22,\,q{=}4093$ & 1.0000 & \chg{0.9999} & \chg{1.0001} \\
+MEDS-134180 &  192 & 52 & 5 & V   & $n{=}30,\,q{=}2039$ & 1.0000 & \chg{1.0000} & \chg{1.0000} \\
+MEDS-167717 &  112 & 66 & 6 & V   & $n{=}30,\,q{=}2039$ & 1.0000 & \chg{1.0000} & \chg{1.0000} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -402,12 +386,14 @@ and a hidden round publishes the coset representative
 $\CosetRep(\pi_{b[i]} \circ \tilde{\pi}^*_i)$. Two structural differences from
 MEDS matter, because the attacks of~\cite{ZKFault,FaultToForge2025} turn on
 them: the tree is \emph{incomplete}, so leaves sit at two depths and the
-implementation carries index-tracking arrays to locate them; and the path is
-computed from an explicit auxiliary \emph{flag tree}, with $\LabelLeaves$
-writing $\calF(\mathrm{leaf}_i) = \mathbf{1}[i \in \calH]$ and
+implementation carries \chg{per-level leaf-offset arrays} to locate them; and the
+path is computed from an explicit auxiliary \emph{flag tree}, with
+$\LabelLeaves$ writing $\calF(\mathrm{leaf}_i) = \mathbf{1}[i \in \calH]$ and
 $\ComputeSeeds$ propagating $\calF(v) = \calF(\ell) \vee \calF(r)$ upwards.
-Both the index arithmetic and the flag array are state that MEDS does not
-have, and hence fault surface that MEDS does not have. Recovering $\pi_{b[i]}$
+Both the \chg{leaf-offset arrays} and the flag array are state that MEDS does not
+have, and hence fault surface that MEDS does not have\chg{; MEDS has a different
+piece of state instead, a cursor into the sorted list of hidden leaves
+(Section~\ref{sec:app})}. Recovering $\pi_{b[i]}$
 from the response together with $\eseed_i$ is the column-extraction argument
 of Lemma~1 in~\cite{FaultToForge2025}, structurally the analogue
 of~\eqref{eq:meds-extract}.

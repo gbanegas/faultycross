@@ -5,6 +5,33 @@ Signing is given in the body as Algorithm~\ref{alg:sign_meds}, since it
 contains the attack target. Subroutine names are explained in
 Table~\ref{tab:meds-notation}.
 
+\begin{remark}[Why MCE is not linear algebra]
+\label{rem:mce-hardness}
+The unknown $T$ in~\eqref{eq:mce-gen} is the entire source of hardness, and it
+is easy to miss. If one \emph{fixes} the basis correspondence, i.e.\ assumes
+$T = I$ so that the $i$-th basis matrix $C^{(0)}_i$ of $\Mat$ maps to the
+$i$-th basis matrix $C^{(1)}_i$ of $\Matd$, then the defining relations
+\chg{$C^{(1)}_i = A\,C^{(0)}_i B$} become
+\[
+  \chg{A\, C^{(0)}_i \;=\; C^{(1)}_i B^{-1}}, \qquad i = 1,\ldots,k,
+\]
+which is a \emph{homogeneous linear} system in the joint unknowns
+\chg{$(A, B^{-1})$} and is solved by Gaussian elimination. This is not a weakness of
+MCE but a routine used inside MEDS: key generation samples a random
+$T_i \in \GL_k(q)$, forms $G'_0 = T_i G_0$, and recovers $(A_i, B_i^{-1})$ from
+exactly this linear system (the $\Solve$ call of
+Algorithm~\ref{alg:keygen_meds}), with the scalar constraint
+$a_{m-1,m-1}$ \chg{removing the residual scaling ambiguity}
+$(A,B) \mapsto (\lambda A, \lambda^{-1} B)$. Publishing only
+$\SF(\pimap{A_i}{B_i}(G_0))$ then destroys the basis correspondence, and with
+it the linearity: with $T$ unknown, \eqref{eq:mce-gen} is a system of
+\emph{bilinear} equations. MCE is Tensor-Isomorphism-complete in the sense of
+Grochow and Qiao~\cite{GrochowQiao23}; see~\cite{ReijndersST23,NarayananQT24}
+for the best known classical algorithms.
+\end{remark}
+
+
+
 \begin{algorithm}[htbp]
 \small
 \setlength{\algomargin}{1.2em}

@@ -41,8 +41,9 @@ MQOM --- all of which did advance --- publish an all-but-one vector commitment
 derived from the same tree. What we analyse is the mechanism, not its host. We
 attack MEDS because its reference implementation realises that mechanism in
 its cleanest form, and the conclusions transfer to any scheme publishing a
-seed-tree path. The timing is favourable rather than late: the third round is
-explicitly an implementation-security phase.
+seed-tree path. The timing is favourable rather than late: \chg{FAEST, SDitH and
+MQOM enter the third round with exactly this mechanism, and implementation
+attacks on it are most useful before their implementations settle.}
 
 \subsection{Related Work}
 \label{sec:relwork}
@@ -82,15 +83,15 @@ invariant.
 \item \textbf{A Taxonomy of Fault Surfaces.}
 We classify every published fault attack on this family by which component
 of the abstraction it corrupts (Section~\ref{sec:taxonomy}), showing that
-five independent attacks against four schemes occupy only three of six
+\chg{six independent attacks against six schemes occupy only four of six}
 components. The empty cells are predictions, and one of them led us
 directly to a new attack surface in the MEDS reference implementation
 that has no analogue in prior work.
 
 \item \textbf{Query Complexity Analysis.}
 We derive bounds on the number of faulted signatures required for
-secret-key recovery and show that only a small number of successful
-queries is needed for all MEDS parameter sets.
+secret-key recovery and show that, \chg{for every MEDS parameter set, a single
+effective fault recovers the full key with probability above $0.98$}.
 
 \item \textbf{Practical Attacks on MEDS.}
 We show fault attacks against the MEDS reference

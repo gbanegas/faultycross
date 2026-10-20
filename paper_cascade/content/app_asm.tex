@@ -17,14 +17,14 @@ Compiled trigger points for the three fault models of Section~\ref{sec:app}.
 Compiled trigger points for fault models~2 and~3, referenced from
 Section~\ref{sec:app}.
 
-\begin{lstlisting}[style=asmstyle, label=lst:f2asm, caption=Compiled trigger points for fault model 2.]
+\begin{lstlisting}[style=asmstyle, escapeinside={(*@}{@*)}, label=lst:f2asm, caption=Compiled trigger points for fault model 2.]
 080006d2 <stree_to_path_to_stree_glitch>:
 ...
  8000726:	f001 fa09 	bl	8001b3c <trigger_high> // trigger_high();
- 800072a:	f108 0401 	add.w	r4, r8, #1  
- 800072e:	2c05      	cmp	r4, #5                 //if (id+1 < MEDS_w)
+ 800072a:	f108 0401 	add.w	r4, r8, #1         (*@\chg{// id+1}@*)
+ 800072e:	2c05      	cmp	r4, #5             // if (id+1 < MEDS_w)
  8000730:	bf88      	it	hi
- 8000732:	4644      	movhi	r4, r8             // id++ ;
+ 8000732:	4644      	movhi	r4, r8             (*@\chg{// else keep id}@*)
  8000734:	f001 fa09 	bl	8001b4a <trigger_low>  // trigger_low();
 ...
 \end{lstlisting}

@@ -14,7 +14,7 @@ leaf descendants of $v$ are revealed ($i \in \calR$).
 \label{app:proof-meds}
 % ------------------------------------------------------------
 
-Let $\calT$ be the MEDS seed tree with $\lceil \log_2 t \rceil$ levels.
+Let $\calT$ be the MEDS seed tree, \chg{of height} $\lceil \log_2 t \rceil$.
 The $\SeedTreeToPath$ algorithm implements the following erasure: for each
 $i \in \calH$ the algorithm (i)~removes the label of $\mathrm{leaf}_i$, and
 (ii)~propagates the removal upward---a node $v$ loses its label as soon as
@@ -62,11 +62,11 @@ tree, serialised in depth-first order.  Equivalently,
   \tpath = \{\,v : v \text{ retains its label and }
   \mathrm{parent}(v) \text{ was erased}\,\}.
 \]
-By Claim~\ref{claim:meds-retain}, this equals
+By \chg{the Claim above}, this equals
 $\{v : \calF(v) = 0,\;\calF(\mathrm{parent}(v)) = 1\}$
 (with the convention that $\calF(\mathrm{parent}(\mathrm{root})) = 1$).
 
-\begin{proof}[Proof of Invariant~\ref{inv:correctness} (Correctness)]
+\begin{proof}[\chg{Invariant~\ref{inv:correctness}, correctness}]
 Let $i \in \calR$.  Consider the root-to-leaf path
 $\pi_i = (v_0 = \mathrm{root},\,v_1,\,\ldots,\,v_d = \mathrm{leaf}_i)$.
 
@@ -85,7 +85,7 @@ $\calF(v_{k-1}) = 1$.  Hence $v_k \in \tpath$, and $v_k$ lies on the
 root-to-leaf path $\pi_i$, establishing Invariant~\ref{inv:correctness}.
 \end{proof}
 
-\begin{proof}[Proof of Invariant~\ref{inv:hiding} (ZK hiding)]
+\begin{proof}[\chg{Invariant~\ref{inv:hiding}, ZK hiding}]
 Let $i \in \calH$ and let $v$ be any proper ancestor of $\mathrm{leaf}_i$
 (including the root).  Since $\mathrm{leaf}_i$ is a descendant of $v$ and
 $i \in \calH$, equation~\eqref{eq:meds-flag-char} gives $\calF(v) = 1$.
@@ -95,17 +95,14 @@ Invariant~\ref{inv:hiding} holds.
 \end{proof}
 
 \begin{proof}[Extension to incomplete trees]
-When $t$ is not a power of~$2$, the MEDS tree is incomplete: some leaves
-appear at depth $\lceil \log_2 t \rceil - 1$ rather than
-$\lceil \log_2 t \rceil$.  The index-tracking arrays ensure that
-$\SeedTreeToPath$ correctly identifies which nodes are leaves, assigns flags
-according to~\eqref{eq:meds-leaf-flag}, and performs the bottom-up OR
-pass~\eqref{eq:meds-or-prop} over the actual tree structure.
-
-The proofs of both invariants above are purely graph-theoretic and depend
-only on properties~\eqref{eq:meds-leaf-flag}--\eqref{eq:meds-flag-char},
-which hold regardless of whether leaves appear at a uniform depth.  Hence
-both invariants hold for any incomplete tree shape produced by MEDS.
+\chg{When $t$ is not a power of~$2$ the tree is incomplete. In MEDS the leaves
+are the first $t$ positions at depth $\lceil \log_2 t \rceil$; in LESS-v2
+they sit at two depths and per-level leaf-offset arrays locate them. In
+either case~\eqref{eq:meds-leaf-flag} and~\eqref{eq:meds-or-prop} are
+defined on the actual tree, and the proofs of both invariants above are
+purely graph-theoretic, depending only
+on~\eqref{eq:meds-leaf-flag}--\eqref{eq:meds-flag-char}. Hence both
+invariants hold for any such tree shape.}
 \end{proof}
 
 % ------------------------------------------------------------
@@ -181,16 +178,17 @@ $p_r \geq p_{\min} = 1-(1-1/(s-1))^w$ for all $r \geq 1$.
 
 The expected total number of effective queries is
 \begin{equation}
-  \mathbb{E}[Q] \;=\; \sum_{r=1}^{m} \frac{1}{p_r}
+  \mathbb{E}[Q] \;\chg{\leq}\; \sum_{r=1}^{m} \frac{1}{p_r}
   \;\leq\; \frac{m}{p_{\min}} \;=\; \frac{s-1}{p_{\min}},
   \label{eq:exp-Q}
 \end{equation}
-where the inequality uses $p_r \geq p_{\min}$ for all $r \geq 1$.
+where \chg{the first inequality holds because each query that reveals a new index
+decreases $r$ by at least one, and the second} uses $p_r \geq p_{\min}$ for
+all $r \geq 1$.
 
 \begin{remark}
-The bound in~\eqref{eq:exp-Q} should be seen as an upper-bound, 
-as it treats the recovery process as just learning one secret 
-per time. In practice, a query may reveal multiple unseen indices 
+The bound in~\eqref{eq:exp-Q} \chg{is loose, as it treats the recovery
+process as learning one secret at a time.} In practice, a query may reveal multiple unseen indices 
 simultaneously, especially during the early stages of the 
 algorithm when $r$ is large. As a consequence the actual expected 
 number of queries can be smaller than $(s-1)/p_{\min}$.
@@ -203,10 +201,11 @@ $m = s-1$ stages,
 \[
   \Pr[Q > k] \;\leq\; (s-1)\cdot(1-p_{\min})^{\lfloor k/(s-1)\rfloor}.
 \]
-Setting $(s-1)(1-p_{\min})^{\lfloor k/(s-1)\rfloor} \leq \delta$ and
-solving gives $k \leq \bigl\lceil \tfrac{s-1}{p_{\min}} \cdot
-\ln\tfrac{s-1}{\delta} \bigr\rceil$, establishing the bound in
-Proposition~\ref{prop:alg-correctness}.
+\chg{Since $(1-p_{\min})^{x} \leq e^{-p_{\min} x}$, the right-hand side is at
+most $\delta$ as soon as $\lfloor k/(s-1)\rfloor \geq p_{\min}^{-1}
+\ln\tfrac{s-1}{\delta}$, so it suffices to take
+$k = (s-1)\bigl\lceil p_{\min}^{-1} \ln\tfrac{s-1}{\delta} \bigr\rceil$,}
+establishing the bound in Proposition~\ref{prop:alg-correctness}.
 
 
 \paragraph{Output correctness.}
@@ -263,12 +262,25 @@ Proposition~\ref{prop:alg-correctness} follows solely from the direct inequality
 \end{remark}
 
 \paragraph{Total queries (root fault).}
-From equation~\eqref{eq:pr-exact} (see page~\pageref{eq:pr-exact}),
+From equation~\eqref{eq:pr-exact},
 \(p_r = 1 - \bigl(1 - r/(s-1)\bigr)^{w}\) (with \(L = w\) deterministic),
 and since \(p_r \geq p_{\min}\) for all \(r \geq 1\),
 \[
-  \mathbb{E}[Q] = \sum_{r=1}^{m} \frac{1}{p_r} \leq \frac{m}{p_{\min}}
-  = \frac{s-1}{p_{\min}},
+  \mathbb{E}[Q] \chg{\leq} \sum_{r=1}^{m} \frac{1}{p_r} \leq \frac{m}{p_{\min}}
+  = \frac{s-1}{p_{\min}}.
 \]
-which for \(p_{\min} \approx 1\) (all MEDS parameter sets, cf.\ Table~\ref{tab:scheme-params})
-gives \(\mathbb{E}[Q] \lesssim s-1\).
+
+\chg{\paragraph{Exact value (root fault).}
+After $k$ effective queries the adversary has seen $kw$ independent uniform
+indices from $\{1,\ldots,m\}$, so by inclusion--exclusion all $m$ secrets are
+collected with probability
+\[
+  P_k \;=\; \sum_{j=0}^{m} (-1)^j \binom{m}{j}
+  \left(1 - \frac{j}{m}\right)^{\!kw},
+  \qquad
+  \mathbb{E}[Q] \;=\; \sum_{k \geq 0} (1 - P_k),
+\]
+and $\Pr[Q = 1] = P_1$. These are the last two columns of
+Table~\ref{tab:scheme-params}: $P_1 \geq 0.987$ and
+$\mathbb{E}[Q] \leq 1.013$ for every MEDS parameter set, against
+$(s-1)/p_{\min}$ between $3.01$ and $5.00$.}

@@ -123,7 +123,7 @@ MEDS instantiates Definition~\ref{def:round} by setting
 with $\Resp$ given by~\eqref{eq:meds-resp} and $\ChkRnd$ applying
 $(\mu_i,\nu_i)$ to $G_{h_i}$. Comparing Algorithm~\ref{alg:generic} with
 Algorithm~\ref{alg:sign_meds}, the digest $d$ plays the role of $\mathbf{c}$
-and line~14 is $\Publish$.
+and \chg{line~\ref{alg:meds:path}} is $\Publish$.
 \end{remark}
 % ------------------------------------------------------------
 \textbf{The Flag Structure.}
@@ -134,10 +134,9 @@ intermediate object.  It is a labelling $\calF : V(\calT) \to \{0,1\}$ where:
         directly included in $\tpath$ or derivable from a published ancestor;
   \item $\calF(v) = 1$: node $v$ is \emph{hidden}---it must not appear in $\tpath$ and must not be derivable from published nodes.
 \end{itemize}
-The flag structure satisfies two invariants:
-
 Throughout we use the convention $\calF(\mathsf{parent}(\mathrm{root})) = 1$,
-so that the root itself may belong to $\tpath$.
+so that the root itself may belong to $\tpath$. \chg{The flag structure satisfies
+two invariants:}
 
 \begin{invariant}[Correctness]
 \label{inv:correctness}
@@ -268,7 +267,7 @@ and revisited in Remark~\ref{rem:spec-vs-impl}.
   
 \end{tikzpicture}
 \vspace{2pt}
-{\small (b) After \Chal, \Decide, \Publish; $\mathbf{b}\!=\!\{0,1,0,0,1,0\}$, $\tpath\!=\!\{s_4,s_6,s_7\}$.}
+{\small (b) After \Chal, \Decide, \Publish; \chg{$\mathbf{c}\!=\!(0,1,0,0,1,0)$}, $\tpath\!=\!\{s_4,s_6,s_7\}$.}
 \end{minipage}
 \caption{GGM seed tree ($t=6$): structure~(a) and flag state~(b).
 In~(b): pink nodes ($\calF{=}1$, hidden subtree); green nodes ($\calF{=}0$,
@@ -283,14 +282,16 @@ fully revealed subtree); blue-bordered nodes ($\calF{=}0$, in $\tpath$).}
 \begin{definition}[Faulted Signing Oracle]
 \label{def:fault-oracle}
 Let $\Pi=(\Setup,\Expand,\Chal,\Decide,\allowbreak
-\Publish,\allowbreak\Recon)$ be a \GZKST
+\Publish,\allowbreak\Recon)$ be a \GZKST{}
 instance, let $\Sig[\Pi]$ be the derived signature scheme of
 Definition~\ref{def:sigma}, and let $(\sk,\pk)$ be a fixed key pair. For a
 node $v^*\in V(\calT)$, the oracle $\Oracle^{v^*}(\sk,\pk)$ runs
 $\Sig[\Pi].\Sign(\sk,\msg)$ unmodified except that, during
 $\Publish(\calT,\calH)$, it forces
 $\calF(v^*) \leftarrow 0$
-before the normal upward propagation step. The oracle outputs the
+\chg{after the upward propagation step and before the path is serialised (forcing
+it earlier would be overwritten by the propagation whenever $v^*$ is an
+internal node)}. The oracle outputs the
 resulting (possibly faulted) signature $\sig^*$.
 \end{definition}
 
@@ -324,35 +325,40 @@ of $\Sig[\Pi]$ must materialise each of the components in turn, and each
 component admits its own class of faults with its own consequence:
 
 \begin{itemize}[leftmargin=*,itemsep=1pt]
-  \item $\Setup$: biasing or zeroing $\seed_r$ makes the whole tree, and hence
-        every $\eseed_i$, predictable without touching $\Publish$.
+  \item $\Setup$: \chg{biasing, zeroing or reusing} $\seed_r$ makes the whole tree,
+        and hence every $\eseed_i$, predictable without touching $\Publish$
+        \chg{--- the surface exploited against
+        PERK~\cite{cryptoeprint:2026/1266}}.
   \item $\Expand$: skipping a \PRG\ invocation leaves a child at a known or
         stale value --- the surface exploited against
         FAEST~\cite{JendralD25} and Mirath/RYDE~\cite{BandaBK26}.
   \item $\Chal$: corrupting the digest before parsing changes which rounds are
         hidden; the attack of~\cite{HuangHHYSTY26} skips iterations of the
         digest-preprocessing loop of LESS-v2 and never touches the tree.
-  \item $\Decide$: forcing $c_i \leftarrow 0$ moves a round from $\calH$ to
-        $\calR$, so its seed is published \emph{legitimately} after $\resp_i$
-        has already been emitted.
+  \item $\Decide$: \chg{in Algorithm~\ref{alg:generic} the partition is computed
+        once and feeds both $\Resp$ and $\Publish$. Corrupting the copy handed
+        to $\Publish$ (in MEDS, the vector $\mathbf{h}$ passed to
+        $\SeedTreeToPath_t$) so that $c_i \leftarrow 0$ moves a round from
+        $\calH$ to $\calR$ after $\resp_i$ has been computed, and its seed is
+        then published \emph{legitimately}.}
   \item $\Publish$: corrupting the per-node release decision ---
         \cite{ZKFault,FaultToForge2025} and all three attacks of
         Section~\ref{sec:app}.
   \item $\Recon$: verifier-side, so relevant to acceptance rather than key
         recovery; it matters here because a verify-before-release
-        countermeasure runs $\Recon$ on the signer's own device
-        (Section~\ref{sec:counter}).
+        countermeasure runs $\Recon$ on the signer's own device.
 \end{itemize}
 
 Table~\ref{tab:surfaces} places the published attacks on this grid. Two
-observations follow. First, five independent attacks developed against four
+observations follow. First, \chg{six independent attacks developed against six}
 schemes, with different tree shapes and different secret types, occupy only
-three of the six components, which suggests the grid is the right coordinate
-system rather than an artefact. Second, the empty cells are predictions: one
-of them produced Model~2 of Section~\ref{sec:app}, since asking what
-\emph{else} inside $\Publish$ can be faulted besides the flag value points at
-the index bookkeeping that walks the tree --- a surface with no analogue in the
-LESS flag array, and one no previous work had considered.
+\chg{four} of the six components, which suggests the grid is the right coordinate
+system rather than an artefact. \chg{Second, the grid is a search tool: the empty
+cells ($\Decide$, $\Recon$) are predictions, and asking what \emph{else}
+inside a populated cell can be faulted produced Model~2 of
+Section~\ref{sec:app}. Inside $\Publish$, besides the flag value, there is
+the cursor that walks the sorted hidden-leaf list --- a surface with no
+analogue in the LESS flag tree, and one no previous work had considered.}
 
 \begin{table}[htbp]
 \centering
@@ -371,8 +377,9 @@ Fault to Forge~\cite{FaultToForge2025} & LESS-v2          & \Publish          & 
 Faultless key recovery~\cite{HuangHHYSTY26} & LESS-v2     & \Chal             & key recovery \\
 Fault attack on MPCitH~\cite{BandaBK26} & Mirath, RYDE    & \Expand, \Chal    & key recovery, forgery \\
 Case study on FAEST~\cite{JendralD25}  & FAEST            & \Expand           & key recovery \\
+\chg{Fault attacks on PERK~\cite{cryptoeprint:2026/1266}} & \chg{PERK} & \chg{\Setup} & \chg{key recovery} \\
 \midrule
-This work (Section~\ref{sec:app})      & MEDS             & \Publish ($3$ surfaces) & key recovery \\
+This work (Section~\ref{sec:app})      & MEDS             & \Publish{} ($3$ surfaces) & key recovery \\
 \bottomrule
 \end{tabular}
 }
@@ -442,30 +449,37 @@ $\mathsf{Collected} \leftarrow \emptyset$\;
 
 \begin{proposition}[Correctness and query complexity]
 \label{prop:alg-correctness}
-Let $\Pi$ be a \GZKST\ instance, let $v^* = \mathrm{root}$ so that the fault
-exposes all $w$ hidden leaves and $L = w$ is deterministic, and put
+\chg{For a fault node $v^*$, write $\ell$ for the number of leaves below $v^*$ and
+$L$ for the number of hidden leaves among them.} Let $\Pi$ be a \GZKST\
+instance, let $v^* = \mathrm{root}$, so that \chg{$\ell = t$,} the fault exposes all
+$w$ hidden leaves and $L = w$ is deterministic, and put
 $p_{\min} = 1 - \bigl(\tfrac{s-2}{s-1}\bigr)^{w}$. Then
 Algorithm~\ref{alg:key-recovery} terminates with $\widehat{\sk} = \sk$, the
 expected number of effective queries satisfies
 $\mathbb{E}[Q] \leq (s-1)/p_{\min}$, and for any $\delta > 0$ at most
-$\lceil \frac{s-1}{p_{\min}} \ln \frac{1}{\delta} \rceil$ effective queries
-suffice with probability $1-\delta$. See Appendix~\ref{app:proof-recovery}.
+\chg{$(s-1)\bigl\lceil p_{\min}^{-1} \ln \frac{s-1}{\delta} \bigr\rceil$}
+effective queries suffice with probability \chg{at least} $1-\delta$. See
+Appendix~\ref{app:proof-recovery}.
 \end{proposition}
 
 For a fault at an arbitrary node the number of hidden leaves in its subtree is
 hypergeometric and may fall below its mean, so $p_{\min}$ no longer bounds the
 per-query success probability; the worst case of a single hidden leaf still
 gives $\mathbb{E}[Q] \leq (s-1)H_{s-1} \leq 5H_5 \approx 11.4$. Deciding
-whether a signature is effective is easy for the adversary: from the fault
-location and the challenge, both recoverable from the signature, it recomputes
-the honest flag tree and checks that $v^*$ was hidden and covers a hidden leaf.
+whether a signature is effective is easy for the adversary: \chg{the fault location
+is its own choice and the challenge is recoverable from the signature, so it}
+recomputes the honest flag tree and checks that $v^*$ was hidden and covers a
+hidden leaf.
 
 
-The last two columns of Table~\ref{tab:scheme-params} instantiate this bound
-for every MEDS parameter set. Because a root fault gives $\ell = t$ and hence
-$L = w$ exactly, every set has $p_{\min} \geq 0.9966$ and therefore
-$\mathbb{E}[Q] \leq s-1 \leq 5$: a handful of effective faults suffices at
-every security level.
+\chg{Table~\ref{tab:scheme-params} instantiates this for every MEDS parameter
+set. Every set has $p_{\min} \geq 0.9966$, so the bound of
+Proposition~\ref{prop:alg-correctness} gives $\mathbb{E}[Q] \leq 5.00$, but
+the bound is loose: with $w \geq 14$ hidden rounds drawn over at most $5$
+secret indices, a single effective root fault recovers the whole key with
+probability at least $0.987$, and the exact expectation is
+$\mathbb{E}[Q] \leq 1.013$ for every set (Appendix~\ref{app:proof-query}).
+In practice one effective fault suffices at every security level.}
 
 
 \noindent\textbf{From key recovery to forgery.}

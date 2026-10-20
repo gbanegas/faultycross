@@ -10,8 +10,9 @@ signature size.
 \paragraph{Post-publication path check.}
 
 These run checks on the output of $\SeedTreeToPath$. A size check alone already
-defeats fault models~1 and~3, whose paths have length $1$ and $|\tpath|+1$
-respectively, and the expected size is computable from $\calH$ in linear time.
+defeats fault models~1 and~3, whose paths have length $1$ and \chg{$|\tpath|+k$}
+respectively \chg{($|\tpath|$ the honest length, $k \geq 1$ the number of leaked
+leaves)}, and the expected size is computable from $\calH$ in linear time.
 A stronger version rebuilds the tree with $\PathToSeedTree$ and compares the
 recovered leaves against $\calH$ and the reference tree.
 
@@ -29,8 +30,14 @@ attacker glitches during signing is \emph{the same instruction}, at the same
 code offset, that the verification pass executes. An attacker who can place
 one glitch can place two, and a ChipWhisperer emits both within a single
 trace: the redundancy is nominal, since the check re-executes the faulted code
-rather than checking it independently. This is why we prefer the decoupled
-decoupled construction below, and the point generalises --- any
+rather than checking it independently. \chg{The replayed glitch does not merely
+break the check, it makes it pass: in reconstruction mode the same skip makes
+the traversal consume the path exactly as the faulted construction produced
+it. Under Model~1, for instance, $\PathToSeedTree$ with the same skip reads
+the single published seed as the root, regenerates the whole tree, and returns
+every revealed leaf correctly, so the recomputed digest equals $d$. For
+Models~2 and~3 the second glitch must also hit the same iteration (the same
+value of \texttt{id}).} This is why we prefer the decoupled construction below, and the point generalises --- any
 implementation folding $\Publish$ and $\Recon$ into shared code inherits it.
 We have not measured the double-glitch success rate, and doing so is the most
 useful single extension of this work. Finally, note that such a countermeasure
@@ -54,61 +61,13 @@ path construction:
 \item Assert that no leaf node explicitly flagged as $1$ is included in the final extracted path.
 \end{enumerate}
 
-All four steps are $\mathcal{O}(t)$. We implemented all three countermeasures
-and measured signing time.
-
-The results are summarised in Table~\ref{tab:counter_1_cmp}. We write
-$C_{size}$ for the path-size check, $C_{tree}$ for the full reconstruction
-check, and $C_{flagtree}$ for the decoupled flag-tree construction of
-the decoupled construction.
-
-\noindent\textit{Setup.} MEDS runs under RIOT OS on a bare-metal Nordic
-nRF52840 DK (Cortex-M4, 64\,MHz, 256\,KB RAM) for the Toy set and natively on
-an Intel Core i7 under Ubuntu 24.04 for all others, compiled with
-\texttt{arm-none-eabi-gcc} and \texttt{gcc}~13.3.0 respectively.
-
-
-\begin{table}[htbp]
-\centering
-\caption{MEDS signature time (microseconds) by parameter set. All values are the median value of 100 runs.}
-\label{tab:counter_1_cmp}
-\smallskip
-\begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}cccc}
-\toprule
-\textbf{Parameter set} & \textbf{base} & $C_{size}$ & $C_{tree}$ & $C_{flagtree}$ \\
-\midrule
-Toy                    & 6845    & 6793      & 6794      & 6835          \\
-MEDS9923               & 1609626	& 1582806	& 1590051.5	& 1585796 \\
-MEDS13220              & 299950	& 275909	& 283484	& 283477.5         \\
-MEDS41711              & 4847694.5	& 5200203	& 4962401.5	& 5360679.5 \\
-MEDS55604              & 1280193	& 1381107	& 1321436	& 1307889          \\
-MEDS134180             & 5009655.5	& 5074072.5	& 5140707.5	& 5735290 \\
-MEDS167717             & 2950702	& 2951835.5	& 3076849.5	& 3051602.5  \\
-\midrule
-Toy (Cortex M4)        & 753566	& 737162	& 738843	& 737739
-\\
-\bottomrule
-\end{tabular*}
-\end{table}
-
-All three checks are $\mathcal{O}(t)$ against a signing cost dominated by
-matrix arithmetic over $\Fq$, so the expected overhead is small, and this is
-what Table~\ref{tab:counter_1_cmp} shows: the largest observed figures are
-$+7.9\%$ for $C_{size}$, $+4.3\%$ for $C_{tree}$ and $+14.5\%$ for
-$C_{flagtree}$, the last on \textit{MEDS134180}.
-
-These numbers should be read with care. Several rows report the instrumented
-build as \emph{faster} than the baseline --- $-8.0\%$ for $C_{size}$ on
-\textit{MEDS13220} --- which cannot be real, since the countermeasure only adds
-work: the noise floor of a whole-signature wall-clock measurement here is of
-the same order as the overheads being reported. The correct experiment
-instruments $\SeedTreeToPath$ alone in cycle counts and reports a distribution
-rather than a median. We therefore read the table as an order-of-magnitude
-upper bound ($\le 15\%$ of signing time in the worst case, negligible for the
-shallow-tree sets) rather than as precise measurements.
-% TODO(authors): re-run as per-function cycle counts, >=1000 runs, report median
-% with IQR. Also: Table 4 lists MEDS55604, absent from Table 2 and from the
-% size table in Appendix D (which has MEDS69497). Reconcile the set benchmarked.
+\chg{All four steps are $\mathcal{O}(t)$, against a signing cost dominated by
+matrix arithmetic over $\Fq$. We implemented all three countermeasures and
+timed whole signatures on a Cortex-M4 and an Intel Core i7
+(Appendix~\ref{app:timings}). The differences from the baseline, between
+$-8.0\%$ and $+14.5\%$, are of the same order as the run-to-run noise of such
+measurements (several rows are \emph{faster} than the baseline), so they show
+only that the overhead is small.}
 
 \paragraph{Abandoning the tree.}
 
