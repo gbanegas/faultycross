@@ -10,7 +10,6 @@
 \usepackage{url}
 \usepackage[breaklinks,colorlinks=true, citecolor=blue, linkcolor=magenta]{hyperref}
 \usepackage{comment}
-\usepackage{parskip}
 \usepackage{float}
 \usepackage{listings}
 \usepackage{graphicx}
@@ -18,7 +17,6 @@
 \usepackage{float}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,shapes.geometric,matrix,calc}
-\usepackage{parskip}
 \usepackage[ruled,      % horizontal rules at top/bottom
             linesnumbered,
             noline,     % no vertical sidebar line
@@ -146,3 +144,9 @@
 % ---------- List spacing ----------
 \setlist[itemize]{topsep=2pt,  itemsep=1pt, parsep=0pt}
 \setlist[enumerate]{topsep=2pt, itemsep=1pt, parsep=0pt}
+
+% Allow large results figures to be placed at the top/bottom of a text page
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}

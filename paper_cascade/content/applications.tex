@@ -1,21 +1,12 @@
-This section details a fault injection (FI) attack against 
-the C reference implementation of MEDS. We focus on 
-exploiting the tree traversal logic used in the path construction to leak 
-hidden seeds.
+We now attack the C reference implementation of MEDS,\footnote{\url{https://github.com/MEDSpqc/meds}}
+exploiting the tree-traversal logic of the path construction --- line~14 of
+Algorithm~\ref{alg:sign_meds} --- to leak hidden seeds. In that
+implementation, path generation and tree reconstruction are not two functions
+but two modes of one, \texttt{stree\_to\_path\_to\_stree}, selected by a
+\texttt{mode} parameter; Listing~\ref{lst:path} gives the traversal.
 
-\paragraph{Target Analysis.}
-The primary target of our analysis is the $\SeedTreePath$ function, 
-specifically targeting the logic represented in the signing phase of 
-the MEDS algorithm (instruction 16 of Algorithm~\ref{alg:sign_meds}). 
-In the reference implementation\footnote{Reference implementation 
-available in \url{https://github.com/MEDSpqc/meds}.}, both $\SeedTreePath$ 
-(path generation) and $\SeedTree$ (tree reconstruction) are handled by a unified function, 
-\texttt{stree\_to\_path\_to\_stree}, which operates in two modes defined 
-by a \texttt{mode} parameter.
-
-\begin{lstlisting}[style=cstyle,caption={minimal description of \texttt{stree\_to\_path\_to\_stree} implementation}., label=lst:path]
-void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, uint8_t *salt, int mode) {
-    ...
+\begin{lstlisting}[style=cstyle,caption={Traversal loop of \texttt{stree\_to\_path\_to\_stree}; highlights mark the three fault targets.},label=lst:path]
+void stree_to_path_to_stree(uint8_t *stree, ..., uint8_t *path, int mode) {
     while (1==1) {
         int index_leaf = 0;
         `\highlight{yhl}{while ((indices[id] >> (MEDS\_seed\_tree\_height-h)) == i)}` 
@@ -35,42 +26,40 @@ void stree_to_path_to_stree(uint8_t *stree, uint8_t *h_digest, uint8_t *path, ui
 }
 \end{lstlisting}
 
-The algorithm identifies secret leaves (where $h[i] > 0$) and performs a Depth-First Search (DFS). The exploration halts as soon as it reaches a node that is no longer an ancestor of the hidden leaf. This node is then appended to the signature path. If the exploration reaches a target hidden leaf, the \texttt{index\_leaf} flag is set to ensure the leaf seed remains unpublished and we move on to the next hidden leaf.
+The algorithm identifies the secret leaves ($h[i] > 0$) and performs a
+depth-first search, halting as soon as it reaches a node that is no longer an
+ancestor of the current hidden leaf and appending that node to the path. On
+reaching a hidden leaf it sets \texttt{index\_leaf}, so the leaf seed stays
+unpublished, and moves to the next one.
 
-\noindent\textbf{Objective.}
-The main goal for these attacks is to manipulate the control flow 
-via fault injection to leak unpublished seeds (internal nodes or leaves) 
-into the public signature path, ultimately compromising the security 
-of the signature scheme.
+Our objective is to manipulate the control flow so that unpublished seeds ---
+internal nodes or leaves --- are written into the public signature path.
 
 \paragraph{Threat model and what a successful fault yields.}
-The adversary can trigger signing on the victim device, inject a clock glitch
-at a chosen offset, and read the resulting signature. It does \emph{not} need
-the faulted signature to be valid. This point is easy to miss and it matters
-for Section~\ref{sec:counter}: the response $\resp_i = (\mu_i,\nu_i)$ of every
-hidden round is present in the output regardless of the fault, so as soon as
-the corrupted path discloses $\sigma_i$ for one such round, the extraction
-of~\eqref{eq:meds-extract} succeeds --- even if the digest check would reject
-the signature. What the adversary needs is not a valid signature but an
-\emph{emitted} one.
+The adversary triggers signing on the victim device, injects a clock glitch at
+a chosen offset, and reads the resulting signature. It does \emph{not} need
+that signature to be valid, a point that matters for
+Section~\ref{sec:counter}: $\resp_i = (\mu_i,\nu_i)$ is present for every
+hidden round regardless of the fault, so once the corrupted path discloses
+$\sigma_i$ for one such round the extraction of~\eqref{eq:meds-extract}
+succeeds even if the digest check would reject. What the adversary needs is
+not a valid signature but an \emph{emitted} one.
 
 \paragraph{Experimental Setup.}
 Our experimental platform consists of a CW303-STM32F3 target board carrying an
 ARM Cortex-M4 STM32F303RCT7 processor. Clock glitching is
 performed using a ChipWhisperer-Lite.
 
-\paragraph{Scope of the experiments.}
-We state the limits of the setup plainly. The target board is flashed
-exclusively with the \texttt{stree\_to\_path\_to\_stree} function, with fixed
-values for the reference tree, salt and challenge; we do not run a full MEDS
-signature on the device. The consequence is that our measurements characterise
-the reproducibility and the parameter window of each fault, but not the
-difficulty of locating the corresponding instruction within a complete signing
-trace, which on a real target would additionally require the attacker to
-synchronise on the end of the commitment loop. We regard this as an
-engineering obstacle rather than a structural one --- the target instructions
-sit in a short, data-independent function executed once per signature --- but
-it is not something these experiments establish.
+\paragraph{Scope.}
+We state the limits plainly. The board is flashed only with
+\texttt{stree\_to\_path\_to\_stree}, with fixed reference tree, salt and
+challenge; we do not run a full MEDS signature on the device. Our measurements
+therefore characterise the reproducibility and parameter window of each fault,
+but not the difficulty of locating the target instruction within a complete
+signing trace, which would additionally require synchronising on the end of
+the commitment loop. We regard that as an engineering obstacle rather than a
+structural one --- the targets sit in a short, data-independent function
+executed once per signature --- but these experiments do not establish it.
 
 %\subsection{Fault Models}
 \paragraph{Fault Models.}
@@ -97,9 +86,9 @@ nonetheless simulate the reconstruction for each of the $w$ possible faulted
 values of \texttt{id} and keep the one whose recomputed commitments match $d$,
 at a cost of at most $w$ verifications.
 
-\begin{figure}[H]
+\begin{figure}[!tb]
 \centering
-\begin{tikzpicture}[x=0.78cm, y=1.0cm]
+\begin{tikzpicture}[x=0.6cm, y=0.75cm]
   \tikzstyle{neutnode} = [circle, draw=gray!60, fill=nodehid, text=black, minimum size=12pt, inner sep=0pt, font=\scriptsize]
   \tikzstyle{faulted_leaf} = [circle, draw=red!60, fill=nodehid, text=black, minimum size=12pt, inner sep=0pt, font=\scriptsize]
   \tikzstyle{pubnode}  = [circle, draw=green!50!black, fill=nodepath, minimum size=12pt, inner sep=0pt, font=\scriptsize]
@@ -139,27 +128,21 @@ This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf 
 
 \noindent\textit{Detection and recovery.} The path length will be $w+k$ (where $k > 0$ is the number of iterations of the target instruction that were skipped). Detection involves testing subsets of the path to find a valid signature, which may be computationally expensive ($ \binom{w+k}{w} $ verifications).
 
-
-
-
 \subsection{Results and Observations}
 
 We successfully executed the fault models on the Chipwhisperer board. This section detailed the compiler and glitcher configurations that were required to obtain the desired faults.
 
-\noindent\textbf{Step-by-Step attack.}
-For each fault model we first define a target output state signifying a
-successful injection, then bracket the target assembly instructions with a
+\noindent\textbf{Method.}
+For each model we fix a target output state that signifies a successful
+injection, bracket the target instructions with a
 \texttt{trigger\_high()}/\texttt{trigger\_low()} pair so the ChipWhisperer
-counts the right clock-cycle window; we verify the disassembly to confirm
-compiler optimizations did not move or drop the triggers. The \texttt{repeat}
-parameter sets the glitch duration in clock cycles, calibrated from the ARM
-nominal cycle counts for the target sequence.
-
-We sweep three parameters to map the fault space: \texttt{width}, the glitch
-pulse width (XOR of the system clock, $0\%$--$50\%$ of the clock period);
-\texttt{offset}, the phase shift relative to the system clock
-($-50\%$--$50\%$); and \texttt{ext\_offset}, the number of clock cycles between
-the trigger and the glitch.
+counts the right clock-cycle window, and check the disassembly to confirm the
+optimiser did not move or drop the triggers. The \texttt{repeat} parameter
+sets the glitch duration in clock cycles, calibrated from the nominal cycle
+counts of the target sequence. We then sweep \texttt{width} (pulse width,
+$0\%$--$50\%$ of the clock period), \texttt{offset} (phase shift,
+$-50\%$--$50\%$) and \texttt{ext\_offset} (clock cycles between trigger and
+glitch).
 
 \textbf{Model 1: Full tree recovery.}
 This attack is successful if the returned path contains a 
@@ -171,33 +154,22 @@ code compiled with the default \texttt{-Os} optimization.
 \textit{Trigger position.} We directly target the 
 evaluation of the conditional and the branching 
 instruction corresponding to line 5 of Listing~\ref{lst:path}. 
-The compiled result is in Listing~\ref{lst:f1asm}. We fault for 3 
-clock cycles.
+The compiled result is Listing~\ref{lst:f1asm} in
+Appendix~\ref{app:asm}; we fault for three clock cycles.
 
-\begin{lstlisting}[style=asmstyle, label=lst:f1asm, caption=Compiled trigger points for fault model 1.]
-0800062c <stree_to_path_to_stree_glitch>:
-...
-    // trigger_high();
- 8000710:	f001 fa12 	bl	8001b38 <trigger_high>
-    // while ((indices[id] >> (MEDS_seed_tree_height - h)) == i)
- 8000714:	ab06      	add	r3, sp, #24
- 8000716:	eb03 0488 	add.w	r4, r3, r8, lsl #2
- 800071a:	e00d      	b.n	8000738 <stree_to_path_to_stree_glitch+0x66>
-    // trigger_low();
- 800071c:	f001 fa13 	bl	8001b46 <trigger_low>
-...
-\end{lstlisting}
+\textit{Parameters.} Figure~\ref{fig:fault1_results} shows a high success rate
+and a low reset rate for \texttt{ext\_offset} between $1.5$ and $2.5$, a small
+\texttt{offset} of $-1$ to $1$, and wide glitches (\texttt{width} above $20$).
 
-\textit{Parameters.} Figure~\ref{fig:fault1_results} shows that the attack has
- a high success rate and lower reset rates for an \texttt{ext\_offset} ranging 
- from $1.5$ to $2.5$, a small \texttt{offset} of $-1$ to $1$ and rather wide 
- glitches (\texttt{width} over $20$).
-
-\begin{figure}[htp]
-    \centering
-    \includegraphics[width=0.62\textwidth]{content/images/glitch_3d_results.png} 
-    \caption{Glitch success frequency by glitch width and offset for fault model 1, with 10 tries per parameter set. Valid glitches are runs that did not crash and output paths that were neither correct nor the target faulted path.}
-    \label{fig:fault1_results}
+\begin{figure}[!tb]
+\centering
+\includegraphics[width=0.56\textwidth]{content/images/glitch_3d_results_crop.png}
+\caption{Model 1 (full tree disclosure): glitch outcome over
+\texttt{ext\_offset}, \texttt{width} and \texttt{offset}, $10$ attempts per
+parameter point. Blue stars mark successful faults, yellow circles
+\emph{valid} glitches (runs that neither crashed nor produced the correct or
+the target faulted path), pink crosses device resets.}
+\label{fig:fault1_results}
 \end{figure}
 
 \textbf{Model 2: Subtree recovery.} We consider 
@@ -206,81 +178,56 @@ described by Figure~\ref{fig:faulted_path}.
 
 \textit{Compilation.} This is carried out on a code compiled with the default \texttt{-Os} optimization.
 
-\textit{Trigger position.} We set the trigger to frame line $12$ of Listing~\ref{lst:path}. The compiled result is in Listing~\ref{lst:f2asm}.
+\textit{Trigger position.} The trigger frames line~12 of
+Listing~\ref{lst:path}; the compiled result is Listing~\ref{lst:f2asm} in
+Appendix~\ref{app:asm}.
 
+\textit{Parameters.} Evaluating the condition and incrementing \texttt{id}
+take $3$ clock cycles, so we set \texttt{repeat} to $3$;
+Figure~\ref{fig:fault2_results} gives the resulting success map.
 
-\begin{lstlisting}[style=asmstyle, label=lst:f2asm, caption=Compiled trigger points for fault model 2.]
-080006d2 <stree_to_path_to_stree_glitch>:
-...
- 8000726:	f001 fa09 	bl	8001b3c <trigger_high> // trigger_high();
- 800072a:	f108 0401 	add.w	r4, r8, #1  
- 800072e:	2c05      	cmp	r4, #5                 //if (id+1 < MEDS_w)
- 8000730:	bf88      	it	hi
- 8000732:	4644      	movhi	r4, r8             // id++ ;
- 8000734:	f001 fa09 	bl	8001b4a <trigger_low>  // trigger_low();
-...
-\end{lstlisting}
+For Model~2 we observe a bounded region of system resets bordered by
+successful attacks and other valid glitches, many of whose paths carry enough
+intermediate nodes to recompute every leaf.
 
+\textbf{Model 3: Single hidden leaf recovery.} Here only one hidden leaf is
+disclosed.
 
-\textit{Parameters.} The evaluation of the condition and 
-the incrementation of \texttt{id} require 3 clock cycles. 
-We therefore set \texttt{repeat} to $3$. 
-Figure~\ref{fig:fault2_results} shows the success in terms 
-of glitch offset and width.
+\textit{Compilation.} At \texttt{-O1} and above, including \texttt{-Os}, the
+compiler removes the explicit assignment and achieves the same outcome through
+control flow, leaving nothing precise to target. We therefore build the target
+function at \texttt{-O0}; applying \texttt{-O0} project-wide overflows the
+board's flash.
 
-\begin{figure}[htp]
-    \centering
-    \includegraphics[width=0.58\textwidth]{content/images/glitch_2d_results_ext2.png}
-    \caption{Glitch success frequency by glitch width and offset for fault model 2, with 10 tries per parameter pair.}
-    \label{fig:fault2_results}
+\textit{Trigger position.} On the unoptimised build we place the high trigger
+immediately before the \texttt{index\_leaf} assignment and the low trigger
+immediately after; the compiled result is Listing~\ref{lst:f3asm} in
+Appendix~\ref{app:asm}.
+\textit{Parameters.} The disassembly shows the assignment compiled to two
+single-cycle instructions, so we set \texttt{repeat} to $2$;
+Figure~\ref{fig:fault3_results} gives the success map.
+
+\begin{figure}[!tb]
+\centering
+\begin{subfigure}[b]{0.46\textwidth}
+  \includegraphics[width=\linewidth]{content/images/glitch_2d_results_ext2_crop.png}
+  \caption{Model 2 (subtree), $\texttt{ext\_offset} = 2$.}
+  \label{fig:fault2_results}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.46\textwidth}
+  \includegraphics[width=\linewidth]{content/images/glitch_2d_results_ext3_crop.png}
+  \caption{Model 3 (hidden leaf), $\texttt{ext\_offset} = 3$.}
+  \label{fig:fault3_results}
+\end{subfigure}
+\caption{Glitch success frequency for Models~2 and~3, $10$ attempts per
+parameter point; markers as in Figure~\ref{fig:fault1_results}.}
+\label{fig:glitch_results}
 \end{figure}
 
-We observe a distinct, bounded region of system resets delimited by successful attacks and other valid glitches. 
-The paths of many of these valid glitches contain a large set of intermediate nodes which provide sufficient 
-coverage to compute all of the leaf values.
-
-\textbf{Model 3: Single hidden leaf recovery.}
-In this model, we recover only a hidden leaf. 
-
-\textit{Compilation.} Higher compiler optimization levels made it difficult to precisely target the flags. 
-The  optimization flags \texttt{-O1}, \texttt{-O2}, \texttt{-O3}, and \texttt{-Os} resulted in compiled 
-assembly code that omitted the explicit assignment instruction entirely, relying instead on complex control-flow 
-manipulations to achieve the same logical outcome. To resolve this issue, we enforced the \texttt{-O0} optimization 
-level on the targeted function, as applying \texttt{-O0} to the entire project increased 
-the binary size beyond the storage capacity of the target board. 
-
-
-
-\textit{Trigger position.} For the unoptimized version, we position the glitch high trigger right before the \texttt{index\_leaf} assignment and the low trigger right after. This results in the compiled code in listing~\ref{lst:f3asm}. 
-\begin{lstlisting}[style=asmstyle, label=lst:f3asm, caption=Compiled trigger points for fault model 3.]
-0800062c <stree_to_path_to_stree_glitch>:
-...
- 80006be:	f001 fd3f 	bl	8002140 <trigger_high> // trigger_high();
- 80006c2:	2301      	movs	r3, #1             // index_leaf = 1;
- 80006c4:	62bb      	str	r3, [r7, #40]	@ 0x28
- 80006c6:	f001 fd43 	bl	8002150 <trigger_low>  // trigger_low();
-...
-\end{lstlisting}
-
-\textit{Parameters.} The disassembled code shows that the assignement is done in two instructions which are both 1 clock cycle long. 
-We set the \texttt{repeat} parameter of the glitch controller to 2. Figure~\ref{fig:fault3_results}
-shows the success rate and reset for the glitch offset and width. 
-
-\begin{figure}[htbp]
-    \centering
-        \includegraphics[width=0.58\textwidth]{content/images/glitch_2d_results_ext3.png} 
-    \caption{Glitch success frequency by glitch width and offset for fault model 3, with 10 tries per parameter pair.}
-    \label{fig:fault3_results}
-\end{figure}
-
-\noindent\textbf{Results.} The experiments confirm that the attack is reproducible. 
-Across all parameter sweeps, attempts strictly resulted in either normal execution, a device reset, or the expected exploit. 
-We observed a complete absence of other valid glitches. This is due to our single-instruction targeting. Unlike  
-fault models that disrupt larger execution windows and introduce non-deterministic errors, this injection is less likely
-to bleed into surrounding cycles or to trigger a control-flow collapse.
-
-These experiments demonstrate that the root reveal fault model, which is the most efficient approach requiring 
-the fewest queries for full secret key recovery, is highly reproducible. Furthermore, our results confirm the viability of two alternative fault models,
-although they prove more challenging to replicate under experimental conditions. Despite their lower reproducibility rates, 
-fault models 2 and 3 remain relevant for threat modeling; as detailed in Section~\ref{sec:counter}, they incur a higher computational or architectural 
-cost to detect during signature generation.
+\noindent\textbf{Results.} The attacks are reproducible. Across every sweep,
+attempts gave normal execution, a device reset, or the expected exploit, with
+no other valid glitches --- a consequence of single-instruction targeting,
+which is less likely than a wider disruption window to bleed into surrounding
+cycles. Model~1, the root reveal, is both the most efficient and the most
+reproducible; Models~2 and~3 replicate less readily but are harder to detect
+during signing (Section~\ref{sec:counter}).

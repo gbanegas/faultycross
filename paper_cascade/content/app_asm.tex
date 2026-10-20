@@ -1,0 +1,40 @@
+Compiled trigger points for the three fault models of Section~\ref{sec:app}.
+
+\begin{lstlisting}[style=asmstyle, label=lst:f1asm, caption=Compiled trigger points for fault model 1.]
+0800062c <stree_to_path_to_stree_glitch>:
+...
+    // trigger_high();
+ 8000710:	f001 fa12 	bl	8001b38 <trigger_high>
+    // while ((indices[id] >> (MEDS_seed_tree_height - h)) == i)
+ 8000714:	ab06      	add	r3, sp, #24
+ 8000716:	eb03 0488 	add.w	r4, r3, r8, lsl #2
+ 800071a:	e00d      	b.n	8000738 <stree_to_path_to_stree_glitch+0x66>
+    // trigger_low();
+ 800071c:	f001 fa13 	bl	8001b46 <trigger_low>
+...
+\end{lstlisting}
+
+Compiled trigger points for fault models~2 and~3, referenced from
+Section~\ref{sec:app}.
+
+\begin{lstlisting}[style=asmstyle, label=lst:f2asm, caption=Compiled trigger points for fault model 2.]
+080006d2 <stree_to_path_to_stree_glitch>:
+...
+ 8000726:	f001 fa09 	bl	8001b3c <trigger_high> // trigger_high();
+ 800072a:	f108 0401 	add.w	r4, r8, #1  
+ 800072e:	2c05      	cmp	r4, #5                 //if (id+1 < MEDS_w)
+ 8000730:	bf88      	it	hi
+ 8000732:	4644      	movhi	r4, r8             // id++ ;
+ 8000734:	f001 fa09 	bl	8001b4a <trigger_low>  // trigger_low();
+...
+\end{lstlisting}
+
+\begin{lstlisting}[style=asmstyle, label=lst:f3asm, caption=Compiled trigger points for fault model 3.]
+0800062c <stree_to_path_to_stree_glitch>:
+...
+ 80006be:	f001 fd3f 	bl	8002140 <trigger_high> // trigger_high();
+ 80006c2:	2301      	movs	r3, #1             // index_leaf = 1;
+ 80006c4:	62bb      	str	r3, [r7, #40]	@ 0x28
+ 80006c6:	f001 fd43 	bl	8002150 <trigger_low>  // trigger_low();
+...
+\end{lstlisting}

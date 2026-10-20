@@ -7,73 +7,6 @@ least one hidden leaf ($i \in \calH$), and $\calF(v) = 0$ to mean that all
 leaf descendants of $v$ are revealed ($i \in \calR$).
 
 
-\begin{comment}
-% ------------------------------------------------------------
-\subsection{Proof of Proposition~\ref{prop:less-gzkst}
-  (LESS-v2 is a \GZKST\ instance)}
-\label{app:proof-less}
-% ------------------------------------------------------------
-
-Let $\calT$ be the LESS-v2 seed tree with $\lceil \log_2 t \rceil$ levels.
-After the three-phase flag-tree construction the flag values are:
-\begin{align}
-  \calF(\mathrm{leaf}_i) &= \mathbf{1}[i \in \calH], \quad i \in \{0,\ldots,t-1\},
-  \label{eq:leaf-flag}\\
-  \calF(v) &= \calF(\ell) \vee \calF(r), \quad \text{for every internal node } v
-  \text{ with children } \ell, r.
-  \label{eq:or-prop}
-\end{align}
-Equations~\eqref{eq:leaf-flag}--\eqref{eq:or-prop} jointly imply:
-\begin{equation}
-  \calF(v) = 1 \iff \exists\, i \in \calH : \mathrm{leaf}_i
-  \text{ is a descendant of } v.
-  \label{eq:flag-char}
-\end{equation}
-The published path is
-$\tpath = \{v : \calF(v) = 0,\; \calF(\mathrm{parent}(v)) = 1\}$
-(with the convention that $\calF(\mathrm{parent}(\mathrm{root})) = 1$).
-
-\begin{proof}[Proof of Invariant~\ref{inv:correctness} (Correctness)]
-Let $i \in \calR$.  Consider the root-to-leaf path
-$\pi_i = (v_0 = \mathrm{root},\, v_1,\, \ldots,\, v_d = \mathrm{leaf}_i)$.
-
-Since $|\calH| \geq 1$ (the challenge weight satisfies $w \geq 1$), at least one
-leaf has flag~$1$.  By~\eqref{eq:flag-char}, $\calF(v_0) = \calF(\mathrm{root}) = 1$.
-
-Since $i \in \calR$, equation~\eqref{eq:leaf-flag} gives $\calF(v_d) = 0$.
-
-Because $\calF(v_0) = 1$ and $\calF(v_d) = 0$, the path $\pi_i$ contains
-at least two nodes with different flags.  Define
-$k = \min\{j \in \{0,\ldots,d\} : \calF(v_j) = 0\}$.
-Then $k \geq 1$ (since $\calF(v_0) = 1$), $\calF(v_k) = 0$, and
-$\calF(v_{k-1}) = 1$.  Hence $v_k \in \tpath$, and $v_k$ lies on
-the root-to-leaf path $\pi_i$, establishing Invariant~\ref{inv:correctness}.
-\end{proof}
-
-\begin{proof}[Proof of Invariant~\ref{inv:hiding} (ZK hiding)]
-Let $i \in \calH$ and let $v$ be any proper ancestor of $\mathrm{leaf}_i$
-(including the root).  Since $\mathrm{leaf}_i$ is a descendant of $v$ and
-$i \in \calH$, equation~\eqref{eq:flag-char} gives $\calF(v) = 1$.
-Hence no ancestor of $\mathrm{leaf}_i$ can satisfy $\calF(v) = 0$, so no
-ancestor of $\mathrm{leaf}_i$ lies in $\tpath$.  Invariant~\ref{inv:hiding}
-holds.
-\end{proof}
-
-\begin{proof}[Extension to incomplete trees (Remark~\ref{rem:incomplete})]
-When $t$ is not a power of~$2$, the LESS-v2 tree is incomplete: some leaves
-appear at depth $\lceil \log_2 t \rceil - 1$ rather than $\lceil \log_2 t \rceil$.
-The index-tracking arrays $\mathsf{npl}$, $\mathsf{ll}$, $\mathsf{off}$, and
-$\mathsf{lsi}$ ensure that $\LabelLeaves$ correctly identifies which nodes are
-leaves and assigns flags according to~\eqref{eq:leaf-flag}, and that
-$\ComputeSeeds$ performs the bottom-up OR pass~\eqref{eq:or-prop} over the
-actual tree structure.
-
-The proofs of both invariants above are purely graph-theoretic and depend only
-on the properties~\eqref{eq:leaf-flag}--\eqref{eq:flag-char}, which hold
-regardless of whether leaves appear at a uniform depth.  Hence both invariants
-hold for any incomplete tree shape produced by the LESS-v2 expansion.
-\end{proof}
-\end{comment}
 
 % ------------------------------------------------------------
 \subsection{Proof of Proposition~\ref{prop:meds-gzkst}
@@ -161,7 +94,7 @@ ancestor of $\mathrm{leaf}_i$ lies in $\tpath$.
 Invariant~\ref{inv:hiding} holds.
 \end{proof}
 
-\begin{proof}[Extension to incomplete trees (Remark~\ref{rem:incomplete})]
+\begin{proof}[Extension to incomplete trees]
 When $t$ is not a power of~$2$, the MEDS tree is incomplete: some leaves
 appear at depth $\lceil \log_2 t \rceil - 1$ rather than
 $\lceil \log_2 t \rceil$.  The index-tracking arrays ensure that
@@ -174,25 +107,6 @@ only on properties~\eqref{eq:meds-leaf-flag}--\eqref{eq:meds-flag-char},
 which hold regardless of whether leaves appear at a uniform depth.  Hence
 both invariants hold for any incomplete tree shape produced by MEDS.
 \end{proof}
-\begin{comment}
-% ------------------------------------------------------------
-\subsection{Proof of Proposition~\ref{prop:cross-gzkst}
-  (CROSS is a \GZKST\ instance)}
-\label{app:proof-cross}
-% ------------------------------------------------------------
-
-The seed-tree component of CROSS ($\SeedTreePath$) is structurally equivalent
-to MEDS's $\SeedTreeToPath$ (see Section~\ref{sec:mapping}).  The argument of
-Appendix~A.2 therefore applies directly, establishing
-Invariants~\ref{inv:correctness} and~\ref{inv:hiding} for the seed-hiding part.
-
-The additional Merkle proof over $\{\mathsf{cmt}_0[i]\}_{i \in \calH}$ is an
-authenticity mechanism for the commitment digests that the verifier cannot
-recompute from the revealed seeds.  It neither publishes any seed in
-$\{\eseed_i : i \in \calH\}$ nor affects the seed-path computation, and is
-therefore orthogonal to both invariants.
-
-\end{comment}
 
 % ------------------------------------------------------------
 \subsection{Proof of Proposition~\ref{prop:alg-correctness}
@@ -303,13 +217,13 @@ The $\mathsf{Collect}$ step assembles these into $\widehat{\sk}$, which equals $
 by correctness of $\Extract$.
 
 % ------------------------------------------------------------
-\subsection{Derivation of Proposition~\ref{prop:query-count}
+\subsection{Derivation of Proposition~\ref{prop:alg-correctness}
   (Expected query count)}
 \label{app:proof-query}
 % ------------------------------------------------------------
 
 \paragraph{Setup.}
-We work in the root-fault setting of Proposition~\ref{prop:query-count}:
+We work in the root-fault setting of Proposition~\ref{prop:alg-correctness}:
 \(v^* = \mathrm{root}\), so \(\ell = t\) and \(L = w\) exactly (deterministic).
 By the Fiat--Shamir uniformity assumption, the challenge index \(c_i\) is
 uniform in \(\{1,\ldots,s-1\}\) independently for each \(i \in \calH\).
@@ -344,7 +258,7 @@ hence
 \(E_{\mathrm{dist}}^{\bar{w}}\) is an \emph{upper} bound on the expected per-query
 gain, which implies a \emph{lower} bound on \(\mathbb{E}[Q]\).  It cannot be
 used to derive an upper bound on \(\mathbb{E}[Q]\); the upper bound in
-Proposition~\ref{prop:query-count} follows solely from the direct inequality
+Proposition~\ref{prop:alg-correctness} follows solely from the direct inequality
 \(p_r \geq p_{\min}\) established in the root-fault setting.
 \end{remark}
 
@@ -356,5 +270,5 @@ and since \(p_r \geq p_{\min}\) for all \(r \geq 1\),
   \mathbb{E}[Q] = \sum_{r=1}^{m} \frac{1}{p_r} \leq \frac{m}{p_{\min}}
   = \frac{s-1}{p_{\min}},
 \]
-which for \(p_{\min} \approx 1\) (all MEDS parameter sets, cf.\ Table~\ref{tab:meds-eq})
+which for \(p_{\min} \approx 1\) (all MEDS parameter sets, cf.\ Table~\ref{tab:scheme-params})
 gives \(\mathbb{E}[Q] \lesssim s-1\).
