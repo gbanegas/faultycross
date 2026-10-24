@@ -223,32 +223,7 @@ Appendix~\ref{app:algs}). MCE is Tensor-Isomorphism-complete~\cite{GrochowQiao23
 see~\cite{ReijndersST23,NarayananQT24} for the best known classical
 algorithms. Subroutine names follow the reference
 specification~\cite{ChouNPRRST23,MEDS_PQC} and are summarised in
-Table~\ref{tab:meds-notation}.}
-\begin{table}[htbp]
-\centering
-\caption{MEDS subroutines used in Algorithm~\ref{alg:sign_meds} and
-Appendix~\ref{app:algs}; all follow~\cite{ChouNPRRST23,MEDS_PQC}.}
-\label{tab:meds-notation}
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabularx}{\textwidth}{@{}lX@{}lX@{}}
-\toprule
-$\XOF$            & derives several seeds from one
-& $\SF$             & systematic form ($\perp$ if none) \\
-$\ExpandSystMat$  & seed $\to$ systematic $G_0$
-& $\pimap{A}{B}$    & $\vect(C) \mapsto \vect(ACB)$ \\
-$\ExpandInvMat$   & seed $\to$ invertible matrix
-& $\Compress$       & bit-packing for signature/key \\
-$\ExpandFqs$      & seed $\to$ elements of $\Fq$
-& $\ParseHash_{s,t,w}$ & digest $\to$ weight-$w$ challenge \\
-$\Solve$          & linear solve of Rem.~\ref{rem:mce-hardness}
-& $\SeedTree_t$     & \GGM\ expansion into $t$ leaves \\
-$\SeedTreeToPath_t$ & the $\Publish$ step
-& $\PathToSeedTree_t$ & the $\Recon$ step \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
+Table~\ref{tab:meds-notation} (Appendix~\ref{app:algs}).}
 
 \paragraph{Key generation.}
 Key generation (Algorithm~\ref{alg:keygen_meds}, Appendix~\ref{app:algs})

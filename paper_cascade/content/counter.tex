@@ -79,3 +79,45 @@ than by code. The cost is prohibitive where $t$ is large: MEDS-9923 grows from
 $9{,}896$ to $677{,}440$ bytes, and even the best case, MEDS-167717, grows by
 $68\%$. Appendix~\ref{app:treeless} gives the construction and the full
 comparison.
+
+\providecommand{\PH}{{\color{red}\textbf{??}}}
+
+\chg{\paragraph{Robustness under the glitch campaign.}
+Timing (Appendix~\ref{app:timings}) only bounds the cost; what matters is
+whether each countermeasure actually stops an \emph{emitted} corrupted path.
+We therefore re-flash each protected build and replay the campaign of
+Section~\ref{sec:app} unchanged, counting a countermeasure as holding for a
+given model only if no corrupted signature is released across the full attempt
+budget --- a signature that is flagged but still emitted does not count, since
+the adversary needs only an emitted path. Table~\ref{tab:cm-robust} reports the
+single-glitch emission rate against each build; the verify-before-release row
+is the \emph{double}-glitch rate, the quantity the body singles out as the most
+useful extension of this work.}
+
+\begin{table}[htbp]
+\centering
+\caption{\chg{Emission rate of a usable corrupted path against each protected
+build, same campaign as Section~\ref{sec:app} ($0$ = countermeasure holds).
+Verify-before-release is evaluated with a \emph{double} glitch at the shared
+code offset; all others with the single glitch of the stated model.}}
+\label{tab:cm-robust}
+\setlength{\tabcolsep}{6pt}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Countermeasure} & \textbf{Model 1} & \textbf{Model 2} & \textbf{Model 3} \\
+\midrule
+None (baseline)                       & \PH & \PH & \PH \\
+$C_{\mathrm{size}}$ (path-size)       & \PH & \PH & \PH \\
+$C_{\mathrm{tree}}$ (reconstruction)  & \PH & \PH & \PH \\
+Verify-before-release (double glitch) & \PH & \PH & \PH \\
+$C_{\mathrm{flag}}$ (decoupled)       & \PH & \PH & \PH \\
+Tree-less                             & $0$ & $0$ & $0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chg{\noindent The tree-less row is $0$ by construction: no seed is ever
+published, so there is no release decision to glitch. For the others the entry
+is the measured residual; a non-zero cell is itself a result, since it marks a
+countermeasure the shared-code replay or a model-specific path still defeats.}

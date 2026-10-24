@@ -162,6 +162,45 @@ $0\%$--$50\%$ of the clock period), \texttt{offset} (phase shift,
 $-50\%$--$50\%$) and \texttt{ext\_offset} (clock cycles between trigger and
 glitch).
 
+\newcommand{\PH}{{\color{red}\textbf{??}}}
+
+\chg{\noindent\textbf{Reporting.}
+For each model we report, at the single best parameter point, the success rate
+(successes over attempts) and the reset rate over $100$ attempts. The vulnerable
+window is narrow: across the full swept grid only a small fraction of points
+fault at all (e.g.\ $33$ of $672$ for Model~1, $4$ of $448$ for Model~3), so
+the grid-averaged yield is one to two orders of magnitude below
+$p_{\mathrm{best}}$. Because
+Proposition~\ref{prop:alg-correctness} shows that about one \emph{effective}
+fault recovers the whole key, the attacker's cost is dominated by the number
+of signing requests per effective fault, i.e.\ the reciprocal of the
+single-glitch success probability, which we report in the last column.
+Table~\ref{tab:fault-success} collects these figures; all runs use a core
+clock of $7.37$\,MHz.}
+
+\begin{table}[htbp]
+\centering
+\caption{\chg{Single-glitch outcome rates at the best parameter point.
+$p_{\mathrm{best}}$ and the reset rate are measured over the number of attempts
+in the \textbf{att.}\ column; the last column is the signing requests per
+effective fault, $\lceil 1/p_{\mathrm{best}}\rceil$. The success-map figures
+sweep the full $(\texttt{ext\_offset},\texttt{offset},\texttt{width})$ grid
+at $10$ attempts per point.}}
+\label{tab:fault-success}
+\setlength{\tabcolsep}{5pt}
+\small
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+\textbf{Model} & \textbf{Opt.} & \textbf{att.} & $p_{\mathrm{best}}$ &
+\textbf{reset} & \textbf{req./fault} \\
+\midrule
+1 (root)        & \texttt{-Os} & $100$ & $0.85$ & $0.01$ & $2$ \\
+2 (subtree)     & \texttt{-Os} & $100$ & $0.23$ & $0.62$ & $5$ \\
+3 (hidden leaf) & \texttt{-O0} & $100$ & $0.16$ & $0.05$ & $7$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \textbf{Model 1: Full tree recovery.}
 This attack is successful if the returned path contains a 
 single node which is the root node.
@@ -175,9 +214,11 @@ instruction corresponding to \chg{line~\ref{lst:path:while}} of Listing~\ref{lst
 The compiled result is Listing~\ref{lst:f1asm} in
 Appendix~\ref{app:asm}; we fault for three clock cycles.
 
-\textit{Parameters.} Figure~\ref{fig:fault1_results} shows a high success rate
-and a low reset rate for \texttt{ext\_offset} between $1.5$ and $2.5$, a small
-\texttt{offset} of $-1$ to $1$, and wide glitches (\texttt{width} above $20$).
+\textit{Parameters.} \chg{The best point is \texttt{ext\_offset}$=9$,
+\texttt{offset}$=3$, \texttt{width}$=9$, giving $85\%$ success over $100$
+attempts with a $1\%$ reset rate; the hot band spans \texttt{ext\_offset}
+$7$--$9$. Figure~\ref{fig:fault1_results} maps the outcomes and the rates are
+the Model~1 row of Table~\ref{tab:fault-success}.}
 
 \begin{figure}[!tb]
 \centering

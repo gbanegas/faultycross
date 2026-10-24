@@ -40,8 +40,15 @@ built from a parallel-repeated identification protocol, and FAEST, SDitH and
 MQOM --- all of which did advance --- publish an all-but-one vector commitment
 derived from the same tree. What we analyse is the mechanism, not its host. We
 attack MEDS because its reference implementation realises that mechanism in
-its cleanest form, and the conclusions transfer to any scheme publishing a
-seed-tree path. The timing is favourable rather than late: \chg{FAEST, SDitH and
+its cleanest form. \chg{Two levels of transfer must be kept apart, and we are
+careful to claim only the first. The \emph{abstraction} transfers to any
+scheme publishing a seed-tree path: the seed-hiding invariant, its violation
+by dual revelation, and the query bound of Section~\ref{sec:extract} are
+scheme-independent. The \emph{concrete fault targets} do not: as
+Remark~\ref{rem:spec-vs-impl} stresses, two implementations of the same
+component have disjoint fault surfaces, so the specific glitches of
+Section~\ref{sec:app} are tied to the MEDS reference code and must be
+re-derived for each target.} The timing is favourable rather than late: \chg{FAEST, SDitH and
 MQOM enter the third round with exactly this mechanism, and implementation
 attacks on it are most useful before their implementations settle.}
 
@@ -84,9 +91,10 @@ invariant.
 We classify every published fault attack on this family by which component
 of the abstraction it corrupts (Section~\ref{sec:taxonomy}), showing that
 \chg{six independent attacks against six schemes occupy only four of six}
-components. The empty cells are predictions, and one of them led us
-directly to a new attack surface in the MEDS reference implementation
-that has no analogue in prior work.
+components. \chg{Reading the grid as a search tool then led us to a new attack
+surface in the MEDS reference implementation, inside the already-populated
+$\Publish$ column but with no analogue in prior work; the two empty columns
+remain open predictions.}
 
 \item \textbf{Query Complexity Analysis.}
 We derive bounds on the number of faulted signatures required for
