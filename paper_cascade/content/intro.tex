@@ -71,6 +71,23 @@ We unify these results under a single Generic ZK Seed Tree abstraction,
 formalising the invariants they implicitly exploit, and add practical fault
 attacks against MEDS.
 
+\chg{Two of these works anchor the comparison. ZKFault establishes the template
+our abstraction generalises, but evaluates its faults by forcing node values in
+the reference code---an end-to-end \emph{simulation} rather than a hardware
+campaign. At the other end, \cite{cryptoeprint:2026/1266} mounts a genuine
+end-to-end attack on the PERK reference implementation in pqm4, with
+clock-glitch and electromagnetic injection under both \texttt{-O3} and
+\texttt{-Os}, but faults seed \emph{generation} ($\Setup$) rather than
+publication. Our work sits between the two: like ZKFault we target the
+publication logic and, unlike it, we fault real silicon; unlike the PERK work,
+our experiments are function-level proof-of-concept faults on the isolated
+seed-path routine rather than a complete signing operation
+(Section~\ref{sec:app}). The novelty we claim is accordingly the GZKST
+systematisation and the MEDS-specific control-flow fault surfaces it exposes
+---in particular the cursor fault of Model~2, which has no analogue in the LESS
+flag tree---not the general observation that revealing a hidden seed alongside
+its response is catastrophic.}
+
 \paragraph{Our Contributions.}
 This work provides a unified analysis of fault attacks against
 post-quantum signature schemes relying on seed-tree compression.
@@ -99,7 +116,11 @@ remain open predictions.}
 \item \textbf{Query Complexity Analysis.}
 We derive bounds on the number of faulted signatures required for
 secret-key recovery and show that, \chg{for every MEDS parameter set, a single
-effective fault recovers the full key with probability above $0.98$}.
+effective fault recovers the full key with probability at least $0.987$, the
+expected number of effective faults staying below $1.02$. These are
+probabilistic statements---under the standard assumption that the nonzero
+challenge indices are independent and uniform over the $s-1$ secret
+components---not a deterministic $s-1$ bound}.
 
 \item \textbf{Practical Attacks on MEDS.}
 We show fault attacks against the MEDS reference

@@ -60,6 +60,15 @@ signing trace, which would additionally require synchronising on the end of
 the commitment loop. We regard that as an engineering obstacle rather than a
 structural one --- the targets sit in a short, data-independent function
 executed once per signature --- but these experiments do not establish it.
+\chg{We therefore report these as \emph{function-level proof-of-concept}
+attacks: each establishes that a targeted instruction can be reliably faulted
+to emit the corrupted path, not that the fault has been carried through a
+complete signing request. The per-fault counts of
+Table~\ref{tab:fault-success} are measured on the isolated routine and are a
+lower bound on the end-to-end signing-request cost, which the synchronisation
+above would only raise. This mirrors concurrent hardware fault work on the same
+family: Banda et al.~\cite{BandaBK26} likewise flash only the required
+subfunctions, as the full MPCitH schemes exceed the target's memory.}
 
 %\subsection{Fault Models}
 \paragraph{Fault Models.}
@@ -146,11 +155,11 @@ corrupts the cursor rather than one node's release decision, so it is not an
 instance of Definition~\ref{def:fault-oracle}; it exposes the hidden leaves
 to the right of the faulted position, so $1 \leq L \leq w$.}
 
-\subsection{Results and Observations}
+\subsection{Results}
 
-We successfully executed the fault models on the \chg{ChipWhisperer} board. This section \chg{details} the compiler and glitcher configurations that were required to obtain the desired faults.
+We successfully executed the fault models on the \chg{ChipWhisperer} board 
+(Chipwhisperer-LITEARM). 
 
-\noindent\textbf{Method.}
 For each model we fix a target output state that signifies a successful
 injection, bracket the target instructions with a
 \texttt{trigger\_high()}/\texttt{trigger\_low()} pair so the ChipWhisperer
@@ -162,47 +171,78 @@ $0\%$--$50\%$ of the clock period), \texttt{offset} (phase shift,
 $-50\%$--$50\%$) and \texttt{ext\_offset} (clock cycles between trigger and
 glitch).
 
-\newcommand{\PH}{{\color{red}\textbf{??}}}
 
-\chg{\noindent\textbf{Reporting.}
-For each model we report, at the single best parameter point, the success rate
-(successes over attempts) and the reset rate over $100$ attempts. The vulnerable
-window is narrow: across the full swept grid only a small fraction of points
-fault at all (e.g.\ $33$ of $672$ for Model~1, $4$ of $448$ for Model~3), so
-the grid-averaged yield is one to two orders of magnitude below
-$p_{\mathrm{best}}$. Because
-Proposition~\ref{prop:alg-correctness} shows that about one \emph{effective}
-fault recovers the whole key, the attacker's cost is dominated by the number
-of signing requests per effective fault, i.e.\ the reciprocal of the
-single-glitch success probability, which we report in the last column.
-Table~\ref{tab:fault-success} collects these figures; all runs use a core
-clock of $7.37$\,MHz.}
+\chg{
+  We separate exploration from confirmation. A coarse sweep of the
+\texttt{ext\_offset}, \texttt{offset} and \texttt{width} grid at $10$ attempts
+per point locates the vulnerable region; we then fix the single highest-yield
+point and re-run $100$ \emph{independent} attempts there, and it is these
+confirmatory runs that Table~\ref{tab:fault-success} reports, as
+$p_{\mathrm{best}}$ with a Wilson $95\%$ confidence interval and the reset
+rate. The vulnerable window is narrow: across the full swept grid only a small
+fraction of points fault at all (e.g.\ $33$ of $672$ for Model~1, $4$ of $448$
+for Model~3), so the grid-averaged yield is one to two orders of magnitude
+below $p_{\mathrm{best}}$. Because Proposition~\ref{prop:alg-correctness} shows
+that about one \emph{effective} fault recovers the whole key, the cost of the
+disclosure step is dominated by the number of glitched invocations of the
+routine per effective fault, i.e. the reciprocal of the single-glitch success
+probability, reported as \textbf{inv./fault} in the last column; measured on
+the isolated routine, it is a lower bound on the end-to-end signing-request
+cost. All runs use a core clock of $7.37$\,MHz.}
 
-\begin{table}[htbp]
+
+\begin{table}[htp]
 \centering
-\caption{\chg{Single-glitch outcome rates at the best parameter point.
-$p_{\mathrm{best}}$ and the reset rate are measured over the number of attempts
-in the \textbf{att.}\ column; the last column is the signing requests per
-effective fault, $\lceil 1/p_{\mathrm{best}}\rceil$. The success-map figures
-sweep the full $(\texttt{ext\_offset},\texttt{offset},\texttt{width})$ grid
-at $10$ attempts per point.}}
+\caption{\chg{Single-glitch outcome rates at the best parameter point, from
+$100$ independent confirmatory attempts (the \textbf{att.}\ column).
+$p_{\mathrm{best}}$ is given with a Wilson $95\%$ confidence interval, alongside
+the reset rate and the glitched routine invocations per effective fault,
+$\lceil 1/p_{\mathrm{best}}\rceil$ --- a routine-level lower bound on the
+end-to-end signing-request cost. The best-point
+$(\texttt{ext\_offset},\texttt{offset},\texttt{width})$ settings are stated per
+model in the text; the success-map figures sweep the full grid at $10$ attempts
+per point.}}
 \label{tab:fault-success}
 \setlength{\tabcolsep}{5pt}
 \small
-\begin{tabular}{@{}llrrrr@{}}
+\begin{tabular}{@{}l|l|r|r|c|r|r@{}}
 \toprule
 \textbf{Model} & \textbf{Opt.} & \textbf{att.} & $p_{\mathrm{best}}$ &
-\textbf{reset} & \textbf{req./fault} \\
+\chg{\textbf{95\% CI}} & \textbf{reset} & \chg{\textbf{inv./fault}} \\
 \midrule
-1 (root)        & \texttt{-Os} & $100$ & $0.85$ & $0.01$ & $2$ \\
-2 (subtree)     & \texttt{-Os} & $100$ & $0.23$ & $0.62$ & $5$ \\
-3 (hidden leaf) & \texttt{-O0} & $100$ & $0.16$ & $0.05$ & $7$ \\
+1 (root)        & \texttt{-Os} & $100$ & $0.85$ & \chg{$[0.77,0.91]$} & $0.01$ & $2$ \\
+\midrule
+2 (subtree)     & \texttt{-Os} & $100$ & $0.23$ & \chg{$[0.16,0.32]$} & $0.62$ & $5$ \\
+\midrule
+3 (hidden leaf) & \texttt{-O0} & $100$ & $0.16$ & \chg{$[0.10,0.24]$} & $0.05$ & $7$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\chg{\paragraph{Reproducibility.} We collect the settings in one place. The
+device is a CW303 STM32F303RCT7 (ARM Cortex-M4) on a ChipWhisperer-Lite, core
+clock $7.37$\,MHz, driven over SimpleSerial~v2.1. The target is the
+\texttt{stree\_to\_path\_to\_stree} routine of the MEDS reference
+implementation for a single parameter set, MEDS level I (tree height
+$\lceil\log_2 t\rceil$, $w$ hidden rounds), built with \texttt{arm-none-eabi-gcc}
+through the ChipWhisperer makefile, with \texttt{PLATFORM=CWLITEARM} and
+\texttt{GLITCH\_MODEL=}$m$. Models~1 and~2 use the project default
+\texttt{-Os}; Model~3
+forces only its target function to \texttt{-O0}
+(via a GCC \texttt{optimize} function attribute), the rest of the image staying
+at \texttt{-Os} so it still fits flash. The clock-glitch sweep ranges over
+\texttt{ext\_offset} ($0$--$11$ for Model~1, $0$--$46$ in steps of $2$ for
+Model~2, $0$--$7$ for Model~3), \texttt{offset} ($\pm4$, excluding $0$) and
+\texttt{width} ($4$--$10$), giving $672$, $1344$ and $448$ grid points and $10$
+attempts per point. The maximum-yield point is then re-measured with $100$
+independent attempts, disjoint from the sweep; these are the figures of
+Table~\ref{tab:fault-success}. The exact parameter set, the
+\texttt{arm-none-eabi-gcc} version and the source commit are pinned in the
+accompanying artefact, with the harness (\texttt{cw\_meds\_glitch.py}) and the
+instrumented \texttt{seed.c}.}
+
 \textbf{Model 1: Full tree recovery.}
-This attack is successful if the returned path contains a 
+This attack is successful if the returned path contains a
 single node which is the root node.
 
 \textit{Compilation.} This attack is carried out on a 
@@ -243,7 +283,11 @@ Appendix~\ref{app:asm}.
 
 \textit{Parameters.} Evaluating the condition and incrementing \texttt{id}
 take $3$ clock cycles, so we set \texttt{repeat} to $3$;
-Figure~\ref{fig:fault2_results} gives the resulting success map.
+Figure~\ref{fig:fault2_results} gives the resulting success map. \chg{The best
+point is \texttt{ext\_offset}$=2$, \texttt{offset}$=4$, \texttt{width}$=9$,
+giving $23\%$ success over $100$ confirmatory attempts (Wilson $95\%$ CI
+$[16\%,32\%]$) with a $62\%$ reset rate; these are the Model~2 row of
+Table~\ref{tab:fault-success}.}
 
 For Model~2 we observe a bounded region of system resets bordered by
 successful attacks and other valid glitches, many of whose paths carry enough
@@ -265,7 +309,11 @@ Appendix~\ref{app:asm}.
 
 \textit{Parameters.} The disassembly shows the assignment compiled to two
 single-cycle instructions, so we set \texttt{repeat} to $2$;
-Figure~\ref{fig:fault3_results} gives the success map.
+Figure~\ref{fig:fault3_results} gives the success map. \chg{The best point is
+\texttt{ext\_offset}$=7$, \texttt{offset}$=3$, \texttt{width}$=8$, giving
+$16\%$ success over $100$ confirmatory attempts (Wilson $95\%$ CI
+$[10\%,24\%]$) with a $5\%$ reset rate; the hot band is confined to
+\texttt{ext\_offset}$=7$.}
 
 \begin{figure}[!tb]
 \centering
@@ -275,8 +323,8 @@ Figure~\ref{fig:fault3_results} gives the success map.
   \label{fig:fault2_results}
 \end{subfigure}\hfill
 \begin{subfigure}[b]{0.46\textwidth}
-  \includegraphics[width=\linewidth]{content/images/glitch_2d_results_ext3_crop.png}
-  \caption{Model 3 (hidden leaf), $\texttt{ext\_offset} = 3$.}
+  \includegraphics[width=\linewidth]{content/images/glitch_2d_results_ext7_crop.png}
+  \caption{\chg{Model 3 (hidden leaf), $\texttt{ext\_offset} = 7$.}}
   \label{fig:fault3_results}
 \end{subfigure}
 \caption{Glitch success frequency for Models~2 and~3, $10$ attempts per

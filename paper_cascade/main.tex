@@ -38,28 +38,26 @@ Institut Polytechnique de Paris\\
 \maketitle
 
 \begin{abstract}
-Post-quantum signatures built by applying Fiat--Shamir to a parallel-repeated
-zero-knowledge identification protocol---LESS, CROSS, MEDS and the
-MPC-in-the-Head family among them---compress their ephemeral randomness with a
-GGM seed tree, publishing the seeds of the revealed rounds and hiding the
-challenge-dependent ones. Deciding, per node, which seeds may be released is
-the single point at which zero knowledge is enforced in the implementation,
-and it is a fault-attack surface.
-We introduce the Generic ZK Seed Tree (GZKST), an abstraction of seed-tree
-generation, challenge partitioning and seed publication together with the
-signature scheme derived from it, and formalise its correctness and
-seed-hiding invariants. Classifying the published fault attacks on this family
-by which component they corrupt shows five independent attacks against four
-schemes occupying only three of six components; the empty cells are
-predictions, and one of them led us to a fault surface in the MEDS reference
-implementation with no analogue in prior work. We derive generic key-recovery
-algorithms and show that at most $s-1 \leq 5$ effective faulted signatures
-suffice for every MEDS parameter set. We then demonstrate three clock-glitch
-attacks against that implementation on an ARM Cortex-M4, yielding complete
-tree disclosure, subtree recovery, or leakage of individual hidden leaves, and
-evaluate countermeasures---including the observation that verifying before
-releasing is weaker than it looks here, since path construction and
-reconstruction share one function.
+Post-quantum signatures based on Fiat--Shamir-transformed 
+zero-knowledge protocols use GGM seed trees to compress 
+ephemeral randomness. Faults in seed publication can reveal 
+hidden seeds and enable secret-key recovery.
+We introduce the Generic ZK Seed Tree (GZKST), 
+formalise its correctness and seed-hiding invariants, 
+and classify existing fault attacks across six components. 
+This taxonomy guides us to a new fault surface in the MEDS 
+reference implementation. We derive generic key-recovery 
+bounds and show that, under independent uniform challenge 
+indices, one effective faulted signature recovers the full 
+MEDS key with probability at least $0.987$ for every 
+parameter set, with fewer than $1.02$ effective faults 
+expected. Finally, we demonstrate three function-level 
+clock-glitch attacks against the MEDS seed-path routine 
+on an ARM Cortex-M4, enabling root-seed disclosure, 
+subtree recovery, or individual hidden-leaf leakage. 
+We also evaluate countermeasures and discuss the limitations 
+of verify-before-release when path construction and 
+reconstruction share code.
 \keywords{GGM tree \and Zero-knowledge signatures \and Fault attacks \and
 Post-quantum cryptography \and Seed compression}
 \end{abstract}

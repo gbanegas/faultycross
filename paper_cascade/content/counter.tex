@@ -55,10 +55,19 @@ each means a fault during flag-tree generation shows up as a mismatch during
 path construction:
 
 \begin{enumerate}
-\item Construct a binary flag tree $\calF$ derived from $\calH$.
-\item Verify that for every leaf position $i$ where $\calF[i] = 1$, no ancestral node in its path to the root is flagged as $0$.
-\item Reconstruct the node path using the validated flag tree $\calF$ and the reference seed tree.
-\item Assert that no leaf node explicitly flagged as $1$ is included in the final extracted path.
+\item \chg{Recompute the flag tree $\calF$ independently from $\mathbf{c}$
+(equivalently $\calH$), in a pass separate from the one that serialises the
+path.}
+\item \chg{Verify \emph{leaf agreement in both directions}: $\calF[i]=1$ if and
+only if $i\in\calH$, for \emph{every} leaf $i$ --- not only for the leaves
+currently flagged $1$.}
+\item \chg{Verify \emph{internal consistency}: every internal node satisfies
+the OR-propagation relation $\calF(v)=\calF(\ell)\vee\calF(r)$, so no single
+corrupted node can agree with its two children.}
+\item \chg{Reconstruct the node path from the validated $\calF$ and the
+reference seed tree, and assert that the published set is exactly the boundary
+$\calF$ determines: no node with $\calF=1$ is derivable from it, and it contains
+no node outside that boundary.}
 \end{enumerate}
 
 \chg{All four steps are $\mathcal{O}(t)$, against a signing cost dominated by
@@ -68,6 +77,26 @@ timed whole signatures on a Cortex-M4 and an Intel Core i7
 $-8.0\%$ and $+14.5\%$, are of the same order as the run-to-run noise of such
 measurements (several rows are \emph{faster} than the baseline), so they show
 only that the overhead is small.}
+
+\chg{\noindent\textit{What the check detects, and what it does not.} A weaker
+form of this countermeasure tests only the ancestors of leaves \emph{currently}
+flagged $1$, and so misses the very fault it should stop: a hidden leaf
+$i\in\calH$ whose own flag is forced $\calF[i]\colon 1\to 0$ while its ancestors
+stay $1$ is no longer examined, and if it then reaches the path the final
+assertion---which also inspects only nodes flagged $1$---does not fire. The
+if-and-only-if test of step~2 closes this, as it checks every leaf against
+$\calH$ in both directions; step~3 catches any single internal-flag flip, since
+such a flip breaks OR-propagation at its parent or one of its children. The
+independent recomputation of step~1 is what gives the checks something to
+disagree with: a fault during path construction cannot silently satisfy a
+validation computed in a separate pass from a separate copy of $\mathbf{c}$.
+Two faults remain outside the model. A double fault that corrupts the
+construction pass and the independent validation identically---the shared-code
+replay that defeats verify-before-release above---is not caught by redundancy
+alone and needs the decoupling to be a genuinely distinct computation. A fault
+that alters $\mathbf{c}$ itself before both passes read it is a
+$\Chal$/$\Decide$ fault (Section~\ref{sec:taxonomy}), not one on $\Publish$, and
+is outside this countermeasure's scope.}
 
 \paragraph{Abandoning the tree.}
 
@@ -80,44 +109,3 @@ $9{,}896$ to $677{,}440$ bytes, and even the best case, MEDS-167717, grows by
 $68\%$. Appendix~\ref{app:treeless} gives the construction and the full
 comparison.
 
-\providecommand{\PH}{{\color{red}\textbf{??}}}
-
-\chg{\paragraph{Robustness under the glitch campaign.}
-Timing (Appendix~\ref{app:timings}) only bounds the cost; what matters is
-whether each countermeasure actually stops an \emph{emitted} corrupted path.
-We therefore re-flash each protected build and replay the campaign of
-Section~\ref{sec:app} unchanged, counting a countermeasure as holding for a
-given model only if no corrupted signature is released across the full attempt
-budget --- a signature that is flagged but still emitted does not count, since
-the adversary needs only an emitted path. Table~\ref{tab:cm-robust} reports the
-single-glitch emission rate against each build; the verify-before-release row
-is the \emph{double}-glitch rate, the quantity the body singles out as the most
-useful extension of this work.}
-
-\begin{table}[htbp]
-\centering
-\caption{\chg{Emission rate of a usable corrupted path against each protected
-build, same campaign as Section~\ref{sec:app} ($0$ = countermeasure holds).
-Verify-before-release is evaluated with a \emph{double} glitch at the shared
-code offset; all others with the single glitch of the stated model.}}
-\label{tab:cm-robust}
-\setlength{\tabcolsep}{6pt}
-\small
-\begin{tabular}{@{}lccc@{}}
-\toprule
-\textbf{Countermeasure} & \textbf{Model 1} & \textbf{Model 2} & \textbf{Model 3} \\
-\midrule
-None (baseline)                       & \PH & \PH & \PH \\
-$C_{\mathrm{size}}$ (path-size)       & \PH & \PH & \PH \\
-$C_{\mathrm{tree}}$ (reconstruction)  & \PH & \PH & \PH \\
-Verify-before-release (double glitch) & \PH & \PH & \PH \\
-$C_{\mathrm{flag}}$ (decoupled)       & \PH & \PH & \PH \\
-Tree-less                             & $0$ & $0$ & $0$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\chg{\noindent The tree-less row is $0$ by construction: no seed is ever
-published, so there is no release decision to glitch. For the others the entry
-is the measured residual; a non-zero cell is itself a result, since it marks a
-countermeasure the shared-code replay or a model-specific path still defeats.}

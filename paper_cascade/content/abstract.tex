@@ -364,22 +364,25 @@ analogue in the LESS flag tree, and one no previous work had considered.}
 \centering
 \caption{Published fault attacks on \GZKST-based signatures, classified by the
 component of Definitions~\ref{def:gzkst}--\ref{def:round} that the fault
-corrupts.}
+corrupts. \chg{The \textbf{Fault mechanism} and \textbf{Evaluation} columns
+record, as reported by each work, how the fault is injected and whether it was
+shown in reference-code simulation or on hardware (at component or end-to-end
+scope).}}
 \label{tab:surfaces}
 \resizebox{\textwidth}{!}{
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}llll@{}}
+\begin{tabular}{@{}llllll@{}}
 \toprule
-\textbf{Work} & \textbf{Target scheme(s)} & \textbf{Component} & \textbf{Outcome} \\
+\textbf{Work} & \textbf{Target scheme(s)} & \textbf{Component} & \chg{\textbf{Fault mechanism}} & \chg{\textbf{Evaluation}} & \textbf{Outcome} \\
 \midrule
-ZKFault~\cite{ZKFault}                & LESS-v1, CROSS   & \Publish          & key recovery \\
-Fault to Forge~\cite{FaultToForge2025} & LESS-v2          & \Publish          & universal forgery \\
-Faultless key recovery~\cite{HuangHHYSTY26} & LESS-v2     & \Chal             & key recovery \\
-Fault attack on MPCitH~\cite{BandaBK26} & Mirath, RYDE    & \Expand, \Chal    & key recovery, forgery \\
-Case study on FAEST~\cite{JendralD25}  & FAEST            & \Expand           & key recovery \\
-\chg{Fault attacks on PERK~\cite{cryptoeprint:2026/1266}} & \chg{PERK} & \chg{\Setup} & \chg{key recovery} \\
+ZKFault~\cite{ZKFault}                & LESS-v1, CROSS   & \Publish          & \chg{instr.\ skip}          & \chg{reference-code sim.}     & key recovery \\
+Fault to Forge~\cite{FaultToForge2025} & LESS-v2          & \Publish          & \chg{standard fault}        & \chg{sim.\ + bench}           & universal forgery \\
+Faultless key recovery~\cite{HuangHHYSTY26} & LESS-v2     & \Chal             & \chg{iter.-skip/loop-abort} & \chg{HW + sim}                & key recovery \\
+Fault attack on MPCitH~\cite{BandaBK26} & Mirath, RYDE    & \Expand, \Chal    & \chg{clock glitch (skip)}   & \chg{HW, routine-level}       & key recovery, forgery \\
+Case study on FAEST~\cite{JendralD25}  & FAEST            & \Expand           & \chg{SCA + fault}           & \chg{HW, Cortex-M4}           & key recovery \\
+\chg{Fault attacks on PERK~\cite{cryptoeprint:2026/1266}} & \chg{PERK} & \chg{\Setup} & \chg{clock glitch, EM} & \chg{HW, end-to-end (pqm4)} & \chg{key recovery} \\
 \midrule
-This work (Section~\ref{sec:app})      & MEDS             & \Publish{} ($3$ surfaces) & key recovery \\
+This work (Section~\ref{sec:app})      & MEDS             & \Publish{} ($3$ surfaces) & \chg{clock glitch} & \chg{HW, routine-level (PoC)} & key recovery \\
 \bottomrule
 \end{tabular}
 }
@@ -453,8 +456,10 @@ $\mathsf{Collected} \leftarrow \emptyset$\;
 $L$ for the number of hidden leaves among them.} Let $\Pi$ be a \GZKST\
 instance, let $v^* = \mathrm{root}$, so that \chg{$\ell = t$,} the fault exposes all
 $w$ hidden leaves and $L = w$ is deterministic, and put
-$p_{\min} = 1 - \bigl(\tfrac{s-2}{s-1}\bigr)^{w}$. Then
-Algorithm~\ref{alg:key-recovery} terminates with $\widehat{\sk} = \sk$, the
+$p_{\min} = 1 - \bigl(\tfrac{s-2}{s-1}\bigr)^{w}$. \chg{Assume the
+hidden-round challenge values $c_i$ ($i \in \calH$) are independent and uniform
+over $\{1,\ldots,s-1\}$, as they are for a challenge drawn by a random oracle.}
+Then Algorithm~\ref{alg:key-recovery} terminates with $\widehat{\sk} = \sk$, the
 expected number of effective queries satisfies
 $\mathbb{E}[Q] \leq (s-1)/p_{\min}$, and for any $\delta > 0$ at most
 \chg{$(s-1)\bigl\lceil p_{\min}^{-1} \ln \frac{s-1}{\delta} \bigr\rceil$}
@@ -489,7 +494,10 @@ EUF-CMA.
 
 \begin{corollary}
 \label{cor:euf-cma}
-Let $\Pi$ be a \GZKST-based signature scheme and let the fault model be as in
+Let $\Pi$ be a \GZKST-based signature scheme \chg{whose round system admits an
+efficient $\Extract$ (Definition~\ref{def:extract}): the secret component is
+recoverable in polynomial time from a leaked leaf seed and its response.} Let
+the fault model be as in
 Definition~\ref{def:fault-oracle} (a stuck-at-zero perturbation of a single
 flag bit during $\Publish$).  If an efficient adversary can induce this fault
 at a fixed node $v^* \in V(\calT)$ on the victim's signing device, then
@@ -497,3 +505,10 @@ $\Pi$ is \emph{not} \textrm{EUF-CMA}-secure in the fault model: the adversary
 recovers $\sk$ via Algorithm~\ref{alg:key-recovery} and forges signatures on
 arbitrary messages without further oracle access.
 \end{corollary}
+
+\chg{\noindent The extractability hypothesis is not implied by
+Definition~\ref{def:gzkst} alone: the abstraction fixes which seeds are
+published, not whether a published seed together with its response determines
+the secret. It holds for every scheme treated here, where $\Extract$ is linear
+algebra (Section~\ref{sec:extract}); a GZKST instance whose response hid $\sk$
+information-theoretically given the leaf seed would fall outside the corollary.}

@@ -114,7 +114,12 @@ invariants hold for any such tree shape.}
 Let $m = |\calS| = s - 1$. The process of recovering the secret
 components is modeled as a \emph{generalized coupon-collector problem}
 with group drawings~\cite{coupon1,AnceaumeBSS16}, where each query
-draws a batch of $w$ coupons out of $m$ distinct types.
+draws a batch of $w$ coupons out of $m$ distinct types. \chg{We assume
+throughout that the coupon drawn for each hidden round is independent and
+uniform over the $m = s-1$ types; concretely, that the nonzero challenge values
+$c_i$ ($i\in\calH$) are independent and uniform over $\{1,\ldots,s-1\}$, which
+holds when the Fiat--Shamir challenge is modelled as a random oracle. All query
+bounds below rest on this assumption.}
 
 \paragraph{Correctness of Extract.}
 For each scheme, Definition~\ref{def:extract} specifies $\Extract$ as a closed-form
