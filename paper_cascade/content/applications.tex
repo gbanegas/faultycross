@@ -36,9 +36,14 @@ Our objective is to manipulate the control flow so that unpublished seeds ---
 internal nodes or leaves --- are written into the public signature path.
 
 \paragraph{Threat model and what a successful fault yields.}
-The adversary triggers signing on the victim device, injects a clock glitch at
-a chosen offset, and reads the resulting signature. It does \emph{not} need
-that signature to be valid, a point that matters for
+\revon
+Our \emph{intended} attack scenario is a victim device that signs a requested
+message and emits the resulting output despite a fault. The experiments
+below instead glitch a standalone invocation of the publication routine,
+using a fixed tree, salt and challenge; no full signing operation is run.
+In the intended attack, the adversary does \emph{not} need the
+emitted signature to be valid, a point that matters for
+\revoff
 Section~\ref{sec:counter}: $\resp_i = (\mu_i,\nu_i)$ is present for every
 hidden round regardless of the fault, so once the corrupted path discloses
 $\sigma_i$ for one such round the extraction of~\eqref{eq:meds-extract}
@@ -50,25 +55,15 @@ Our experimental platform consists of a CW303-STM32F3 target board carrying an
 ARM Cortex-M4 STM32F303RCT7 processor. Clock glitching is
 performed using a ChipWhisperer-Lite.
 
-\paragraph{Scope.}
-We state the limits plainly. The board is flashed only with
-\texttt{stree\_to\_path\_to\_stree}, with fixed reference tree, salt and
-challenge; we do not run a full MEDS signature on the device. Our measurements
-therefore characterise the reproducibility and parameter window of each fault,
-but not the difficulty of locating the target instruction within a complete
-signing trace, which would additionally require synchronising on the end of
-the commitment loop. We regard that as an engineering obstacle rather than a
-structural one --- the targets sit in a short, data-independent function
-executed once per signature --- but these experiments do not establish it.
-\chg{We therefore report these as \emph{function-level proof-of-concept}
-attacks: each establishes that a targeted instruction can be reliably faulted
-to emit the corrupted path, not that the fault has been carried through a
-complete signing request. The per-fault counts of
-Table~\ref{tab:fault-success} are measured on the isolated routine and are a
-lower bound on the end-to-end signing-request cost, which the synchronisation
-above would only raise. This mirrors concurrent hardware fault work on the same
-family: Banda et al.~\cite{BandaBK26} likewise flash only the required
-subfunctions, as the full MPCitH schemes exceed the target's memory.}
+\revon
+\paragraph{Experimental scope.}
+The board executes only the seed-path routine with fixed tree, salt and
+challenge. Locating the vulnerable instruction after a complete signing
+operation, producing a serialized faulted signature and recovering secret
+components on-device were not tested. Thus the measured routine-level yields
+cannot be read as end-to-end attack probabilities. Other hardware fault work
+on this family has likewise isolated subfunctions~\cite{BandaBK26}.
+\revoff
 
 %\subsection{Fault Models}
 \paragraph{Fault Models.}
@@ -153,23 +148,26 @@ publishes a single hidden leaf, as $\Oracle^{v^*}$ does with $v^*$ that leaf
 ($L = 1$, the $(s-1)H_{s-1}$ case of Section~\ref{sec:extract}). Model~2
 corrupts the cursor rather than one node's release decision, so it is not an
 instance of Definition~\ref{def:fault-oracle}; it exposes the hidden leaves
-to the right of the faulted position, so $1 \leq L \leq w$.}
+\revon
+to the right of the faulted position, so $1 \leq L \leq w$ for useful disclosures. Neither its empirical
+$L$ distribution nor an end-to-end recovery rate was measured.}
+\revoff
 
 \subsection{Results}
 
-We successfully executed the fault models on the \chg{ChipWhisperer} board 
-(Chipwhisperer-LITEARM). 
+\revon
+We reproduced all three targeted faulty path outputs on a
+ChipWhisperer-Lite/STM32F303 testbed. 
+\revoff
 
-For each model we fix a target output state that signifies a successful
-injection, bracket the target instructions with a
-\texttt{trigger\_high()}/\texttt{trigger\_low()} pair so the ChipWhisperer
-counts the right clock-cycle window, and check the disassembly to confirm the
-optimiser did not move or drop the triggers. The \texttt{repeat} parameter
-sets the glitch duration in clock cycles, calibrated from the nominal cycle
-counts of the target sequence. We then sweep \texttt{width} (pulse width,
-$0\%$--$50\%$ of the clock period), \texttt{offset} (phase shift,
-$-50\%$--$50\%$) and \texttt{ext\_offset} (clock cycles between trigger and
-glitch).
+\revon
+We bracket the instruction under test with GPIO triggers and check the
+disassembly for trigger placement. After tuning the glitch duration, we
+sweep \texttt{width} (pulse width), \texttt{offset} (phase) and
+\texttt{ext\_offset} (cycles after the trigger). This arrangement gives
+instruction-level synchronization unavailable from the beginning of a full
+signing request.
+\revoff
 
 
 \chg{
@@ -182,13 +180,14 @@ $p_{\mathrm{best}}$ with a Wilson $95\%$ confidence interval and the reset
 rate. The vulnerable window is narrow: across the full swept grid only a small
 fraction of points fault at all (e.g.\ $33$ of $672$ for Model~1, $4$ of $448$
 for Model~3), so the grid-averaged yield is one to two orders of magnitude
-below $p_{\mathrm{best}}$. Because Proposition~\ref{prop:alg-correctness} shows
-that about one \emph{effective} fault recovers the whole key, the cost of the
-disclosure step is dominated by the number of glitched invocations of the
-routine per effective fault, i.e. the reciprocal of the single-glitch success
-probability, reported as \textbf{inv./fault} in the last column; measured on
-the isolated routine, it is a lower bound on the end-to-end signing-request
-cost. All runs use a core clock of $7.37$\,MHz.}
+\revon
+below $p_{\mathrm{best}}$. Proposition~\ref{prop:alg-correctness} applies to \emph{root
+disclosure only}. The inverse calibrated success probability $1/p_{\mathrm{best}}$
+is the geometric mean number of routine invocations to obtain the specified
+target output, if repeated attempts are independent. It excludes the initial
+parameter search, resets, timing uncertainty of full signing and, for
+Models~2--3, the further disclosures needed to recover all components. All runs use a core clock of $7.37$\,MHz.}
+\revoff
 
 
 \begin{table}[htp]
@@ -196,9 +195,11 @@ cost. All runs use a core clock of $7.37$\,MHz.}
 \caption{\chg{Single-glitch outcome rates at the best parameter point, from
 $100$ independent confirmatory attempts (the \textbf{att.}\ column).
 $p_{\mathrm{best}}$ is given with a Wilson $95\%$ confidence interval, alongside
-the reset rate and the glitched routine invocations per effective fault,
-$\lceil 1/p_{\mathrm{best}}\rceil$ --- a routine-level lower bound on the
-end-to-end signing-request cost. The best-point
+\revon
+the reset rate and the idealised mean
+invocations $1/p_{\mathrm{best}}$ needed for the specified target output.
+These are \emph{not} end-to-end signing-request or full-key recovery costs. The best-point
+\revoff
 $(\texttt{ext\_offset},\texttt{offset},\texttt{width})$ settings are stated per
 model in the text; the success-map figures sweep the full grid at $10$ attempts
 per point.}}
@@ -208,13 +209,13 @@ per point.}}
 \begin{tabular}{@{}l|l|r|r|c|r|r@{}}
 \toprule
 \textbf{Model} & \textbf{Opt.} & \textbf{att.} & $p_{\mathrm{best}}$ &
-\chg{\textbf{95\% CI}} & \textbf{reset} & \chg{\textbf{inv./fault}} \\
+\chg{\textbf{95\% CI}} & \textbf{reset} & \rev{\chg{\textbf{inv./hit}}} \\
 \midrule
-1 (root)        & \texttt{-Os} & $100$ & $0.85$ & \chg{$[0.77,0.91]$} & $0.01$ & $2$ \\
+1 (root)        & \texttt{-Os} & $100$ & $0.85$ & \chg{$[0.77,0.91]$} & $0.01$ & \rev{$1.18$} \\
 \midrule
-2 (subtree)     & \texttt{-Os} & $100$ & $0.23$ & \chg{$[0.16,0.32]$} & $0.62$ & $5$ \\
+2 (subtree)     & \texttt{-Os} & $100$ & $0.23$ & \chg{$[0.16,0.32]$} & $0.62$ & \rev{$4.35$} \\
 \midrule
-3 (hidden leaf) & \texttt{-O0} & $100$ & $0.16$ & \chg{$[0.10,0.24]$} & $0.05$ & $7$ \\
+3 (hidden leaf) & \texttt{-O0} & $100$ & $0.16$ & \chg{$[0.10,0.24]$} & $0.05$ & \rev{$6.25$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -223,7 +224,9 @@ per point.}}
 device is a CW303 STM32F303RCT7 (ARM Cortex-M4) on a ChipWhisperer-Lite, core
 clock $7.37$\,MHz, driven over SimpleSerial~v2.1. The target is the
 \texttt{stree\_to\_path\_to\_stree} routine of the MEDS reference
-implementation for a single parameter set, MEDS level I (tree height
+\revon
+implementation for a single parameter set, one MEDS level-I configuration (tree height
+\revoff
 $\lceil\log_2 t\rceil$, $w$ hidden rounds), built with \texttt{arm-none-eabi-gcc}
 through the ChipWhisperer makefile, with \texttt{PLATFORM=CWLITEARM} and
 \texttt{GLITCH\_MODEL=}$m$. Models~1 and~2 use the project default
@@ -332,11 +335,26 @@ parameter point; markers as in Figure~\ref{fig:fault1_results}.}
 \label{fig:glitch_results}
 \end{figure}
 
-\noindent\textbf{Results.} The attacks are reproducible. \chg{For Model~3, every
+\revon
+\noindent\textbf{Results.} The target faulty outputs are reproducible under instrumentation. \chg{For Model~3, every
+\revoff
 attempt} gave normal execution, a device reset, or the expected exploit, with
 no other valid glitches --- a consequence of single-instruction targeting,
 which is less likely than a wider disruption window to bleed into surrounding
 cycles\chg{; Models~1 and~2 also produce other valid glitches
 (Figures~\ref{fig:fault1_results} and~\ref{fig:fault2_results})}. Model~1, the root reveal, is both the most efficient and the most
 reproducible; Models~2 and~3 replicate less readily but are harder to detect
+\revon
 during signing (Section~\ref{sec:counter}).
+\noindent\textbf{Limits of the evidence.}
+The rates in Table~\ref{tab:fault-success} describe tuned points selected
+after searching $672$, $1344$ and $448$ parameter combinations (ten trials
+per point), not success probabilities for a previously unprofiled device.
+Only Model~1 yields the full-tree disclosure required by the one-query
+coverage calculation; Models~2--3 generally expose fewer hidden seeds.
+Our tests did not reconstruct MEDS response pairs from a full emitted
+signature, demonstrate key extraction on the target, or measure the ability
+to hit the publication routine from the start of complete signing. Model~3
+uses a non-default \texttt{-O0} build, so its transfer to the normal
+\texttt{-Os} binary remains open.
+\revoff

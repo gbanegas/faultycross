@@ -1,140 +1,55 @@
-Digital signatures underpin firmware updates, secure boot, messaging and
-public-key infrastructures, and the schemes deployed today rest on integer
-factorisation or on the Elliptic Curve Discrete Logarithm Problem, both of
-which a large quantum computer would solve with Shor's algorithm. Among the
-most promising replacements are signatures obtained by applying the
-Fiat--Shamir transform~\cite{DagdelenFG13,FiatS86} to a zero-knowledge
-identification protocol repeated in parallel --- LESS~\cite{LESS-spec},
-CROSS~\cite{CROSSspec} and MEDS~\cite{ChouNPRRST23,MEDS_PQC} among them. Their
-weak point is signature size, and the standard remedy is
-\GGM-tree seed compression: the $t$ ephemeral secrets are derived from a single
-root seed, so that the signer publishes a handful of internal nodes rather than
-$t$ independent seeds.
+\revon
+Post-quantum signatures derived from parallel-repeated identification
+protocols compress ephemeral randomness with GGM seed trees. In schemes such
+as LESS, CROSS and MEDS~\cite{LESS-spec,CROSSspec,ChouNPRRST23}, a signer
+releases seeds for the revealed rounds, but must withhold any node that would
+reconstruct a hidden round. A fault that releases a hidden seed alongside its
+response can expose long-term signing information~\cite{ZKFault,FaultToForge2025}.
+The separation between these two views is a security-critical decision in
+software, even when the underlying Fiat--Shamir construction is secure.
 
-During signing, only the seeds of the revealed rounds may be released; the
-challenge-dependent ones must stay hidden. This is the single point at which
-zero knowledge is enforced in the implementation, and recent work has shown it
-to be a fault-attack surface: a fault in the seed-publication logic can leak a
-hidden seed alongside the zero-knowledge response of the same round, which is
-enough for key recovery or universal
-forgery~\cite{FaultToForge2025,ZKFault}.
-
-
-%In 2022, the National Institute 
-%of Standards and Technology selected the first set of post-quantum 
-%digital signature schemes as part of its standardization process, 
-%marking a major step toward the deployment of quantum-resistant 
-%cryptography.
-
-
-
-
-
-\paragraph{Why seed trees, and not one scheme.}
-The three schemes named above have all now left the NIST additional-signatures
-process: MEDS was not selected for the second round, and CROSS and LESS were
-eliminated at the end of it~\cite{NISTIR8610}. It would be a mistake to read
-this as closing the subject. The compression technique is not specific to
-those designs: it is the standard way to shrink any Fiat--Shamir signature
-built from a parallel-repeated identification protocol, and FAEST, SDitH and
-MQOM --- all of which did advance --- publish an all-but-one vector commitment
-derived from the same tree. What we analyse is the mechanism, not its host. We
-attack MEDS because its reference implementation realises that mechanism in
-its cleanest form. \chg{Two levels of transfer must be kept apart, and we are
-careful to claim only the first. The \emph{abstraction} transfers to any
-scheme publishing a seed-tree path: the seed-hiding invariant, its violation
-by dual revelation, and the query bound of Section~\ref{sec:extract} are
-scheme-independent. The \emph{concrete fault targets} do not: as
-Remark~\ref{rem:spec-vs-impl} stresses, two implementations of the same
-component have disjoint fault surfaces, so the specific glitches of
-Section~\ref{sec:app} are tied to the MEDS reference code and must be
-re-derived for each target.} The timing is favourable rather than late: \chg{FAEST, SDitH and
-MQOM enter the third round with exactly this mechanism, and implementation
-attacks on it are most useful before their implementations settle.}
+The mechanism matters beyond MEDS: GGM-derived all-but-one openings also
+appear in MPC-in-the-Head and VOLE-in-the-Head signatures. We study the
+shared release decision rather than claiming a portable glitch: the
+seed-hiding obligation applies across implementations, whereas instruction
+and state-corruption targets depend on the particular code. MEDS is an
+especially useful case because its reference implementation does not follow
+the flag-propagation algorithm in its specification. Instead, it traverses
+the tree with a cursor into a sorted list of hidden leaves. This difference
+creates a distinct control-flow fault surface. The concrete attacks below
+are specific to this MEDS routine, not demonstrated attacks on other schemes.
 
 \subsection{Related Work}
 \label{sec:relwork}
-Fault attacks on seed-tree-based post-quantum signatures are an active line of
-work. ZKFault~\cite{ZKFault} faults the seed publication of LESS-v1, extended
-to CROSS, disclosing hidden ephemeral seeds and recovering secret material.
-Fault-to-Forge~\cite{FaultToForge2025} revisits LESS-v2, whose incomplete tree
-defeats that strategy, and finds new injection points in tree generation and
-seed publication, showing that secret-equivalent information already suffices
-for universal forgery. The attack of~\cite{HuangHHYSTY26} avoids the tree
-altogether, using iteration-skip and loop-abort faults in the
-digest-preprocessing step that precedes tree generation. Elsewhere in the
-family,~\cite{cryptoeprint:2026/1266} faults tree generation in
-PERK~\cite{BettaiebBDEGKP24},~\cite{JendralD25} targets FAEST,
-and~\cite{BandaBK26} targets Mirath and RYDE.
+ZKFault~\cite{ZKFault} studies disclosure of hidden seeds in LESS-v1 and
+CROSS using faults simulated in reference code. Fault-to-Forge
+\cite{FaultToForge2025} identifies additional opportunities in the incomplete
+LESS-v2 tree and establishes universal forgery from secret-equivalent
+information. Digest-preprocessing faults in LESS-v2~\cite{HuangHHYSTY26}
+act before seed-tree publication. Other attacks concern PERK seed
+setup~\cite{cryptoeprint:2026/1266}, FAEST expansion~\cite{JendralD25},
+and Mirath/RYDE~\cite{BandaBK26}. The PERK work provides an end-to-end
+hardware attack, while the MEDS experiments in this paper are deliberately
+limited to an isolated seed-path routine. Our novelty is not the observation
+that dual revelation is fatal; it lies principally in analysing the
+cursor-dependent MEDS implementation and experimentally inducing its
+control-flow faults.
 
-We unify these results under a single Generic ZK Seed Tree abstraction,
-formalising the invariants they implicitly exploit, and add practical fault
-attacks against MEDS.
+\paragraph{Contributions and limitations.}
+We give a six-component Generic ZK Seed Tree (GZKST) framework and classify
+published faults by where they intervene; the framework is a means of
+finding implementation surfaces, not a new proof of punctured-PRF security.
+We then identify three disclosure mechanisms in MEDS, including a cursor
+fault absent from earlier flag-tree attacks, and demonstrate the target
+states under clock glitches on a Cortex-M4. For a \emph{root-disclosure}
+fault we derive exact key-coverage probabilities: with independent uniform
+nonzero MEDS challenge indices, one such disclosure covers all $s-1$
+long-term matrix pairs with probability at least $0.987$. This number does
+\emph{not} apply to partial subtree or single-leaf faults. We discuss
+release-time checks and independent path validation, while treating a
+possible double-glitch bypass of shared-code verification as an untested
+hypothesis rather than a demonstrated attack. The experiments do not include
+complete on-device MEDS signing or on-device extraction of an equivalent
+signing key.
 
-\chg{Two of these works anchor the comparison. ZKFault establishes the template
-our abstraction generalises, but evaluates its faults by forcing node values in
-the reference code---an end-to-end \emph{simulation} rather than a hardware
-campaign. At the other end, \cite{cryptoeprint:2026/1266} mounts a genuine
-end-to-end attack on the PERK reference implementation in pqm4, with
-clock-glitch and electromagnetic injection under both \texttt{-O3} and
-\texttt{-Os}, but faults seed \emph{generation} ($\Setup$) rather than
-publication. Our work sits between the two: like ZKFault we target the
-publication logic and, unlike it, we fault real silicon; unlike the PERK work,
-our experiments are function-level proof-of-concept faults on the isolated
-seed-path routine rather than a complete signing operation
-(Section~\ref{sec:app}). The novelty we claim is accordingly the GZKST
-systematisation and the MEDS-specific control-flow fault surfaces it exposes
----in particular the cursor fault of Model~2, which has no analogue in the LESS
-flag tree---not the general observation that revealing a hidden seed alongside
-its response is catastrophic.}
-
-\paragraph{Our Contributions.}
-This work provides a unified analysis of fault attacks against
-post-quantum signature schemes relying on seed-tree compression.
-Our main contributions are as follows:
-\begin{itemize}
-
-\item \textbf{Generic Seed-Tree Abstraction.}
-We introduce the \emph{Generic ZK Seed Tree} (GZKST), a unified model
-capturing the seed-tree generation mechanisms used in schemes such as
-LESS-v2, MEDS, and CROSS.
-
-\item \textbf{Unified View of Existing Attacks.}
-We show that previously proposed fault attacks against LESS-v1 and
-LESS-v2 can be interpreted as violations of a common seed-hiding
-invariant.
-
-\item \textbf{A Taxonomy of Fault Surfaces.}
-We classify every published fault attack on this family by which component
-of the abstraction it corrupts (Section~\ref{sec:taxonomy}), showing that
-\chg{six independent attacks against six schemes occupy only four of six}
-components. \chg{Reading the grid as a search tool then led us to a new attack
-surface in the MEDS reference implementation, inside the already-populated
-$\Publish$ column but with no analogue in prior work; the two empty columns
-remain open predictions.}
-
-\item \textbf{Query Complexity Analysis.}
-We derive bounds on the number of faulted signatures required for
-secret-key recovery and show that, \chg{for every MEDS parameter set, a single
-effective fault recovers the full key with probability at least $0.987$, the
-expected number of effective faults staying below $1.02$. These are
-probabilistic statements---under the standard assumption that the nonzero
-challenge indices are independent and uniform over the $s-1$ secret
-components---not a deterministic $s-1$ bound}.
-
-\item \textbf{Practical Attacks on MEDS.}
-We show fault attacks against the MEDS reference
-implementation on an ARM Cortex-M4 using a ChipWhisperer-Lite,
-revealing several fault surfaces that enable complete or partial
-seed-tree disclosure.
-
-\item \textbf{Countermeasures for MEDS, and their limits.}
-We propose and evaluate three families of countermeasures. We also show
-that the obvious defence --- verifying a signature before releasing it ---
-is weaker than it looks against this particular implementation, because
-path construction and path reconstruction share a single function, so the
-same glitch at the same code offset defeats both passes
-(Section~\ref{sec:counter}).
-
-\end{itemize}
-
+\revoff

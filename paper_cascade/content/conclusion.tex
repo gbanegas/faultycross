@@ -1,21 +1,20 @@
-The GZKST abstraction isolates the seed-hiding invariant common to
-seed-tree-based post-quantum signatures, exhibits the published fault attacks
-as violations of it, and turns the fault surface into an enumerable grid from
-which we derived generic key-recovery procedures with bounded query
-complexity. \emph{We demonstrated three clock-glitch attacks against the MEDS}
-reference implementation on an ARM Cortex-M4 and evaluated countermeasures
-whose cost is small relative to the matrix arithmetic dominating signing.
+\revon
+We classified faults in seed-tree-based signatures with a six-component
+GZKST framework and identified a cursor-dependent publication vulnerability
+in MEDS that does not arise in the previously studied flag-array traversal.
+Three clock-glitch experiments demonstrate root, subtree and hidden-leaf
+publication faults in an instrumented seed-path routine. Given an emitted
+signature that contains a hidden seed and its response, the resulting matrix
+relations yield signing-equivalent secret information. The full-component
+coverage probabilities and near-one effective-query expectations apply to
+\emph{root disclosure} under an explicit independent-uniform challenge
+assumption, not to arbitrary partial disclosures.
 
-\chg{Three limitations remain. The glitches targeted the path-construction
-function in isolation, not inside a complete signature, so locating the target
-in a full signing trace is not yet demonstrated. Model~3 required building the
-target function at \texttt{-O0}, since optimised builds remove the targeted
-assignment. And the double glitch that defeats verify-before-release has not
-been measured.}
+The measurements are function-level: complete-device signing,
+end-to-end extraction, the leak distribution of the cursor fault and a
+correlated double-glitch verification bypass remain untested. The results
+therefore motivate both implementation-specific hardening and the evaluation
+of independent release-time checks under realistic faults, rather than an
+unqualified claim of a practical full-signing compromise.
 
-%Two directions follow. The first is to quantify the double-glitch attack of
-%Section~\ref{sec:counter}, turning a structural observation about shared code
-%into a concrete attacker cost. The second is to instantiate the abstraction
-%against a scheme still under consideration --- FAEST, SDitH and MQOM all build
-%an all-but-one vector commitment from the same tree --- since the empty cells
-%of Table~\ref{tab:surfaces} are as much a programme as a classification.
+\revoff

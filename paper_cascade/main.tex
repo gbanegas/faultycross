@@ -38,28 +38,24 @@ Institut Polytechnique de Paris\\
 \maketitle
 
 \begin{abstract}
-Post-quantum signatures based on Fiat--Shamir-transformed 
-zero-knowledge protocols use GGM seed trees to compress 
-ephemeral randomness. Faults in seed publication can reveal 
-hidden seeds and enable secret-key recovery.
-We introduce the Generic ZK Seed Tree (GZKST), 
-formalise its correctness and seed-hiding invariants, 
-and classify existing fault attacks across six components. 
-This taxonomy guides us to a new fault surface in the MEDS 
-reference implementation. We derive generic key-recovery 
-bounds and show that, under independent uniform challenge 
-indices, one effective faulted signature recovers the full 
-MEDS key with probability at least $0.987$ for every 
-parameter set, with fewer than $1.02$ effective faults 
-expected. Finally, we demonstrate three function-level 
-clock-glitch attacks against the MEDS seed-path routine 
-on an ARM Cortex-M4, enabling root-seed disclosure, 
-subtree recovery, or individual hidden-leaf leakage. 
-We also evaluate countermeasures and discuss the limitations 
-of verify-before-release when path construction and 
-reconstruction share code.
-\keywords{GGM tree \and Zero-knowledge signatures \and Fault attacks \and
-Post-quantum cryptography \and Seed compression}
+\revon
+Fiat--Shamir post-quantum signatures use GGM seed trees to compress
+per-round randomness. A fault during seed publication can expose a seed
+for a hidden round alongside its response, allowing long-term secret
+extraction. We present the Generic ZK Seed Tree (GZKST), a framework for
+classifying such fault surfaces, and use it to analyse an overlooked
+cursor-dependent path traversal in the MEDS reference implementation.
+For a complete root-seed disclosure, under independent uniform nonzero
+challenge indices, one faulted signature reveals signing-equivalent
+secret information with probability at least $0.987$ across the listed
+MEDS parameter sets. We demonstrate three clock-glitch effects on a
+Cortex-M4 using an instrumented, isolated seed-path routine: root,
+subtree, and hidden-leaf disclosure. These are function-level experiments,
+not an end-to-end signing or key-recovery demonstration. We examine
+countermeasures and identify a potential correlated-fault risk when
+path construction and reconstruction share code.
+\keywords{GGM trees \and Post-quantum signatures \and Fault injection \and Seed compression}
+\revoff
 \end{abstract}
   \ifanonymous\else
   \makeatletter%
@@ -103,8 +99,9 @@ Post-quantum cryptography \and Seed compression}
 \bibliographystyle{plain}
 \bibliography{references}
 
+\clearpage
 \appendix
-\section{MEDS Key Generation and Verification}
+\section{Generic and MEDS Algorithms}
 \label{app:algs}
 \input{content/app_algs.tex}
 

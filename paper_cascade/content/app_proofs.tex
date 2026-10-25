@@ -111,14 +111,19 @@ invariants hold for any such tree shape.}
 \label{app:proof-recovery}
 % ------------------------------------------------------------
 
-Let $m = |\calS| = s - 1$. The process of recovering the secret
+\revon
+Let $m = |\calS| = s - 1$. The process of recovering all signing-relevant secret
+\revoff
 components is modeled as a \emph{generalized coupon-collector problem}
 with group drawings~\cite{coupon1,AnceaumeBSS16}, where each query
 draws a batch of $w$ coupons out of $m$ distinct types. \chg{We assume
 throughout that the coupon drawn for each hidden round is independent and
 uniform over the $m = s-1$ types; concretely, that the nonzero challenge values
-$c_i$ ($i\in\calH$) are independent and uniform over $\{1,\ldots,s-1\}$, which
-holds when the Fiat--Shamir challenge is modelled as a random oracle. All query
+\revon
+$c_i$ ($i\in\calH$) are independent and uniform over $\{1,\ldots,s-1\}$, which is an explicit assumption about the output distribution of the
+challenge parser. Random-oracle sampling of the digest alone does not prove
+this independence property. All query
+\revoff
 bounds below rest on this assumption.}
 
 \paragraph{Correctness of Extract.}
@@ -217,8 +222,11 @@ establishing the bound in Proposition~\ref{prop:alg-correctness}.
 When the loop terminates, $|\mathsf{Collected}| = m$, and for each
 $j \in \{1,\ldots,s-1\}$ there is exactly one entry $(j, \sk'_j) \in \mathsf{Collected}$
 with $\sk'_j = A_j^{-1}$ (or the corresponding secret for each scheme).
-The $\mathsf{Collect}$ step assembles these into $\widehat{\sk}$, which equals $\sk$
-by correctness of $\Extract$.
+\revon
+The $\mathsf{Collect}$ step assembles them into a signing-equivalent
+secret description. Equality with the original serialized $\sk$ is not
+claimed: its other seed fields need not be recovered.
+\revoff
 
 % ------------------------------------------------------------
 \subsection{Derivation of Proposition~\ref{prop:alg-correctness}

@@ -23,34 +23,27 @@ output on mismatch. Against the attacks of Section~\ref{sec:app} this does
 work in principle, because none of the three faulted paths deserialises to the
 honest leaf set and the recomputed digest therefore differs from $d$.
 
-It is weaker than it looks, for a structural reason. In the MEDS reference
-code $\SeedTreeToPath$ and $\PathToSeedTree$ are two modes of one function
-sharing the traversal loop of Listing~\ref{lst:path}, so the instruction the
-attacker glitches during signing is \emph{the same instruction}, at the same
-code offset, that the verification pass executes. An attacker who can place
-one glitch can place two, and a ChipWhisperer emits both within a single
-trace: the redundancy is nominal, since the check re-executes the faulted code
-rather than checking it independently. \chg{The replayed glitch does not merely
-break the check, it makes it pass: in reconstruction mode the same skip makes
-the traversal consume the path exactly as the faulted construction produced
-it. Under Model~1, for instance, $\PathToSeedTree$ with the same skip reads
-the single published seed as the root, regenerates the whole tree, and returns
-every revealed leaf correctly, so the recomputed digest equals $d$. For
-Models~2 and~3 the second glitch must also hit the same iteration (the same
-value of \texttt{id}).} This is why we prefer the decoupled construction below, and the point generalises --- any
-implementation folding $\Publish$ and $\Recon$ into shared code inherits it.
-We have not measured the double-glitch success rate, and doing so is the most
-useful single extension of this work. Finally, note that such a countermeasure
-must suppress the output entirely on detection rather than merely flag it:
-as Section~\ref{sec:app} observes, the adversary needs an emitted corrupted
-path, not a valid signature.
-
-
+\revon
+A caveat is that the MEDS reference combines path construction and
+reconstruction in two modes of the same function. Repeated faults at shared
+instruction locations could in principle corrupt both the signature and its
+local validation. \emph{This does not establish a bypass}: the two modes
+may have different control flow, memory state and iteration counts, and no
+double-glitch experiment or matching execution trace is available. Under a
+single publication fault followed by correct independent verification,
+verify-before-release rejects the malformed signature. Demonstrating a
+correlated-fault bypass requires a separate two-fault adversary model and
+experimental validation. The essential requirement is to suppress \emph{all}
+output on detection; emitting an invalid signature is sufficient for the
+leakage attack.
+\revoff
 
 \paragraph{Decoupling path construction from the flag tree.}
 
-Coupling flag-tree construction to path extraction is what makes the replay
-above possible. Decoupling them into independent stages with a check after
+\revon
+Using the same traversal for producing and checking the path creates
+potential common-mode failures. Decoupling them into independent stages with a check after
+\revoff
 each means a fault during flag-tree generation shows up as a mismatch during
 path construction:
 
@@ -71,12 +64,13 @@ no node outside that boundary.}
 \end{enumerate}
 
 \chg{All four steps are $\mathcal{O}(t)$, against a signing cost dominated by
-matrix arithmetic over $\Fq$. We implemented all three countermeasures and
-timed whole signatures on a Cortex-M4 and an Intel Core i7
-(Appendix~\ref{app:timings}). The differences from the baseline, between
-$-8.0\%$ and $+14.5\%$, are of the same order as the run-to-run noise of such
-measurements (several rows are \emph{faster} than the baseline), so they show
-only that the overhead is small.}
+\revon
+matrix arithmetic over $\Fq$. We implemented and timed three checks
+(Appendix~\ref{app:timings}); whole-signature timing differences range
+from apparent speedups to $+14.5\%$, so they do not reliably quantify the
+validation overhead. Cycle-level microbenchmarks and fault tests of the
+checks themselves remain necessary.}
+\revoff
 
 \chg{\noindent\textit{What the check detects, and what it does not.} A weaker
 form of this countermeasure tests only the ancestors of leaves \emph{currently}
@@ -91,8 +85,9 @@ independent recomputation of step~1 is what gives the checks something to
 disagree with: a fault during path construction cannot silently satisfy a
 validation computed in a separate pass from a separate copy of $\mathbf{c}$.
 Two faults remain outside the model. A double fault that corrupts the
-construction pass and the independent validation identically---the shared-code
-replay that defeats verify-before-release above---is not caught by redundancy
+\revon
+construction pass and the independent validation identically---a possible common-mode event not demonstrated here---is not caught by redundancy
+\revoff
 alone and needs the decoupling to be a genuinely distinct computation. A fault
 that alters $\mathbf{c}$ itself before both passes read it is a
 $\Chal$/$\Decide$ fault (Section~\ref{sec:taxonomy}), not one on $\Publish$, and
@@ -102,9 +97,11 @@ is outside this countermeasure's scope.}
 
 A third option is architectural: drop the tree and publish the ephemeral
 matrices $(\tilde{A}_i,\tilde{B}_i)$ of the revealed rounds explicitly,
-adapting to MEDS the LESS countermeasure of~\cite{ZKFault}. No seed is ever
-released, so Invariant~\ref{inv:hiding} is enforced by construction rather
-than by code. The cost is prohibitive where $t$ is large: MEDS-9923 grows from
+\revon
+adapting to MEDS the LESS countermeasure of~\cite{ZKFault}. No seed is released in this design, removing the specific
+seed-publication leakage channel; it does not prevent every possible fault
+on ephemeral state. The cost is prohibitive where $t$ is large: MEDS-9923 grows from
+\revoff
 $9{,}896$ to $677{,}440$ bytes, and even the best case, MEDS-167717, grows by
 $68\%$. Appendix~\ref{app:treeless} gives the construction and the full
 comparison.

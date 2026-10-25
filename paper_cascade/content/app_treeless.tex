@@ -65,7 +65,9 @@ Toy                    & 6845    & 6793      & 6794      & 6835          \\
 MEDS-9923               & 1609626	& 1582806	& 1590051.5	& 1585796 \\
 MEDS-13220              & 299950	& 275909	& 283484	& 283477.5         \\
 MEDS-41711              & 4847694.5	& 5200203	& 4962401.5	& 5360679.5 \\
-MEDS-55604              & 1280193	& 1381107	& 1321436	& 1307889          \\
+\revon
+MEDS-55604$^{*}$        & 1280193	& 1381107	& 1321436	& 1307889          \\
+\revoff
 MEDS-134180             & 5009655.5	& 5074072.5	& 5140707.5	& 5735290 \\
 MEDS-167717             & 2950702	& 2951835.5	& 3076849.5	& 3051602.5  \\
 \midrule
@@ -74,6 +76,13 @@ Toy (Cortex M4)        & 753566	& 737162	& 738843	& 737739
 \bottomrule
 \end{tabular*}
 \end{table}
+
+\revon
+The original benchmark records use the label MEDS-55604, which is absent
+from Table~\ref{tab:scheme-params}. We preserve this recorded label rather
+than assuming that it is the MEDS-69497 configuration; this inconsistency
+requires checking against the experimental sources.
+\revoff
 
 All three checks are $\mathcal{O}(t)$ against a signing cost dominated by
 matrix arithmetic over $\Fq$, so the expected overhead is small, and this is
@@ -84,10 +93,11 @@ $+14.5\%$ for $C_{\mathrm{flag}}$, the last on MEDS-134180.
 These numbers should be read with care. Several rows report the instrumented
 build as \emph{faster} than the baseline --- $-8.0\%$ for $C_{\mathrm{size}}$
 on MEDS-13220 --- which cannot be real, since the countermeasure only adds
-work: the noise floor of a whole-signature wall-clock measurement here is of
-the same order as the overheads being reported. The correct experiment
-instruments $\SeedTreeToPath$ alone in cycle counts and reports a distribution
-rather than a median. \chg{The pattern of the table confirms that it is noise:
+\revon
+work: whole-signature wall-clock measurements do not isolate countermeasure
+overheads; variations in build or measurement conditions may dominate. A stronger experiment would instrument $\SeedTreeToPath$ alone in cycles
+and report a distribution rather than only a median. \chg{The pattern of the table confirms that it is noise:
+\revoff
 the largest apparent overheads occur on $t = 192$ and $t = 608$, not on the
 deepest tree ($t = 1152$, MEDS-9923, $-1.5\%$). We therefore read it only as
 indicating that the overhead is not large, not as a measurement.}

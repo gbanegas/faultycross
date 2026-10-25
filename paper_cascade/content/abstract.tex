@@ -31,9 +31,11 @@ $\PRG : \{0,1\}^{\lam} \to \{0,1\}^{2\lam}$. The six algorithms are:
         $\{0,\ldots,t-1\}$ into the hidden set $\calH = \{i : c_i \neq 0\}$,
         $|\calH| = w$, and the revealed set $\calR = \{i : c_i = 0\}$.
 
-  \item $\Publish(\calT,\calH) \to \tpath$: returns a set of nodes from which
-        every $\eseed_i$ with $i \in \calR$ is reconstructible and no
-        $\eseed_i$ with $i \in \calH$ is derivable.
+\revon
+  \item $\Publish(\calT,\calH) \to \tpath$: serialises a set of
+        labelled seed-tree nodes. Correctness and hiding are separate
+        obligations below, not part of this algorithm's syntax.
+\revoff
 
   \item $\Recon(\tpath,\mathbf{c},\salt) \to \{\eseed_i : i \in \calR\}$:
         verifier-side reconstruction of the revealed leaf seeds.
@@ -54,7 +56,11 @@ definition.
 A \emph{round system} for a \GZKST\ $\Pi$ over a secret type $\calS$ (the type
 of the long-term secret: monomial permutations for LESS, matrix pairs for
 MEDS, an R-SDP solution for CROSS, a witness for MPCitH) is a triple
-$(\Commit, \Resp, \ChkRnd)$ of efficient algorithms:
+\revon
+$(\Commit, \Resp, \ChkRnd)$ of efficient algorithms.
+All round functions receive public parameters (in particular, the public
+key and the public base code in MEDS) implicitly:
+\revoff
 \begin{itemize}[leftmargin=*]
   \item $\Commit(\eseed_i, \salt, i) \to \cmt_i$: derives the round-$i$
         ephemeral secret from the leaf seed and commits to it. It does not
@@ -73,46 +79,13 @@ Given $\Pi$ and a round system as above, the \emph{derived signature scheme}
 $\Sig[\Pi]$ is the pair $(\Sign, \Verify)$ of Algorithm~\ref{alg:generic}.
 \end{definition}
 
-\begin{figure}[htbp]
-\centering
-\begin{minipage}[t]{0.48\textwidth}
-\begin{algorithm}[H]
-\footnotesize
-\setlength{\algomargin}{0.7em}
-\caption{$\Sig[\Pi].\Sign$}
-\label{alg:generic}
-\KwIn{Secret key $\sk$, message $\msg$}
-\KwOut{Signature $\sig$}
-$(\seed_r,\salt) \leftarrow \Setup(1^{\lam})$\;
-$(\calT,(\eseed_i)_i) \leftarrow \Expand(\seed_r,\salt)$\;
-\lFor{$i = 0$ \KwTo $t-1$}{$\cmt_i \leftarrow \Commit(\eseed_i,\salt,i)$}
-$\mathbf{c} \leftarrow \Chal(\cmt_0,\ldots,\cmt_{t-1},\msg)$\;
-$(\calH,\calR) \leftarrow \Decide(\mathbf{c})$\;
-\lFor{$i \in \calH$}{$\resp_i \leftarrow \Resp(\eseed_i,c_i,\sk)$}
-$\tpath \leftarrow \Publish(\calT,\calH)$\;
-\Return $\sig \leftarrow \bigl(\mathbf{c},(\resp_i)_{i\in\calH},\tpath,\salt\bigr)$
-\end{algorithm}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.48\textwidth}
-\begin{algorithm}[H]
-\footnotesize
-\setlength{\algomargin}{0.7em}
-\caption{$\Sig[\Pi].\Verify$}
-\label{alg:generic-verify}
-\KwIn{Public key $\pk$, message $\msg$, signature $\sig$}
-\KwOut{$\mathsf{accept}$ or $\perp$}
-Parse $\sig$ as $(\mathbf{c},(\resp_i)_{i\in\calH},\tpath,\salt)$\;
-$(\calH,\calR) \leftarrow \Decide(\mathbf{c})$\;
-$\{\eseed_i\}_{i \in \calR} \leftarrow \Recon(\tpath,\mathbf{c},\salt)$\;
-\lFor{$i \in \calR$}{$\widehat{\cmt}_i \leftarrow \Commit(\eseed_i,\salt,i)$}
-\lFor{$i \in \calH$}{$\widehat{\cmt}_i \leftarrow \ChkRnd(\resp_i,c_i,\pk,i)$}
-\lIf{some $\widehat{\cmt}_i = \perp$}{\Return $\perp$}
-\lIf{$\Chal(\widehat{\cmt}_0,\ldots,\widehat{\cmt}_{t-1},\msg) = \mathbf{c}$}
-   {\Return $\mathsf{accept}$}
-\Return $\perp$
-\end{algorithm}
-\end{minipage}
-\end{figure}
+\revon
+The generic signing and verification algorithms are given in
+Appendix~\ref{app:generic-algs} (Algorithms~\ref{alg:generic}
+and~\ref{alg:generic-verify}); they are schematic, with public parameters
+implicit in the round functions.
+\revoff
+
 
 \begin{remark}
 MEDS instantiates Definition~\ref{def:round} by setting
@@ -127,8 +100,10 @@ and \chg{line~\ref{alg:meds:path}} is $\Publish$.
 \end{remark}
 % ------------------------------------------------------------
 \textbf{The Flag Structure.}
-The flag structure $\calF$ produced internally by $\Publish$ is the key
-intermediate object.  It is a labelling $\calF : V(\calT) \to \{0,1\}$ where:
+\revon
+A flag structure $\calF$ is a convenient \emph{logical representation}
+of a publication decision; an implementation need not store such a flag array.  It is a labelling $\calF : V(\calT) \to \{0,1\}$ where:
+\revoff
 \begin{itemize}
   \item $\calF(v) = 0$: node $v$ is \emph{publishable}---either
         directly included in $\tpath$ or derivable from a published ancestor;
@@ -149,8 +124,12 @@ leaf $\eseed_i$ such that $\calF(v) = 0$ and $\calF(\mathsf{parent}(v)) = 1$.
 For every $i \in \calH$, no ancestor of leaf $\eseed_i$ satisfies $\calF(v) = 0$.
 \end{invariant}
 
-The ZK property of the signature scheme is contingent on
-Invariant~\ref{inv:hiding} holding for \emph{all} $i \in \calH$. A fault that
+\revon
+Seed hiding in this mechanism requires Invariant~\ref{inv:hiding}
+and that the released path indeed contains only boundary nodes specified
+by the flags. These invariants alone are not a complete zero-knowledge
+security proof of the derived signature scheme. A fault that
+\revoff
 changes $\calF(v)$ from $1$ to $0$ for any $v$ that is an ancestor of some
 $\eseed_i$ with $i \in \calH$ \emph{breaks Invariant~\ref{inv:hiding}} and
 may allow an attacker to reconstruct $\eseed_i$. We provide an example of
@@ -175,22 +154,14 @@ Invariants~\ref{inv:correctness} and~\ref{inv:hiding} hold by construction.
 \end{proposition}
 
 \label{prop:less-gzkst}%
-Concretely for MEDS: $\Setup$ derives $(\seed_r,\salt)$ from one $\XOF$ call;
-$\Expand$ builds the tree by hashing each parent with the salt and node index;
-$\Chal$ expands the leaves, hashes the compressed generators with the message
-and parses the digest through $\ParseHash_{s,t,w}$ into a weight-$w$
-$\mathbf{h}$; $\Decide$ sets $\calH = \{i : h_i \neq 0\}$; $\Publish =
-\SeedTreeToPath_t$ applies $\calF(v) = \calF(\ell) \vee \calF(r)$ bottom-up
-and serialises the boundary in depth-first order; and $\Recon =
-\PathToSeedTree_t$ re-expands it downward, leaving the positions in $\calH$
-empty. The proof (Appendix~\ref{app:proof-meds}) is purely graph-theoretic,
-depending only on the OR-propagation
-characterisation~\eqref{eq:meds-flag-char}, so it is insensitive to tree
-shape; this is what carries it to LESS-v2, whose index-tracking arrays keep
-$\LabelLeaves$ and $\ComputeSeeds$ on the correct nodes whatever depth the
-leaves sit at. CROSS additionally authenticates
-$\{\mathsf{cmt}_0[i]\}_{i\in\calH}$ with a Merkle tree, which is orthogonal to
-seed hiding and which we do not model.
+\revon
+For MEDS, $\Chal$ parses the commitment digest into $\mathbf h$,
+$\Decide$ sets $\calH=\{i:h_i\ne0\}$, and the specification computes the
+publication boundary by bottom-up OR propagation of hidden-leaf flags.
+The graph-theoretic proof (Appendix~\ref{app:proof-meds}) also covers
+LESS-v2's incomplete tree. CROSS additionally authenticates selected
+commitments with a Merkle tree, orthogonal to seed hiding.
+\revoff
 
 \begin{remark}
 This $\Publish$ follows the MEDS submission~\cite{MEDS_PQC}; the reference
@@ -302,10 +273,11 @@ reveals a node from which $\eseed_i$ is derivable, violating
 Invariant~\ref{inv:hiding}. Otherwise, the fault is
 \emph{ineffective}.
 
-Definition~\ref{def:fault-oracle} is realised by instruction skips,
-stuck-at-zero faults, bit flips and clock
-glitches~\cite{ZKFault,FaultToForge2025} alike; the abstraction is indifferent
-to which. An honest signature reveals $\resp_i$ for every $i \in \calH$ while
+\revon
+Definition~\ref{def:fault-oracle} specifies a \emph{logical} node-release
+fault. Different physical glitches may reproduce its disclosure effect,
+but not all control-flow faults instantiate this oracle. An honest signature reveals $\resp_i$ for every $i \in \calH$ while
+\revoff
 keeping $\eseed_i$ hidden, and an effective fault breaks that separation,
 handing the attacker both. We call this \emph{dual revelation}; it is the
 primitive underlying every secret-recovery attack in this work.
@@ -350,11 +322,11 @@ component admits its own class of faults with its own consequence:
 \end{itemize}
 
 Table~\ref{tab:surfaces} places the published attacks on this grid. Two
-observations follow. First, \chg{six independent attacks developed against six}
-schemes, with different tree shapes and different secret types, occupy only
-\chg{four} of the six components, which suggests the grid is the right coordinate
-system rather than an artefact. \chg{Second, the grid is a search tool: the empty
-cells ($\Decide$, $\Recon$) are predictions, and asking what \emph{else}
+\revon
+observations follow. The reported attacks span several schemes but target only four of the six
+components. \chg{Second, the grid is a search tool: the empty
+cells ($\Decide$, $\Recon$) suggest possible research directions, and asking what \emph{else}
+\revoff
 inside a populated cell can be faulted produced Model~2 of
 Section~\ref{sec:app}. Inside $\Publish$, besides the flag value, there is
 the cursor that walks the sorted hidden-leaf list --- a surface with no
@@ -382,7 +354,7 @@ Fault attack on MPCitH~\cite{BandaBK26} & Mirath, RYDE    & \Expand, \Chal    & 
 Case study on FAEST~\cite{JendralD25}  & FAEST            & \Expand           & \chg{SCA + fault}           & \chg{HW, Cortex-M4}           & key recovery \\
 \chg{Fault attacks on PERK~\cite{cryptoeprint:2026/1266}} & \chg{PERK} & \chg{\Setup} & \chg{clock glitch, EM} & \chg{HW, end-to-end (pqm4)} & \chg{key recovery} \\
 \midrule
-This work (Section~\ref{sec:app})      & MEDS             & \Publish{} ($3$ surfaces) & \chg{clock glitch} & \chg{HW, routine-level (PoC)} & key recovery \\
+This work (Section~\ref{sec:app})      & MEDS             & \Publish{} ($3$ surfaces) & \chg{clock glitch} & \chg{HW, routine-level (PoC)} & seed disclosure \\
 \bottomrule
 \end{tabular}
 }
@@ -458,20 +430,31 @@ instance, let $v^* = \mathrm{root}$, so that \chg{$\ell = t$,} the fault exposes
 $w$ hidden leaves and $L = w$ is deterministic, and put
 $p_{\min} = 1 - \bigl(\tfrac{s-2}{s-1}\bigr)^{w}$. \chg{Assume the
 hidden-round challenge values $c_i$ ($i \in \calH$) are independent and uniform
-over $\{1,\ldots,s-1\}$, as they are for a challenge drawn by a random oracle.}
-Then Algorithm~\ref{alg:key-recovery} terminates with $\widehat{\sk} = \sk$, the
+\revon
+over $\{1,\ldots,s-1\}$, as an explicit idealised assumption on the output of the challenge parser (random-oracle output alone does not establish this distribution).}
+Then Algorithm~\ref{alg:key-recovery} collects every secret component
+with probability one (yielding signing-equivalent information), and the
+\revoff
 expected number of effective queries satisfies
-$\mathbb{E}[Q] \leq (s-1)/p_{\min}$, and for any $\delta > 0$ at most
+\revon
+$\mathbb{E}[Q] \leq (s-1)/p_{\min}$, and for any $\delta \in (0,1)$ at most
+\revoff
 \chg{$(s-1)\bigl\lceil p_{\min}^{-1} \ln \frac{s-1}{\delta} \bigr\rceil$}
 effective queries suffice with probability \chg{at least} $1-\delta$. See
 Appendix~\ref{app:proof-recovery}.
 \end{proposition}
 
-For a fault at an arbitrary node the number of hidden leaves in its subtree is
-hypergeometric and may fall below its mean, so $p_{\min}$ no longer bounds the
-per-query success probability; the worst case of a single hidden leaf still
-gives $\mathbb{E}[Q] \leq (s-1)H_{s-1} \leq 5H_5 \approx 11.4$. Deciding
-whether a signature is effective is easy for the adversary: \chg{the fault location
+\revon
+For a fixed non-root node, $L$ is hypergeometric \emph{before conditioning
+on effectiveness}; conditional on at least one exposed hidden leaf,
+$1\leq L\leq w$. Assuming independently uniform component labels for
+each exposed leaf across effective queries, the single-leaf case gives the
+conservative coupon-collector bound $\mathbb{E}[Q]\leq(s-1)H_{s-1}$
+(for the MEDS parameter sets, at most $5H_5\approx11.4$). This bound
+is not a calibrated attack cost for the hardware cursor fault, whose
+leakage distribution is unmeasured. Deciding whether a \emph{modelled}
+flag fault was effective uses the fault location and public challenge: \chg{the fault location
+\revoff
 is its own choice and the challenge is recoverable from the signature, so it}
 recomputes the honest flag tree and checks that $v^*$ was hidden and covers a
 hidden leaf.
@@ -481,16 +464,24 @@ hidden leaf.
 set. Every set has $p_{\min} \geq 0.9966$, so the bound of
 Proposition~\ref{prop:alg-correctness} gives $\mathbb{E}[Q] \leq 5.00$, but
 the bound is loose: with $w \geq 14$ hidden rounds drawn over at most $5$
-secret indices, a single effective root fault recovers the whole key with
+\revon
+secret indices, one effective root disclosure covers all long-term matrix pairs with
+\revoff
 probability at least $0.987$, and the exact expectation is
 $\mathbb{E}[Q] \leq 1.013$ for every set (Appendix~\ref{app:proof-query}).
-In practice one effective fault suffices at every security level.}
+\revon
+This is a conditional statement about \emph{root leakage}, not about
+Models~2--3 or the probability of inducing such leakage.}
+\revoff
 
 
 \noindent\textbf{From key recovery to forgery.}
-On termination the adversary holds a complete signing key and can sign any
-message, including ones never submitted to the oracle. This is a full break of
-EUF-CMA.
+\revon
+On termination the adversary has recovered the long-term components
+needed to produce valid signatures, even if the original serialized secret
+key (including seeds used in key generation) is not reconstructed.
+This enables universal forgery in the stated fault model.
+\revoff
 
 \begin{corollary}
 \label{cor:euf-cma}
@@ -501,8 +492,10 @@ the fault model be as in
 Definition~\ref{def:fault-oracle} (a stuck-at-zero perturbation of a single
 flag bit during $\Publish$).  If an efficient adversary can induce this fault
 at a fixed node $v^* \in V(\calT)$ on the victim's signing device, then
-$\Pi$ is \emph{not} \textrm{EUF-CMA}-secure in the fault model: the adversary
-recovers $\sk$ via Algorithm~\ref{alg:key-recovery} and forges signatures on
+\revon
+$\Pi$ is \emph{not} \textrm{EUF-CMA}-secure in the fault model: the adversary recovers signing-equivalent information via
+Algorithm~\ref{alg:key-recovery} and forges signatures on
+\revoff
 arbitrary messages without further oracle access.
 \end{corollary}
 

@@ -1,3 +1,52 @@
+\revon
+\subsection{Generic GZKST signing and verification}
+\label{app:generic-algs}
+The algorithms below make explicit the schematically defined signature
+scheme of Definition~\ref{def:sigma}; every round function implicitly
+receives the public parameters.
+
+\revoff
+\begin{figure}[htbp]
+\centering
+\begin{minipage}[t]{0.48\textwidth}
+\begin{algorithm}[H]
+\footnotesize
+\setlength{\algomargin}{0.7em}
+\caption{$\Sig[\Pi].\Sign$}
+\label{alg:generic}
+\KwIn{Secret key $\sk$, message $\msg$}
+\KwOut{Signature $\sig$}
+$(\seed_r,\salt) \leftarrow \Setup(1^{\lam})$\;
+$(\calT,(\eseed_i)_i) \leftarrow \Expand(\seed_r,\salt)$\;
+\lFor{$i = 0$ \KwTo $t-1$}{$\cmt_i \leftarrow \Commit(\eseed_i,\salt,i)$}
+$\mathbf{c} \leftarrow \Chal(\cmt_0,\ldots,\cmt_{t-1},\msg)$\;
+$(\calH,\calR) \leftarrow \Decide(\mathbf{c})$\;
+\lFor{$i \in \calH$}{$\resp_i \leftarrow \Resp(\eseed_i,c_i,\sk)$}
+$\tpath \leftarrow \Publish(\calT,\calH)$\;
+\Return $\sig \leftarrow \bigl(\mathbf{c},(\resp_i)_{i\in\calH},\tpath,\salt\bigr)$
+\end{algorithm}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\begin{algorithm}[H]
+\footnotesize
+\setlength{\algomargin}{0.7em}
+\caption{$\Sig[\Pi].\Verify$}
+\label{alg:generic-verify}
+\KwIn{Public key $\pk$, message $\msg$, signature $\sig$}
+\KwOut{$\mathsf{accept}$ or $\perp$}
+Parse $\sig$ as $(\mathbf{c},(\resp_i)_{i\in\calH},\tpath,\salt)$\;
+$(\calH,\calR) \leftarrow \Decide(\mathbf{c})$\;
+$\{\eseed_i\}_{i \in \calR} \leftarrow \Recon(\tpath,\mathbf{c},\salt)$\;
+\lFor{$i \in \calR$}{$\widehat{\cmt}_i \leftarrow \Commit(\eseed_i,\salt,i)$}
+\lFor{$i \in \calH$}{$\widehat{\cmt}_i \leftarrow \ChkRnd(\resp_i,c_i,\pk,i)$}
+\lIf{some $\widehat{\cmt}_i = \perp$}{\Return $\perp$}
+\lIf{$\Chal(\widehat{\cmt}_0,\ldots,\widehat{\cmt}_{t-1},\msg) = \mathbf{c}$}
+   {\Return $\mathsf{accept}$}
+\Return $\perp$
+\end{algorithm}
+\end{minipage}
+\end{figure}
+
 
 For completeness we reproduce the MEDS key generation and verification
 algorithms, following the reference specification~\cite{ChouNPRRST23,MEDS_PQC}.
