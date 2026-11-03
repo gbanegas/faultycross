@@ -6,15 +6,13 @@ We use the convention $\calF(v) = 1$ to mean that $v$'s subtree contains at
 least one hidden leaf ($i \in \calH$), and $\calF(v) = 0$ to mean that all
 leaf descendants of $v$ are revealed ($i \in \calR$).
 
-
-
 % ------------------------------------------------------------
 \subsection{Proof of Proposition~\ref{prop:meds-gzkst}
   (MEDS is a \GZKST\ instance)}
 \label{app:proof-meds}
 % ------------------------------------------------------------
 
-Let $\calT$ be the MEDS seed tree, \chg{of height} $\lceil \log_2 t \rceil$.
+Let $\calT$ be the MEDS seed tree, of height $\lceil \log_2 t \rceil$.
 The $\SeedTreeToPath$ algorithm implements the following erasure: for each
 $i \in \calH$ the algorithm (i)~removes the label of $\mathrm{leaf}_i$, and
 (ii)~propagates the removal upward---a node $v$ loses its label as soon as
@@ -62,11 +60,11 @@ tree, serialised in depth-first order.  Equivalently,
   \tpath = \{\,v : v \text{ retains its label and }
   \mathrm{parent}(v) \text{ was erased}\,\}.
 \]
-By \chg{the Claim above}, this equals
+By the Claim above, this equals
 $\{v : \calF(v) = 0,\;\calF(\mathrm{parent}(v)) = 1\}$
 (with the convention that $\calF(\mathrm{parent}(\mathrm{root})) = 1$).
 
-\begin{proof}[\chg{Invariant~\ref{inv:correctness}, correctness}]
+\begin{proof}[Invariant~\ref{inv:correctness}, correctness]
 Let $i \in \calR$.  Consider the root-to-leaf path
 $\pi_i = (v_0 = \mathrm{root},\,v_1,\,\ldots,\,v_d = \mathrm{leaf}_i)$.
 
@@ -85,7 +83,7 @@ $\calF(v_{k-1}) = 1$.  Hence $v_k \in \tpath$, and $v_k$ lies on the
 root-to-leaf path $\pi_i$, establishing Invariant~\ref{inv:correctness}.
 \end{proof}
 
-\begin{proof}[\chg{Invariant~\ref{inv:hiding}, ZK hiding}]
+\begin{proof}[Invariant~\ref{inv:hiding}, ZK hiding]
 Let $i \in \calH$ and let $v$ be any proper ancestor of $\mathrm{leaf}_i$
 (including the root).  Since $\mathrm{leaf}_i$ is a descendant of $v$ and
 $i \in \calH$, equation~\eqref{eq:meds-flag-char} gives $\calF(v) = 1$.
@@ -95,14 +93,14 @@ Invariant~\ref{inv:hiding} holds.
 \end{proof}
 
 \begin{proof}[Extension to incomplete trees]
-\chg{When $t$ is not a power of~$2$ the tree is incomplete. In MEDS the leaves
+When $t$ is not a power of~$2$ the tree is incomplete. In MEDS the leaves
 are the first $t$ positions at depth $\lceil \log_2 t \rceil$; in LESS-v2
 they sit at two depths and per-level leaf-offset arrays locate them. In
 either case~\eqref{eq:meds-leaf-flag} and~\eqref{eq:meds-or-prop} are
 defined on the actual tree, and the proofs of both invariants above are
 purely graph-theoretic, depending only
 on~\eqref{eq:meds-leaf-flag}--\eqref{eq:meds-flag-char}. Hence both
-invariants hold for any such tree shape.}
+invariants hold for any such tree shape.
 \end{proof}
 
 % ------------------------------------------------------------
@@ -111,20 +109,16 @@ invariants hold for any such tree shape.}
 \label{app:proof-recovery}
 % ------------------------------------------------------------
 
-\revon
 Let $m = |\calS| = s - 1$. The process of recovering all signing-relevant secret
-\revoff
 components is modeled as a \emph{generalized coupon-collector problem}
 with group drawings~\cite{coupon1,AnceaumeBSS16}, where each query
-draws a batch of $w$ coupons out of $m$ distinct types. \chg{We assume
+draws a batch of $w$ coupons out of $m$ distinct types. We assume
 throughout that the coupon drawn for each hidden round is independent and
 uniform over the $m = s-1$ types; concretely, that the nonzero challenge values
-\revon
 $c_i$ ($i\in\calH$) are independent and uniform over $\{1,\ldots,s-1\}$, which is an explicit assumption about the output distribution of the
 challenge parser. Random-oracle sampling of the digest alone does not prove
 this independence property. All query
-\revoff
-bounds below rest on this assumption.}
+bounds below rest on this assumption.
 
 \paragraph{Correctness of Extract.}
 For each scheme, Definition~\ref{def:extract} specifies $\Extract$ as a closed-form
@@ -169,7 +163,6 @@ a $\mathrm{Geom}(p_{\min})$ random variable, which is finite almost
 surely.  Hence $Q = \sum_{j=1}^{m} T_j$ is finite almost surely, and
 Algorithm~\ref{alg:key-recovery} terminates with probability~$1$.
 
-
 \paragraph{Expected query count and tail bound.}
 Let $R_k$ be the number of uncollected secret indices after $k$ effective
 queries, and let $r = R_{k-1} > 0$.  Each of the $w$ hidden leaves
@@ -188,22 +181,21 @@ $p_r \geq p_{\min} = 1-(1-1/(s-1))^w$ for all $r \geq 1$.
 
 The expected total number of effective queries is
 \begin{equation}
-  \mathbb{E}[Q] \;\chg{\leq}\; \sum_{r=1}^{m} \frac{1}{p_r}
+  \mathbb{E}[Q] \;\leq\; \sum_{r=1}^{m} \frac{1}{p_r}
   \;\leq\; \frac{m}{p_{\min}} \;=\; \frac{s-1}{p_{\min}},
   \label{eq:exp-Q}
 \end{equation}
-where \chg{the first inequality holds because each query that reveals a new index
-decreases $r$ by at least one, and the second} uses $p_r \geq p_{\min}$ for
+where the first inequality holds because each query that reveals a new index
+decreases $r$ by at least one, and the second uses $p_r \geq p_{\min}$ for
 all $r \geq 1$.
 
 \begin{remark}
-The bound in~\eqref{eq:exp-Q} \chg{is loose, as it treats the recovery
-process as learning one secret at a time.} In practice, a query may reveal multiple unseen indices 
-simultaneously, especially during the early stages of the 
-algorithm when $r$ is large. As a consequence the actual expected 
+The bound in~\eqref{eq:exp-Q} is loose, as it treats the recovery
+process as learning one secret at a time. In practice, a query may reveal multiple unseen indices
+simultaneously, especially during the early stages of the
+algorithm when $r$ is large. As a consequence the actual expected
 number of queries can be smaller than $(s-1)/p_{\min}$.
 \end{remark}
-
 
 For the tail bound, each $T_j \leq k_0$ with probability at least
 $1 - (1 - p_{\min})^{k_0}$ (geometric tail), so by a union bound over
@@ -211,22 +203,19 @@ $m = s-1$ stages,
 \[
   \Pr[Q > k] \;\leq\; (s-1)\cdot(1-p_{\min})^{\lfloor k/(s-1)\rfloor}.
 \]
-\chg{Since $(1-p_{\min})^{x} \leq e^{-p_{\min} x}$, the right-hand side is at
+Since $(1-p_{\min})^{x} \leq e^{-p_{\min} x}$, the right-hand side is at
 most $\delta$ as soon as $\lfloor k/(s-1)\rfloor \geq p_{\min}^{-1}
 \ln\tfrac{s-1}{\delta}$, so it suffices to take
-$k = (s-1)\bigl\lceil p_{\min}^{-1} \ln\tfrac{s-1}{\delta} \bigr\rceil$,}
+$k = (s-1)\bigl\lceil p_{\min}^{-1} \ln\tfrac{s-1}{\delta} \bigr\rceil$,
 establishing the bound in Proposition~\ref{prop:alg-correctness}.
-
 
 \paragraph{Output correctness.}
 When the loop terminates, $|\mathsf{Collected}| = m$, and for each
 $j \in \{1,\ldots,s-1\}$ there is exactly one entry $(j, \sk'_j) \in \mathsf{Collected}$
 with $\sk'_j = A_j^{-1}$ (or the corresponding secret for each scheme).
-\revon
 The $\mathsf{Collect}$ step assembles them into a signing-equivalent
 secret description. Equality with the original serialized $\sk$ is not
 claimed: its other seed fields need not be recovered.
-\revoff
 
 % ------------------------------------------------------------
 \subsection{Derivation of Proposition~\ref{prop:alg-correctness}
@@ -279,11 +268,11 @@ From equation~\eqref{eq:pr-exact},
 \(p_r = 1 - \bigl(1 - r/(s-1)\bigr)^{w}\) (with \(L = w\) deterministic),
 and since \(p_r \geq p_{\min}\) for all \(r \geq 1\),
 \[
-  \mathbb{E}[Q] \chg{\leq} \sum_{r=1}^{m} \frac{1}{p_r} \leq \frac{m}{p_{\min}}
+  \mathbb{E}[Q] \leq \sum_{r=1}^{m} \frac{1}{p_r} \leq \frac{m}{p_{\min}}
   = \frac{s-1}{p_{\min}}.
 \]
 
-\chg{\paragraph{Exact value (root fault).}
+\paragraph{Exact value (root fault).}
 After $k$ effective queries the adversary has seen $kw$ independent uniform
 indices from $\{1,\ldots,m\}$, so by inclusion--exclusion all $m$ secrets are
 collected with probability
@@ -296,4 +285,4 @@ collected with probability
 and $\Pr[Q = 1] = P_1$. These are the last two columns of
 Table~\ref{tab:scheme-params}: $P_1 \geq 0.987$ and
 $\mathbb{E}[Q] \leq 1.013$ for every MEDS parameter set, against
-$(s-1)/p_{\min}$ between $3.01$ and $5.00$.}
+$(s-1)/p_{\min}$ between $3.01$ and $5.00$.

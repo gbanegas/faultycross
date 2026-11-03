@@ -1,4 +1,3 @@
-\revon
 Post-quantum signatures derived from parallel-repeated identification
 protocols compress ephemeral randomness with GGM seed trees. In schemes such
 as LESS, CROSS and MEDS~\cite{LESS-spec,CROSSspec,ChouNPRRST23}, a signer
@@ -19,7 +18,7 @@ the tree with a cursor into a sorted list of hidden leaves. This difference
 creates a distinct control-flow fault surface. The concrete attacks below
 are specific to this MEDS routine, not demonstrated attacks on other schemes.
 
-\subsection{Related Work}
+\subsection{Related work}
 \label{sec:relwork}
 ZKFault~\cite{ZKFault} studies disclosure of hidden seeds in LESS-v1 and
 CROSS using faults simulated in reference code. Fault-to-Forge
@@ -35,21 +34,29 @@ that dual revelation is fatal; it lies principally in analysing the
 cursor-dependent MEDS implementation and experimentally inducing its
 control-flow faults.
 
-\paragraph{Contributions and limitations.}
-We give a six-component Generic ZK Seed Tree (GZKST) framework and classify
-published faults by where they intervene; the framework is a means of
-finding implementation surfaces, not a new proof of punctured-PRF security.
-We then identify three disclosure mechanisms in MEDS, including a cursor
-fault absent from earlier flag-tree attacks, and demonstrate the target
-states under clock glitches on a Cortex-M4. For a \emph{root-disclosure}
-fault we derive exact key-coverage probabilities: with independent uniform
-nonzero MEDS challenge indices, one such disclosure covers all $s-1$
-long-term matrix pairs with probability at least $0.987$. This number does
-\emph{not} apply to partial subtree or single-leaf faults. We discuss
-release-time checks and independent path validation, while treating a
-possible double-glitch bypass of shared-code verification as an untested
-hypothesis rather than a demonstrated attack. The experiments do not include
-complete on-device MEDS signing or on-device extraction of an equivalent
-signing key.
+\paragraph{Contributions.}
+This paper makes three contributions.
+\begin{itemize}[leftmargin=*]
+  \item A six-component Generic ZK Seed Tree (GZKST) framework that classifies
+        published faults by the component they corrupt. The framework is a tool
+        for locating implementation surfaces, not a new proof of punctured-PRF
+        security.
+  \item Three seed-disclosure mechanisms in the MEDS reference implementation,
+        one of them a cursor fault with no analogue in the flag-tree attacks of
+        earlier work, each reproduced as a target state under clock glitches on
+        a Cortex-M4.
+  \item For the root-disclosure fault, exact key-coverage probabilities: under
+        independent uniform nonzero MEDS challenge indices, one such disclosure
+        covers all $s-1$ long-term matrix pairs with probability at least
+        $0.987$. We then discuss release-time checks and independent path
+        validation.
+\end{itemize}
 
-\revoff
+\paragraph{Scope.}
+The $0.987$ figure is specific to root disclosure and does \emph{not} apply to
+partial subtree or single-leaf faults. The experiments glitch an isolated
+seed-path routine; they do not include complete on-device MEDS signing or
+on-device extraction of a signing-equivalent key, and we treat a double-glitch
+bypass of shared-code verification as an untested hypothesis rather than a
+demonstrated attack.
+

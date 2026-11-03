@@ -6,13 +6,12 @@ signature size but change how the path is produced; and \emph{tree-less
 constructions}, which remove the mechanism entirely at a large cost in
 signature size.
 
-
 \paragraph{Post-publication path check.}
 
 These run checks on the output of $\SeedTreeToPath$. A size check alone already
-defeats fault models~1 and~3, whose paths have length $1$ and \chg{$|\tpath|+k$}
-respectively \chg{($|\tpath|$ the honest length, $k \geq 1$ the number of leaked
-leaves)}, and the expected size is computable from $\calH$ in linear time.
+defeats fault models~1 and~3, whose paths have length $1$ and $|\tpath|+k$
+respectively ($|\tpath|$ the honest length, $k \geq 1$ the number of leaked
+leaves), and the expected size is computable from $\calH$ in linear time.
 A stronger version rebuilds the tree with $\PathToSeedTree$ and compares the
 recovered leaves against $\calH$ and the reference tree.
 
@@ -23,7 +22,6 @@ output on mismatch. Against the attacks of Section~\ref{sec:app} this does
 work in principle, because none of the three faulted paths deserialises to the
 honest leaf set and the recomputed digest therefore differs from $d$.
 
-\revon
 A caveat is that the MEDS reference combines path construction and
 reconstruction in two modes of the same function. Repeated faults at shared
 instruction locations could in principle corrupt both the signature and its
@@ -36,43 +34,38 @@ correlated-fault bypass requires a separate two-fault adversary model and
 experimental validation. The essential requirement is to suppress \emph{all}
 output on detection; emitting an invalid signature is sufficient for the
 leakage attack.
-\revoff
 
 \paragraph{Decoupling path construction from the flag tree.}
 
-\revon
 Using the same traversal for producing and checking the path creates
 potential common-mode failures. Decoupling them into independent stages with a check after
-\revoff
 each means a fault during flag-tree generation shows up as a mismatch during
 path construction:
 
 \begin{enumerate}
-\item \chg{Recompute the flag tree $\calF$ independently from $\mathbf{c}$
+\item Recompute the flag tree $\calF$ independently from $\mathbf{c}$
 (equivalently $\calH$), in a pass separate from the one that serialises the
-path.}
-\item \chg{Verify \emph{leaf agreement in both directions}: $\calF[i]=1$ if and
+path.
+\item Verify \emph{leaf agreement in both directions}: $\calF[i]=1$ if and
 only if $i\in\calH$, for \emph{every} leaf $i$ --- not only for the leaves
-currently flagged $1$.}
-\item \chg{Verify \emph{internal consistency}: every internal node satisfies
+currently flagged $1$.
+\item Verify \emph{internal consistency}: every internal node satisfies
 the OR-propagation relation $\calF(v)=\calF(\ell)\vee\calF(r)$, so no single
-corrupted node can agree with its two children.}
-\item \chg{Reconstruct the node path from the validated $\calF$ and the
+corrupted node can agree with its two children.
+\item Reconstruct the node path from the validated $\calF$ and the
 reference seed tree, and assert that the published set is exactly the boundary
 $\calF$ determines: no node with $\calF=1$ is derivable from it, and it contains
-no node outside that boundary.}
+no node outside that boundary.
 \end{enumerate}
 
-\chg{All four steps are $\mathcal{O}(t)$, against a signing cost dominated by
-\revon
+All four steps are $\mathcal{O}(t)$, against a signing cost dominated by
 matrix arithmetic over $\Fq$. We implemented and timed three checks
 (Appendix~\ref{app:timings}); whole-signature timing differences range
 from apparent speedups to $+14.5\%$, so they do not reliably quantify the
 validation overhead. Cycle-level microbenchmarks and fault tests of the
-checks themselves remain necessary.}
-\revoff
+checks themselves remain necessary.
 
-\chg{\noindent\textit{What the check detects, and what it does not.} A weaker
+\noindent\textit{What the check detects, and what it does not.} A weaker
 form of this countermeasure tests only the ancestors of leaves \emph{currently}
 flagged $1$, and so misses the very fault it should stop: a hidden leaf
 $i\in\calH$ whose own flag is forced $\calF[i]\colon 1\to 0$ while its ancestors
@@ -85,23 +78,19 @@ independent recomputation of step~1 is what gives the checks something to
 disagree with: a fault during path construction cannot silently satisfy a
 validation computed in a separate pass from a separate copy of $\mathbf{c}$.
 Two faults remain outside the model. A double fault that corrupts the
-\revon
 construction pass and the independent validation identically---a possible common-mode event not demonstrated here---is not caught by redundancy
-\revoff
 alone and needs the decoupling to be a genuinely distinct computation. A fault
 that alters $\mathbf{c}$ itself before both passes read it is a
 $\Chal$/$\Decide$ fault (Section~\ref{sec:taxonomy}), not one on $\Publish$, and
-is outside this countermeasure's scope.}
+is outside this countermeasure's scope.
 
 \paragraph{Abandoning the tree.}
 
 A third option is architectural: drop the tree and publish the ephemeral
 matrices $(\tilde{A}_i,\tilde{B}_i)$ of the revealed rounds explicitly,
-\revon
 adapting to MEDS the LESS countermeasure of~\cite{ZKFault}. No seed is released in this design, removing the specific
 seed-publication leakage channel; it does not prevent every possible fault
 on ephemeral state. The cost is prohibitive where $t$ is large: MEDS-9923 grows from
-\revoff
 $9{,}896$ to $677{,}440$ bytes, and even the best case, MEDS-167717, grows by
 $68\%$. Appendix~\ref{app:treeless} gives the construction and the full
 comparison.

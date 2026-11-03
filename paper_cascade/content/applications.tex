@@ -1,5 +1,5 @@
 We now attack the C reference implementation of MEDS,\footnote{\url{https://github.com/MEDSpqc/meds}}
-exploiting the tree-traversal logic of the path construction --- \chg{line~\ref{alg:meds:path}} of
+exploiting the tree-traversal logic of the path construction --- line~\ref{alg:meds:path} of
 Algorithm~\ref{alg:sign_meds} --- to leak hidden seeds. In that
 implementation, path generation and tree reconstruction are not two functions
 but two modes of one, \texttt{stree\_to\_path\_to\_stree}, selected by a
@@ -9,7 +9,7 @@ but two modes of one, \texttt{stree\_to\_path\_to\_stree}, selected by a
 void stree_to_path_to_stree(uint8_t *stree, ..., uint8_t *path, int mode) {
     while (1==1) {
         int index_leaf = 0;
-        `\label{lst:path:while}\highlight{yhl}{while ((indices[id] \chg{>{}>} (MEDS\_seed\_tree\_height-h)) == i)}` 
+        `\label{lst:path:while}\highlight{yhl}{while ((indices[id] >{}> (MEDS\_seed\_tree\_height-h)) == i)}`
         {// Traverse down toward the secret leaf
             h += 1;
             i <<= 1;
@@ -36,41 +36,33 @@ Our objective is to manipulate the control flow so that unpublished seeds ---
 internal nodes or leaves --- are written into the public signature path.
 
 \paragraph{Threat model and what a successful fault yields.}
-\revon
 Our \emph{intended} attack scenario is a victim device that signs a requested
 message and emits the resulting output despite a fault. The experiments
 below instead glitch a standalone invocation of the publication routine,
 using a fixed tree, salt and challenge; no full signing operation is run.
 In the intended attack, the adversary does \emph{not} need the
 emitted signature to be valid, a point that matters for
-\revoff
 Section~\ref{sec:counter}: $\resp_i = (\mu_i,\nu_i)$ is present for every
 hidden round regardless of the fault, so once the corrupted path discloses
 $\sigma_i$ for one such round the extraction of~\eqref{eq:meds-extract}
 succeeds even if the digest check would reject. What the adversary needs is
 not a valid signature but an \emph{emitted} one.
 
-\paragraph{Experimental Setup.}
-Our experimental platform consists of a CW303-STM32F3 target board carrying an
-ARM Cortex-M4 STM32F303RCT7 processor. Clock glitching is
-performed using a ChipWhisperer-Lite.
+\paragraph{Experimental setup and scope.}
+The platform is a CW303-STM32F3 target board carrying an ARM Cortex-M4
+STM32F303RCT7 processor, clock-glitched with a ChipWhisperer-Lite. The board
+executes only the seed-path routine, on a fixed tree, salt and challenge. We
+did not test locating the vulnerable instruction after a complete signing
+operation, producing a serialised faulted signature, or recovering secret
+components on-device, so the routine-level yields reported below cannot be read
+as end-to-end attack probabilities. Other hardware fault work on this family
+has likewise isolated subfunctions~\cite{BandaBK26}.
 
-\revon
-\paragraph{Experimental scope.}
-The board executes only the seed-path routine with fixed tree, salt and
-challenge. Locating the vulnerable instruction after a complete signing
-operation, producing a serialized faulted signature and recovering secret
-components on-device were not tested. Thus the measured routine-level yields
-cannot be read as end-to-end attack probabilities. Other hardware fault work
-on this family has likewise isolated subfunctions~\cite{BandaBK26}.
-\revoff
-
-%\subsection{Fault Models}
-\paragraph{Fault Models.}
+\paragraph{Fault models.}
 We propose three fault models targeting different stages of the tree traversal.
 
-\noindent\textbf{Model 1: Full Tree Recovery (Root Leakage).}
-This attack aims to reveal the root seed, which effectively compromises the entire tree. By injecting a fault that causes the skip of the first iteration of \highlight{yhl}{\texttt{while} loop} at \chg{line~\ref{lst:path:while}} of Listing~\ref{lst:path}, the DFS halts immediately at the root ($h=0, i=0$). The root is incorrectly identified as a node ready for publication.
+\noindent\textbf{Model 1: full tree recovery (root leakage).}
+This attack aims to reveal the root seed, which effectively compromises the entire tree. By injecting a fault that causes the skip of the first iteration of \highlight{yhl}{\texttt{while} loop} at line~\ref{lst:path:while} of Listing~\ref{lst:path}, the DFS halts immediately at the root ($h=0, i=0$). The root is incorrectly identified as a node ready for publication.
 
 \noindent\textit{Detection and recovery.} The signature path contains only a
 single non-zero element. The adversary confirms the fault offline by expanding
@@ -80,8 +72,8 @@ device is required. Note that the resulting path does not deserialise
 correctly under an honest $\PathToSeedTree_t$, so this fault is detectable by
 the signer --- see Section~\ref{sec:counter}.
 
-\noindent\textbf{Model 2: Subtree Recovery.}
-By glitching the guarded increment \highlight{rhl}{\texttt{id++}} at \chg{line~\ref{lst:path:inc}}
+\noindent\textbf{Model 2: subtree recovery.}
+By glitching the guarded increment \highlight{rhl}{\texttt{id++}} at line~\ref{lst:path:inc}
 of Listing~\ref{lst:path}, the algorithm fails to advance the cursor
 \texttt{id} into the list of hidden leaves. The traversal logic becomes desynchronized, resulting in the algorithm treating subsequent branches as public. All leaves to the right of the faulted \texttt{id} become computable.
 
@@ -124,23 +116,23 @@ at a cost of at most $w$ verifications.
   \draw[treeedge](s3)--(s7);\draw[treeedge](s3)--(s8);
   \draw[treeedge](s4)--(s9);\draw[treeedge](s4)--(s10);
 \end{tikzpicture}
-\caption{Effect of fault model 2 on the example presented in Figure~\ref{fig:less-trees}, if the glitch \chg{occurred while \texttt{id==0}, i.e.\ at the first hidden leaf $\eseed_1$ (at \texttt{id==1} the guarded increment is already a no-op for $w=2$)}. The returned path is $\{s_7,s_9,s_4,s_2\}$ and all leaves are computable except $\eseed_1$.}
+\caption{Effect of fault model 2 on the example presented in Figure~\ref{fig:less-trees}, if the glitch occurred while \texttt{id==0}, i.e.\ at the first hidden leaf $\eseed_1$ (at \texttt{id==1} the guarded increment is already a no-op for $w=2$). The returned path is $\{s_7,s_9,s_4,s_2\}$ and all leaves are computable except $\eseed_1$.}
 \label{fig:faulted_path}
 \end{figure}
 
-\noindent\textbf{Model 3: Hidden Leaf Recovery.}
-This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf = 1;}} at \chg{line~\ref{lst:path:leaf}} of Listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
+\noindent\textbf{Model 3: hidden leaf recovery.}
+This model targets the specific instruction \highlight{bhl}{\texttt{index\_leaf = 1;}} at line~\ref{lst:path:leaf} of Listing~\ref{lst:path}. By skipping this assignment, a hidden leaf is no longer marked as private. The execution continues normally, but the secret leaf seed is copied into the \texttt{path} buffer.
 
-\noindent\textit{Detection and recovery.} \chg{The path carries $k > 0$ extra
+\noindent\textit{Detection and recovery.} The path carries $k > 0$ extra
 seeds, one per skipped assignment, so it is $k$ entries longer than the honest
 path, whose length the adversary computes from $\mathbf{h}$. No subset search
 is needed to exploit it: for each path entry $\sigma$ and each hidden round
 $i$, the adversary expands $\sigma$ as the round-$i$ seed, extracts a candidate
 $(A_j^{-1},B_j^{-1})$ with $j = h_i$ by~\eqref{eq:meds-extract}, and keeps it
 if $\SF(\pimap{A_j}{B_j}(G_0)) = G_j$. This costs at most $w\cdot|\tpath|$
-such tests, each a handful of matrix operations over $\Fq$.}
+such tests, each a handful of matrix operations over $\Fq$.
 
-\chg{\noindent\textit{Relation to Definition~\ref{def:fault-oracle}.} The
+\noindent\textit{Relation to Definition~\ref{def:fault-oracle}.} The
 reference implementation has no flag array, but Models~1 and~3 have the effect
 of the faulted oracle: Model~1 publishes the root, as $\Oracle^{\mathrm{root}}$
 does, so Proposition~\ref{prop:alg-correctness} applies with $L = w$; Model~3
@@ -148,30 +140,22 @@ publishes a single hidden leaf, as $\Oracle^{v^*}$ does with $v^*$ that leaf
 ($L = 1$, the $(s-1)H_{s-1}$ case of Section~\ref{sec:extract}). Model~2
 corrupts the cursor rather than one node's release decision, so it is not an
 instance of Definition~\ref{def:fault-oracle}; it exposes the hidden leaves
-\revon
 to the right of the faulted position, so $1 \leq L \leq w$ for useful disclosures. Neither its empirical
-$L$ distribution nor an end-to-end recovery rate was measured.}
-\revoff
+$L$ distribution nor an end-to-end recovery rate was measured.
 
 \subsection{Results}
 
-\revon
 We reproduced all three targeted faulty path outputs on a
-ChipWhisperer-Lite/STM32F303 testbed. 
-\revoff
+ChipWhisperer-Lite/STM32F303 testbed.
 
-\revon
 We bracket the instruction under test with GPIO triggers and check the
 disassembly for trigger placement. After tuning the glitch duration, we
 sweep \texttt{width} (pulse width), \texttt{offset} (phase) and
 \texttt{ext\_offset} (cycles after the trigger). This arrangement gives
 instruction-level synchronization unavailable from the beginning of a full
 signing request.
-\revoff
 
-
-\chg{
-  We separate exploration from confirmation. A coarse sweep of the
+We separate exploration from confirmation. A coarse sweep of the
 \texttt{ext\_offset}, \texttt{offset} and \texttt{width} grid at $10$ attempts
 per point locates the vulnerable region; we then fix the single highest-yield
 point and re-run $100$ \emph{independent} attempts there, and it is these
@@ -180,53 +164,46 @@ $p_{\mathrm{best}}$ with a Wilson $95\%$ confidence interval and the reset
 rate. The vulnerable window is narrow: across the full swept grid only a small
 fraction of points fault at all (e.g.\ $33$ of $672$ for Model~1, $4$ of $448$
 for Model~3), so the grid-averaged yield is one to two orders of magnitude
-\revon
 below $p_{\mathrm{best}}$. Proposition~\ref{prop:alg-correctness} applies to \emph{root
 disclosure only}. The inverse calibrated success probability $1/p_{\mathrm{best}}$
 is the geometric mean number of routine invocations to obtain the specified
 target output, if repeated attempts are independent. It excludes the initial
 parameter search, resets, timing uncertainty of full signing and, for
-Models~2--3, the further disclosures needed to recover all components. All runs use a core clock of $7.37$\,MHz.}
-\revoff
-
+Models~2--3, the further disclosures needed to recover all components. All runs use a core clock of $7.37$\,MHz.
 
 \begin{table}[htp]
 \centering
-\caption{\chg{Single-glitch outcome rates at the best parameter point, from
+\caption{Single-glitch outcome rates at the best parameter point, from
 $100$ independent confirmatory attempts (the \textbf{att.}\ column).
 $p_{\mathrm{best}}$ is given with a Wilson $95\%$ confidence interval, alongside
-\revon
 the reset rate and the idealised mean
 invocations $1/p_{\mathrm{best}}$ needed for the specified target output.
 These are \emph{not} end-to-end signing-request or full-key recovery costs. The best-point
-\revoff
 $(\texttt{ext\_offset},\texttt{offset},\texttt{width})$ settings are stated per
 model in the text; the success-map figures sweep the full grid at $10$ attempts
-per point.}}
+per point.}
 \label{tab:fault-success}
 \setlength{\tabcolsep}{5pt}
 \small
 \begin{tabular}{@{}l|l|r|r|c|r|r@{}}
 \toprule
 \textbf{Model} & \textbf{Opt.} & \textbf{att.} & $p_{\mathrm{best}}$ &
-\chg{\textbf{95\% CI}} & \textbf{reset} & \rev{\chg{\textbf{inv./hit}}} \\
+\textbf{95\% CI} & \textbf{reset} & \textbf{inv./hit} \\
 \midrule
-1 (root)        & \texttt{-Os} & $100$ & $0.85$ & \chg{$[0.77,0.91]$} & $0.01$ & \rev{$1.18$} \\
+1 (root)        & \texttt{-Os} & $100$ & $0.85$ & $[0.77,0.91]$ & $0.01$ & $1.18$ \\
 \midrule
-2 (subtree)     & \texttt{-Os} & $100$ & $0.23$ & \chg{$[0.16,0.32]$} & $0.62$ & \rev{$4.35$} \\
+2 (subtree)     & \texttt{-Os} & $100$ & $0.23$ & $[0.16,0.32]$ & $0.62$ & $4.35$ \\
 \midrule
-3 (hidden leaf) & \texttt{-O0} & $100$ & $0.16$ & \chg{$[0.10,0.24]$} & $0.05$ & \rev{$6.25$} \\
+3 (hidden leaf) & \texttt{-O0} & $100$ & $0.16$ & $[0.10,0.24]$ & $0.05$ & $6.25$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\chg{\paragraph{Reproducibility.} We collect the settings in one place. The
+\paragraph{Reproducibility.} We collect the settings in one place. The
 device is a CW303 STM32F303RCT7 (ARM Cortex-M4) on a ChipWhisperer-Lite, core
 clock $7.37$\,MHz, driven over SimpleSerial~v2.1. The target is the
 \texttt{stree\_to\_path\_to\_stree} routine of the MEDS reference
-\revon
 implementation for a single parameter set, one MEDS level-I configuration (tree height
-\revoff
 $\lceil\log_2 t\rceil$, $w$ hidden rounds), built with \texttt{arm-none-eabi-gcc}
 through the ChipWhisperer makefile, with \texttt{PLATFORM=CWLITEARM} and
 \texttt{GLITCH\_MODEL=}$m$. Models~1 and~2 use the project default
@@ -242,26 +219,26 @@ independent attempts, disjoint from the sweep; these are the figures of
 Table~\ref{tab:fault-success}. The exact parameter set, the
 \texttt{arm-none-eabi-gcc} version and the source commit are pinned in the
 accompanying artefact, with the harness (\texttt{cw\_meds\_glitch.py}) and the
-instrumented \texttt{seed.c}.}
+instrumented \texttt{seed.c}.
 
 \textbf{Model 1: Full tree recovery.}
 This attack is successful if the returned path contains a
 single node which is the root node.
 
-\textit{Compilation.} This attack is carried out on a 
+\textit{Compilation.} This attack is carried out on a
 code compiled with the default \texttt{-Os} optimization.
 
-\textit{Trigger position.} We directly target the 
-evaluation of the conditional and the branching 
-instruction corresponding to \chg{line~\ref{lst:path:while}} of Listing~\ref{lst:path}. 
+\textit{Trigger position.} We directly target the
+evaluation of the conditional and the branching
+instruction corresponding to line~\ref{lst:path:while} of Listing~\ref{lst:path}.
 The compiled result is Listing~\ref{lst:f1asm} in
 Appendix~\ref{app:asm}; we fault for three clock cycles.
 
-\textit{Parameters.} \chg{The best point is \texttt{ext\_offset}$=9$,
+\textit{Parameters.} The best point is \texttt{ext\_offset}$=9$,
 \texttt{offset}$=3$, \texttt{width}$=9$, giving $85\%$ success over $100$
 attempts with a $1\%$ reset rate; the hot band spans \texttt{ext\_offset}
 $7$--$9$. Figure~\ref{fig:fault1_results} maps the outcomes and the rates are
-the Model~1 row of Table~\ref{tab:fault-success}.}
+the Model~1 row of Table~\ref{tab:fault-success}.
 
 \begin{figure}[!tb]
 \centering
@@ -274,23 +251,23 @@ the target faulted path), pink crosses device resets.}
 \label{fig:fault1_results}
 \end{figure}
 
-\textbf{Model 2: Subtree recovery.} We consider 
-this attack successful if we obtain the faulted path pattern 
-described by Figure~\ref{fig:faulted_path}. 
+\textbf{Model 2: Subtree recovery.} We consider
+this attack successful if we obtain the faulted path pattern
+described by Figure~\ref{fig:faulted_path}.
 
 \textit{Compilation.} This is carried out on a code compiled with the default \texttt{-Os} optimization.
 
-\textit{Trigger position.} The trigger frames \chg{line~\ref{lst:path:inc}} of
+\textit{Trigger position.} The trigger frames line~\ref{lst:path:inc} of
 Listing~\ref{lst:path}; the compiled result is Listing~\ref{lst:f2asm} in
 Appendix~\ref{app:asm}.
 
 \textit{Parameters.} Evaluating the condition and incrementing \texttt{id}
 take $3$ clock cycles, so we set \texttt{repeat} to $3$;
-Figure~\ref{fig:fault2_results} gives the resulting success map. \chg{The best
+Figure~\ref{fig:fault2_results} gives the resulting success map. The best
 point is \texttt{ext\_offset}$=2$, \texttt{offset}$=4$, \texttt{width}$=9$,
 giving $23\%$ success over $100$ confirmatory attempts (Wilson $95\%$ CI
 $[16\%,32\%]$) with a $62\%$ reset rate; these are the Model~2 row of
-Table~\ref{tab:fault-success}.}
+Table~\ref{tab:fault-success}.
 
 For Model~2 we observe a bounded region of system resets bordered by
 successful attacks and other valid glitches, many of whose paths carry enough
@@ -312,11 +289,11 @@ Appendix~\ref{app:asm}.
 
 \textit{Parameters.} The disassembly shows the assignment compiled to two
 single-cycle instructions, so we set \texttt{repeat} to $2$;
-Figure~\ref{fig:fault3_results} gives the success map. \chg{The best point is
+Figure~\ref{fig:fault3_results} gives the success map. The best point is
 \texttt{ext\_offset}$=7$, \texttt{offset}$=3$, \texttt{width}$=8$, giving
 $16\%$ success over $100$ confirmatory attempts (Wilson $95\%$ CI
 $[10\%,24\%]$) with a $5\%$ reset rate; the hot band is confined to
-\texttt{ext\_offset}$=7$.}
+\texttt{ext\_offset}$=7$.
 
 \begin{figure}[!tb]
 \centering
@@ -327,7 +304,7 @@ $[10\%,24\%]$) with a $5\%$ reset rate; the hot band is confined to
 \end{subfigure}\hfill
 \begin{subfigure}[b]{0.46\textwidth}
   \includegraphics[width=\linewidth]{content/images/glitch_2d_results_ext7_crop.png}
-  \caption{\chg{Model 3 (hidden leaf), $\texttt{ext\_offset} = 7$.}}
+  \caption{Model 3 (hidden leaf), $\texttt{ext\_offset} = 7$.}
   \label{fig:fault3_results}
 \end{subfigure}
 \caption{Glitch success frequency for Models~2 and~3, $10$ attempts per
@@ -335,26 +312,22 @@ parameter point; markers as in Figure~\ref{fig:fault1_results}.}
 \label{fig:glitch_results}
 \end{figure}
 
-\revon
-\noindent\textbf{Results.} The target faulty outputs are reproducible under instrumentation. \chg{For Model~3, every
-\revoff
-attempt} gave normal execution, a device reset, or the expected exploit, with
+\noindent\textbf{Results.} The target faulty outputs are reproducible under instrumentation. For Model~3, every
+attempt gave normal execution, a device reset, or the expected exploit, with
 no other valid glitches --- a consequence of single-instruction targeting,
 which is less likely than a wider disruption window to bleed into surrounding
-cycles\chg{; Models~1 and~2 also produce other valid glitches
-(Figures~\ref{fig:fault1_results} and~\ref{fig:fault2_results})}. Model~1, the root reveal, is both the most efficient and the most
+cycles; Models~1 and~2 also produce other valid glitches
+(Figures~\ref{fig:fault1_results} and~\ref{fig:fault2_results}). Model~1, the root reveal, is both the most efficient and the most
 reproducible; Models~2 and~3 replicate less readily but are harder to detect
-\revon
 during signing (Section~\ref{sec:counter}).
+
 \noindent\textbf{Limits of the evidence.}
 The rates in Table~\ref{tab:fault-success} describe tuned points selected
 after searching $672$, $1344$ and $448$ parameter combinations (ten trials
 per point), not success probabilities for a previously unprofiled device.
 Only Model~1 yields the full-tree disclosure required by the one-query
-coverage calculation; Models~2--3 generally expose fewer hidden seeds.
-Our tests did not reconstruct MEDS response pairs from a full emitted
-signature, demonstrate key extraction on the target, or measure the ability
-to hit the publication routine from the start of complete signing. Model~3
-uses a non-default \texttt{-O0} build, so its transfer to the normal
+coverage calculation; Models~2--3 generally expose fewer hidden seeds. Within
+the routine-level scope stated above, we neither reconstructed response pairs
+from a full emitted signature nor extracted a key on the target. Finally,
+Model~3 uses a non-default \texttt{-O0} build, so its transfer to the normal
 \texttt{-Os} binary remains open.
-\revoff
